@@ -1,0 +1,12 @@
+{
+  "name": "infinder",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "build": "npm run build -w infinder-frontend"
+  }
+}

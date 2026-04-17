@@ -1,0 +1,2 @@
+-- Run once in Supabase SQL editor after your first user exists:
+-- UPDATE public.users SET role = 'admin' WHERE email = 'your-admin@email.com';
