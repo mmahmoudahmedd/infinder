@@ -10,7 +10,6 @@ const BUCKETS = ['stocks', 'baskets', 'bonds', 'gold'];
 const CATEGORY_SYMBOLS = {
   stocks: 'SPY',
   basket: 'QQQ',
-  baskets: 'QQQ',
   bonds: 'TLT',
   gold: 'XAU/USD',
 };
@@ -36,24 +35,33 @@ async function fetchSeries(symbol) {
     timeSeriesKey = 'Time Series (Daily)';
   }
 
-  const response = await fetch(url);
-  const json = await response.json();
-  const rawSeries = json[timeSeriesKey];
+  try {
+    const response = await fetch(url);
+    const json = await response.json();
+    const rawSeries = json[timeSeriesKey];
 
-  if (!rawSeries) {
-    console.warn(`Alpha Vantage returned no series for ${symbol}:`, JSON.stringify(json).slice(0, 200));
+    if (!rawSeries) {
+      console.warn(`Alpha Vantage returned no series for ${symbol}:`, JSON.stringify(json).slice(0, 200));
+      return seriesCache[symbol]?.series ?? [];
+    }
+
+    const dates = Object.keys(rawSeries).sort().slice(-30);
+    const base = parseFloat(rawSeries[dates[0]]?.['4. close']);
+    if (!base || isNaN(base)) {
+      console.warn(`fetchSeries: invalid base price for ${symbol}`);
+      return seriesCache[symbol]?.series ?? [];
+    }
+    const series = dates.map((date) => ({
+      date,
+      index: Math.round((parseFloat(rawSeries[date]['4. close']) / base) * 10000) / 100,
+    }));
+
+    seriesCache[symbol] = { fetchedAt: Date.now(), series };
+    return series;
+  } catch (err) {
+    console.warn(`fetchSeries network error for ${symbol}:`, err.message);
     return seriesCache[symbol]?.series ?? [];
   }
-
-  const dates = Object.keys(rawSeries).sort().slice(-30);
-  const base = parseFloat(rawSeries[dates[0]]['4. close']);
-  const series = dates.map((date) => ({
-    date,
-    index: Math.round((parseFloat(rawSeries[date]['4. close']) / base) * 10000) / 100,
-  }));
-
-  seriesCache[symbol] = { fetchedAt: Date.now(), series };
-  return series;
 }
 
 router.get('/catalog', verifyToken, async (req, res) => {
