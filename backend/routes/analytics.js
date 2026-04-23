@@ -6,64 +6,104 @@ const router = Router();
 
 const BUCKETS = ['stocks', 'baskets', 'bonds', 'gold'];
 
-function hashSeed(str) {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
-  return Math.abs(h);
-}
+// Maps each investment category to a real benchmark symbol
+const CATEGORY_SYMBOLS = {
+  stocks: 'SPY',
+  basket: 'QQQ',
+  baskets: 'QQQ',
+  bonds: 'TLT',
+  gold: 'XAU/USD',
+};
 
-/** Deterministic demo performance curve (not real market data). */
-function demoSeriesForSlug(slug, days = 30, baseLow = 4, baseHigh = 6) {
-  const seed = hashSeed(slug);
-  const mid = (baseLow + baseHigh) / 2;
-  const vol = 0.15 + (seed % 100) / 500;
-  const out = [];
-  let v = 100;
-  const d0 = new Date();
-  d0.setUTCDate(d0.getUTCDate() - days);
-  for (let i = 0; i <= days; i++) {
-    const d = new Date(d0);
-    d.setUTCDate(d0.getUTCDate() + i);
-    const noise = Math.sin((seed + i) * 0.7) * vol + (seed % 7) * 0.01;
-    v += (mid / 100 / 12 + noise * 0.05) * v;
-    out.push({
-      date: d.toISOString().slice(0, 10),
-      index: Math.round(v * 100) / 100,
-    });
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const seriesCache = {};
+
+async function fetchSeries(symbol) {
+  const cached = seriesCache[symbol];
+  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
+    return cached.series;
   }
-  return out;
+
+  const key = process.env.ALPHA_VANTAGE_KEY;
+  let url;
+  let timeSeriesKey;
+
+  if (symbol === 'XAU/USD') {
+    url = `https://www.alphavantage.co/query?function=FX_DAILY&from_symbol=XAU&to_symbol=USD&outputsize=compact&apikey=${key}`;
+    timeSeriesKey = 'Time Series FX (Daily)';
+  } else {
+    url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=compact&apikey=${key}`;
+    timeSeriesKey = 'Time Series (Daily)';
+  }
+
+  const response = await fetch(url);
+  const json = await response.json();
+  const rawSeries = json[timeSeriesKey];
+
+  if (!rawSeries) {
+    console.warn(`Alpha Vantage returned no series for ${symbol}:`, JSON.stringify(json).slice(0, 200));
+    return seriesCache[symbol]?.series ?? [];
+  }
+
+  const dates = Object.keys(rawSeries).sort().slice(-30);
+  const base = parseFloat(rawSeries[dates[0]]['4. close']);
+  const series = dates.map((date) => ({
+    date,
+    index: Math.round((parseFloat(rawSeries[date]['4. close']) / base) * 10000) / 100,
+  }));
+
+  seriesCache[symbol] = { fetchedAt: Date.now(), series };
+  return series;
 }
 
 router.get('/catalog', verifyToken, async (req, res) => {
   try {
-    const { data: rows, error } = await supabase.from('investments').select('*').eq('active', true).order('min_investment');
+    const { data: rows, error } = await supabase
+      .from('investments')
+      .select('*')
+      .eq('active', true)
+      .order('min_investment');
     if (error) throw error;
+
+    const uniqueSymbols = [
+      ...new Set((rows || []).map((r) => CATEGORY_SYMBOLS[r.category]).filter(Boolean)),
+    ];
+
+    const seriesMap = {};
+    await Promise.all(
+      uniqueSymbols.map(async (sym) => {
+        seriesMap[sym] = await fetchSeries(sym);
+      }),
+    );
+
     const list = (rows || []).map((row) => {
-      const low = row.expected_return_low != null ? Number(row.expected_return_low) : 4;
-      const high = row.expected_return_high != null ? Number(row.expected_return_high) : 8;
-      const series = demoSeriesForSlug(row.slug, 30, low, high);
-      const last = series[series.length - 1];
+      const symbol = CATEGORY_SYMBOLS[row.category];
+      const series = symbol ? (seriesMap[symbol] ?? []) : [];
       const first = series[0];
-      const mtdPct = first && last ? Math.round(((last.index - first.index) / first.index) * 10000) / 100 : 0;
-      const seed = hashSeed(row.slug);
-      const volatilityLabel = row.risk_level === 'high' ? 'High' : row.risk_level === 'low' ? 'Low' : 'Medium';
+      const last = series[series.length - 1];
+      const mtdPct =
+        first && last ? Math.round(((last.index - first.index) / first.index) * 10000) / 100 : 0;
+      const volatilityLabel =
+        row.risk_level === 'high' ? 'High' : row.risk_level === 'low' ? 'Low' : 'Medium';
+
       return {
         id: row.id,
         slug: row.slug,
         title: row.title,
         category: row.category,
         min_investment: Number(row.min_investment),
-        expected_return_low: low,
-        expected_return_high: high,
+        expected_return_low: row.expected_return_low != null ? Number(row.expected_return_low) : 4,
+        expected_return_high:
+          row.expected_return_high != null ? Number(row.expected_return_high) : 8,
         risk_level: row.risk_level,
         is_halal: row.is_halal,
-        mtd_demo_pct: mtdPct,
-        ytd_demo_pct: Math.round((mtdPct * 3.2 + (seed % 5) - 2) * 10) / 10,
+        mtd_pct: mtdPct,
         volatility_label: volatilityLabel,
         series_30d: series,
       };
     });
-    return res.json({ catalog: list, disclaimer: 'Demo analytics only — not real market data.' });
+
+    return res.json({ catalog: list });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ error: 'Failed to load analytics' });
@@ -106,7 +146,8 @@ router.get('/holdings', verifyToken, async (req, res) => {
     const breakdown = BUCKETS.map((k) => ({
       key: k,
       amount_egp: Math.round(agg[k] * 100) / 100,
-      pct_of_invested: totalInvested > 0 ? Math.round((agg[k] / totalInvested) * 1000) / 10 : 0,
+      pct_of_invested:
+        totalInvested > 0 ? Math.round((agg[k] / totalInvested) * 1000) / 10 : 0,
     }));
 
     return res.json({
