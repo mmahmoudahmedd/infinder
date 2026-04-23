@@ -53,6 +53,9 @@ router.get('/', verifyToken, async (req, res) => {
 
 router.post('/robo', verifyToken, (req, res) => {
   const { goal, horizon, risk, isSharia } = req.body;
+  if (!goal || !horizon || !risk) {
+    return res.status(400).json({ error: 'goal, horizon, and risk are required' });
+  }
   let key = 'balanced';
   if (goal === 'preserve' && horizon === 'short' && risk === 'low') key = 'preserve_short_low';
   else if (goal === 'preserve' && horizon === 'short') key = 'preserve_short_med';
