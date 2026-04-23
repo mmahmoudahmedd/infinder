@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Logo } from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
 
 export default function RegisterPage() {
@@ -12,83 +11,107 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [sharia_mode, setSharia] = useState(false);
   const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErr('');
+    setLoading(true);
     try {
       await register({ email, password, full_name, phone, sharia_mode });
       nav('/onboarding/review', { replace: true });
     } catch {
       setErr('Could not create account. Email may already be in use.');
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="p-4 flex justify-between items-center">
-        <Logo />
-        <Link to="/login" className="text-sm text-gray-600">
+    <div className="min-h-screen bg-infinder-black flex flex-col">
+      {/* Glow */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[400px] rounded-full bg-infinder-lime/8 blur-[120px]" />
+      </div>
+
+      {/* Header */}
+      <div className="relative p-6 flex justify-between items-center">
+        <Link to="/" className="flex items-center gap-2">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-infinder-lime text-infinder-black font-bold text-sm">
+            i
+          </span>
+          <span className="font-bold tracking-tight text-white">INFINDER</span>
+        </Link>
+        <Link to="/login" className="text-sm text-white/45 hover:text-white transition">
           Sign in
         </Link>
       </div>
-      <div className="flex-1 flex items-center justify-center px-4 pb-20">
-        <form onSubmit={onSubmit} className="w-full max-w-lg bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
-          <div className="flex gap-2 text-xs text-gray-500 mb-6">
-            <span className="font-semibold text-infinder-black">1. Personal</span>
-            <span>—</span>
-            <span>2. Verification</span>
-            <span>—</span>
-            <span>3. Review</span>
+
+      {/* Form */}
+      <div className="relative flex-1 flex items-center justify-center px-4 pb-16">
+        <form
+          onSubmit={onSubmit}
+          className="w-full max-w-lg bg-white/[0.04] border border-white/[0.08] rounded-2xl p-8 backdrop-blur-sm"
+        >
+          {/* Step indicator */}
+          <div className="flex items-center gap-2 text-xs mb-6">
+            <span className="font-semibold text-infinder-lime bg-infinder-lime/10 border border-infinder-lime/25 rounded-full px-3 py-1">
+              1. Personal
+            </span>
+            <span className="text-white/25">—</span>
+            <span className="text-white/30">2. Verification</span>
+            <span className="text-white/25">—</span>
+            <span className="text-white/30">3. Review</span>
           </div>
-          <h1 className="text-2xl font-bold">Create your account</h1>
-          <p className="text-gray-600 text-sm mt-1">Let&apos;s get started with some basic information.</p>
-          {err && <p className="text-red-600 text-sm mt-3">{err}</p>}
-          <label className="block mt-6 text-sm font-medium">Full name</label>
-          <input
-            className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
-            placeholder="Enter your full name"
-            value={full_name}
-            onChange={(e) => setFullName(e.target.value)}
-            required
-          />
-          <label className="block mt-4 text-sm font-medium">Email</label>
-          <input
-            className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
-            placeholder="your@email.com"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <label className="block mt-4 text-sm font-medium">Phone</label>
-          <input
-            className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
-            placeholder="+20 xxx xxx xxxx"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
-          <label className="block mt-4 text-sm font-medium">Password</label>
-          <input
-            className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-          />
-          <label className="mt-6 flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50 p-4 cursor-pointer">
-            <input type="checkbox" checked={sharia_mode} onChange={(e) => setSharia(e.target.checked)} className="mt-1" />
+
+          <h1 className="text-2xl font-bold text-white">Create your account</h1>
+          <p className="text-white/45 text-sm mt-1">Let's get started with some basic information.</p>
+
+          {err && (
+            <div className="mt-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3">
+              {err}
+            </div>
+          )}
+
+          {[
+            { label: 'Full name', value: full_name, setter: setFullName, type: 'text', placeholder: 'Your full name' },
+            { label: 'Email', value: email, setter: setEmail, type: 'email', placeholder: 'you@example.com' },
+            { label: 'Phone', value: phone, setter: setPhone, type: 'tel', placeholder: '+20 xxx xxx xxxx' },
+            { label: 'Password', value: password, setter: setPassword, type: 'password', placeholder: '••••••••', minLength: 6 },
+          ].map(({ label, value, setter, type, placeholder, minLength }) => (
+            <div key={label} className="mt-5">
+              <label className="block text-sm font-medium text-white/70">{label}</label>
+              <input
+                className="mt-1.5 w-full rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/25 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-infinder-lime/50 focus:border-infinder-lime/50 transition"
+                placeholder={placeholder}
+                type={type}
+                value={value}
+                onChange={(e) => setter(e.target.value)}
+                required={type !== 'tel'}
+                minLength={minLength}
+              />
+            </div>
+          ))}
+
+          <label className="mt-6 flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 cursor-pointer hover:border-infinder-lime/25 transition">
+            <input
+              type="checkbox"
+              checked={sharia_mode}
+              onChange={(e) => setSharia(e.target.checked)}
+              className="mt-0.5 accent-infinder-lime"
+            />
             <span>
-              <span className="font-medium block">Enable Sharia-compliant mode</span>
-              <span className="text-sm text-gray-600">Only show halal investment options where applicable.</span>
+              <span className="font-medium text-white block text-sm">Enable Sharia-compliant mode</span>
+              <span className="text-xs text-white/40 mt-0.5 block">Only show halal investment options where applicable.</span>
             </span>
           </label>
+
           <button
             type="submit"
-            className="mt-8 w-full rounded-xl bg-infinder-lime text-infinder-black font-semibold py-3 hover:opacity-95"
+            disabled={loading}
+            className="mt-8 w-full rounded-xl bg-infinder-lime text-infinder-black font-semibold py-3.5 text-sm hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed shadow-[0_0_24px_rgba(190,243,94,0.2)]"
           >
-            Continue to verification
+            {loading ? 'Creating account…' : 'Continue to verification →'}
           </button>
         </form>
       </div>

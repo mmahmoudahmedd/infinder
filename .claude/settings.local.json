@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Read(//c/Users/20155/.claude/plugins/marketplaces/local-desktop-app-uploads/ui-ux-pro-max/**)",
+      "Bash(python scripts/search.py \"fintech investment beginner modern premium\" --design-system -p \"INFINDER\" -f markdown)",
+      "Bash(python cli/assets/scripts/search.py \"fintech investment beginner modern premium\" --design-system -p \"INFINDER\" -f markdown)"
+    ]
+  }
+}

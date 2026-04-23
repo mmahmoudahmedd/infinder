@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Logo } from './Logo';
 import { useAuth } from '../context/AuthContext';
 import clsx from 'clsx';
@@ -19,21 +19,28 @@ export function Navbar({ showNav, right, className }: Props) {
       <div className="flex items-center gap-4 text-sm">
         {showNav && user && (
           <>
-            <Link to="/dashboard" className="text-gray-700 hover:text-infinder-black">
-              Dashboard
-            </Link>
-            <Link to="/invest" className="text-gray-700 hover:text-infinder-black">
-              Invest
-            </Link>
-            <Link to="/profile" className="text-gray-700 hover:text-infinder-black">
-              Profile
-            </Link>
-            <Link to="/learn" className="text-gray-700 hover:text-infinder-black">
-              Learn
-            </Link>
-            <Link to="/reports" className="text-gray-700 hover:text-infinder-black">
-              Reports
-            </Link>
+            {[
+              { to: '/dashboard', label: 'Dashboard' },
+              { to: '/invest', label: 'Invest' },
+              { to: '/learn', label: 'Learn' },
+              { to: '/reports', label: 'Reports' },
+              { to: '/profile', label: 'Profile' },
+            ].map(({ to, label }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) =>
+                  clsx(
+                    'pb-0.5 border-b-2 transition',
+                    isActive
+                      ? 'text-infinder-black font-semibold border-infinder-lime'
+                      : 'text-gray-600 border-transparent hover:text-infinder-black'
+                  )
+                }
+              >
+                {label}
+              </NavLink>
+            ))}
             {user.role === 'admin' && (
               <Link to="/admin" className="text-amber-700 font-medium">
                 Admin

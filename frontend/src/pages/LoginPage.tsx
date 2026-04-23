@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Logo } from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
@@ -10,53 +9,88 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErr('');
+    setLoading(true);
     try {
       await login(email, password);
       nav(loc.state?.from?.pathname || '/dashboard', { replace: true });
     } catch {
       setErr('Invalid email or password.');
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="p-4">
-        <Logo />
+    <div className="min-h-screen bg-infinder-black flex flex-col">
+      {/* Glow */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[400px] rounded-full bg-infinder-lime/8 blur-[120px]" />
       </div>
-      <div className="flex-1 flex items-center justify-center px-4 pb-20">
-        <form onSubmit={onSubmit} className="w-full max-w-md bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
-          <h1 className="text-2xl font-bold">Welcome back</h1>
-          <p className="text-gray-600 text-sm mt-1">Sign in to continue to your dashboard.</p>
-          {err && <p className="text-red-600 text-sm mt-3">{err}</p>}
-          <label className="block mt-6 text-sm font-medium">Email</label>
+
+      {/* Logo */}
+      <div className="relative p-6">
+        <Link to="/" className="flex items-center gap-2 w-fit">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-infinder-lime text-infinder-black font-bold text-sm">
+            i
+          </span>
+          <span className="font-bold tracking-tight text-white">INFINDER</span>
+        </Link>
+      </div>
+
+      {/* Form */}
+      <div className="relative flex-1 flex items-center justify-center px-4 pb-16">
+        <form
+          onSubmit={onSubmit}
+          className="w-full max-w-md bg-white/[0.04] border border-white/[0.08] rounded-2xl p-8 backdrop-blur-sm"
+        >
+          <h1 className="text-2xl font-bold text-white">Welcome back</h1>
+          <p className="text-white/45 text-sm mt-1">Sign in to continue to your dashboard.</p>
+
+          {err && (
+            <div className="mt-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3">
+              {err}
+            </div>
+          )}
+
+          <label className="block mt-6 text-sm font-medium text-white/70">Email</label>
           <input
-            className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
+            className="mt-1.5 w-full rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/25 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-infinder-lime/50 focus:border-infinder-lime/50 transition"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             type="email"
+            placeholder="you@example.com"
             required
           />
-          <label className="block mt-4 text-sm font-medium">Password</label>
+
+          <div className="flex items-center justify-between mt-5">
+            <label className="text-sm font-medium text-white/70">Password</label>
+            <span className="text-xs text-white/30">Forgot password? Contact support.</span>
+          </div>
           <input
-            className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
+            className="mt-1.5 w-full rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/25 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-infinder-lime/50 focus:border-infinder-lime/50 transition"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             type="password"
+            placeholder="••••••••"
             required
           />
+
           <button
             type="submit"
-            className="mt-8 w-full rounded-xl bg-infinder-lime text-infinder-black font-semibold py-3 hover:opacity-95"
+            disabled={loading}
+            className="mt-8 w-full rounded-xl bg-infinder-lime text-infinder-black font-semibold py-3.5 text-sm hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed shadow-[0_0_24px_rgba(190,243,94,0.2)]"
           >
-            Sign in
+            {loading ? 'Signing in…' : 'Sign in'}
           </button>
-          <p className="text-center text-sm text-gray-600 mt-4">
+
+          <p className="text-center text-sm text-white/35 mt-5">
             No account?{' '}
-            <Link to="/register" className="font-medium text-infinder-black underline">
+            <Link to="/register" className="font-medium text-infinder-lime hover:opacity-80 transition">
               Create one
             </Link>
           </p>

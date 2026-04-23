@@ -25,6 +25,14 @@ const riskLabel: Record<string, string> = {
   high: 'High risk',
 };
 
+const categoryIcon: Record<string, string> = {
+  stocks: '📈',
+  bonds: '🏦',
+  gold: '🥇',
+  basket: '🧺',
+  crypto: '₿',
+};
+
 export default function InvestmentOptions() {
   const { user } = useAuth();
   const [items, setItems] = useState<Inv[]>([]);
@@ -64,7 +72,7 @@ export default function InvestmentOptions() {
             <div key={inv.id} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <div className="flex justify-between items-start gap-2">
                 <h3 className="font-semibold text-lg">{inv.title}</h3>
-                <span className="text-xl">📊</span>
+                <span className="text-xl">{categoryIcon[inv.category] ?? '📊'}</span>
               </div>
               <div className="flex flex-wrap gap-2 mt-2">
                 <span className="text-xs rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5">{riskLabel[inv.risk_level] || inv.risk_level}</span>
@@ -87,10 +95,21 @@ export default function InvestmentOptions() {
               </div>
               <button
                 type="button"
-                className="mt-3 text-sm text-gray-600 flex items-center gap-1"
+                className="mt-3 text-sm text-gray-600 flex items-center gap-1 hover:text-infinder-black transition"
                 onClick={() => setOpen((o) => ({ ...o, [inv.id]: !isOpen }))}
               >
-                Learn more {isOpen ? '▲' : '▼'}
+                Learn more
+                <svg
+                  className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M2 4l4 4 4-4" />
+                </svg>
               </button>
               {isOpen && bullets.length > 0 && (
                 <ul className="mt-2 text-sm text-gray-700 list-disc pl-5 space-y-1">
