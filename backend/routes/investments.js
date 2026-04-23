@@ -6,11 +6,30 @@ import { evaluateRewards } from '../services/rewardsEngine.js';
 const router = Router();
 
 const ROBO_TEMPLATES = {
-  preserve_short_low: { stocks: 10, baskets: 10, bonds: 60, gold: 20 },
-  preserve_short_med: { stocks: 15, baskets: 15, bonds: 50, gold: 20 },
-  grow_long_high: { stocks: 45, baskets: 25, bonds: 15, gold: 15 },
-  balanced: { stocks: 40, baskets: 20, bonds: 30, gold: 10 },
+  preserve_short_low:       { stocks: 10, baskets: 10, bonds: 60, gold: 20 },
+  preserve_short_med:       { stocks: 15, baskets: 15, bonds: 50, gold: 20 },
+  grow_long_high:           { stocks: 45, baskets: 25, bonds: 15, gold: 15 },
+  balanced:                 { stocks: 40, baskets: 20, bonds: 30, gold: 10 },
+  preserve_short_low_halal: { stocks: 15, baskets: 10, bonds: 0,  gold: 75 },
+  preserve_short_med_halal: { stocks: 20, baskets: 20, bonds: 0,  gold: 60 },
+  grow_long_high_halal:     { stocks: 50, baskets: 30, bonds: 0,  gold: 20 },
+  balanced_halal:           { stocks: 45, baskets: 25, bonds: 0,  gold: 30 },
 };
+
+function buildRoboLabel(goal, horizon, risk, isSharia) {
+  const horizonPart = horizon === 'long' ? 'Long-term' : horizon === 'medium' ? 'Medium-term' : 'Short-term';
+  const riskPart = risk === 'high' ? 'Growth' : risk === 'low' ? 'Conservative' : 'Balanced';
+  const halal = isSharia ? ' Halal' : '';
+  return `${horizonPart} ${riskPart}${halal} Portfolio`;
+}
+
+function buildRoboExplanation(goal, horizon, risk, isSharia) {
+  const riskText = risk === 'high' ? 'higher risk tolerance' : risk === 'low' ? 'lower risk preference' : 'balanced risk approach';
+  const horizonText = horizon === 'long' ? 'long-term horizon' : horizon === 'short' ? 'short-term horizon' : 'medium-term horizon';
+  const goalText = goal === 'grow' ? 'growth focus' : 'capital preservation focus';
+  const shariaNote = isSharia ? ' Bonds were replaced with gold to keep the portfolio fully halal.' : '';
+  return `Based on your ${goalText}, ${horizonText}, and ${riskText}, we built this allocation to match your objectives.${shariaNote}`;
+}
 
 router.get('/', verifyToken, async (req, res) => {
   try {
@@ -33,17 +52,19 @@ router.get('/', verifyToken, async (req, res) => {
 });
 
 router.post('/robo', verifyToken, (req, res) => {
-  const { goal, horizon, risk } = req.body;
+  const { goal, horizon, risk, isSharia } = req.body;
   let key = 'balanced';
   if (goal === 'preserve' && horizon === 'short' && risk === 'low') key = 'preserve_short_low';
   else if (goal === 'preserve' && horizon === 'short') key = 'preserve_short_med';
   else if (goal === 'grow' && (horizon === 'long' || horizon === 'medium') && risk === 'high') key = 'grow_long_high';
+  if (isSharia) key = `${key}_halal`;
   const allocation = { ...ROBO_TEMPLATES[key] };
   return res.json({
     allocation,
-    label: key === 'balanced' ? 'Balanced Portfolio' : key.replace(/_/g, ' '),
+    label: buildRoboLabel(goal, horizon, risk, isSharia),
+    explanation: buildRoboExplanation(goal, horizon, risk, isSharia),
     expected_return: '6-10%',
-    risk_level: 'Medium',
+    risk_level: risk === 'high' ? 'High' : risk === 'low' ? 'Low' : 'Medium',
   });
 });
 
