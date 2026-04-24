@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { verifyToken } from '../middleware/verifyToken.js';
 
 const router = Router();
@@ -44,7 +43,7 @@ function validatePayload(obj) {
   if (Math.abs(sum - 100) > 2) {
     const f = 100 / sum;
     for (const k of keys) nums[k] = Math.round(nums[k] * f);
-    let diff = 100 - keys.reduce((s, k) => s + nums[k], 0);
+    const diff = 100 - keys.reduce((s, k) => s + nums[k], 0);
     nums.stocks += diff;
   }
   return {
@@ -55,6 +54,24 @@ function validatePayload(obj) {
   };
 }
 
+async function callGroq(messages) {
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages,
+      temperature: 0.7,
+    }),
+  });
+  const json = await response.json();
+  if (!response.ok) throw new Error(json.error?.message || `Groq error ${response.status}`);
+  return json.choices[0].message.content;
+}
+
 router.post('/chat', verifyToken, async (req, res) => {
   try {
     const { messages, userProfile } = req.body;
@@ -62,8 +79,7 @@ router.post('/chat', verifyToken, async (req, res) => {
       return res.status(400).json({ error: 'messages[] required' });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
+    if (!process.env.GROQ_API_KEY) {
       const lastUser = [...messages].reverse().find((m) => m.role === 'user');
       const text = (lastUser?.content || '').toLowerCase();
       const mockAlloc =
@@ -71,67 +87,47 @@ router.post('/chat', verifyToken, async (req, res) => {
           ? { stocks: 20, baskets: 30, bonds: 10, gold: 40 }
           : { stocks: 35, baskets: 25, bonds: 25, gold: 15 };
       return res.json({
-        message:
-          'Gemini API key is not set on the server. Here is a demo allocation so the UI still works. Add GEMINI_API_KEY to your backend .env for real AI chat.',
+        message: 'AI key not configured. Here is a demo allocation.',
         allocation: mockAlloc,
-        reasoning: 'Demo mode: balanced sample with slightly more gold when Sharia-related keywords are detected.',
+        reasoning: 'Demo mode: balanced sample.',
         isSharia: !!(text.includes('sharia') || text.includes('halal')),
       });
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
-      systemInstruction: SYSTEM,
-    });
+    const profileBits = userProfile ? `User profile: ${JSON.stringify(userProfile)}` : '';
+    const systemContent = profileBits ? `${SYSTEM}\n\n${profileBits}` : SYSTEM;
 
-    const profileBits = userProfile
-      ? `User profile JSON: ${JSON.stringify(userProfile)}`
-      : '';
-    const history = messages.slice(0, -1).map((m) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: String(m.content || '') }],
-    }));
-    const last = messages[messages.length - 1];
-    const lastText = [profileBits, String(last.content || '')].filter(Boolean).join('\n\n');
+    const groqMessages = [
+      { role: 'system', content: systemContent },
+      ...messages.map((m) => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user',
+        content: String(m.content || ''),
+      })),
+    ];
 
-    const chat = model.startChat({ history });
-    let result = await chat.sendMessage(lastText);
-    let raw = result.response.text();
+    let raw = await callGroq(groqMessages);
 
     let parsed = null;
     const jsonStr = stripJsonBlock(raw);
     if (jsonStr) {
-      try {
-        parsed = validatePayload(JSON.parse(jsonStr));
-      } catch {
-        parsed = null;
-      }
+      try { parsed = validatePayload(JSON.parse(jsonStr)); } catch { parsed = null; }
     }
 
     if (jsonStr && !parsed) {
-      const retry = await chat.sendMessage(
-        'Your last message was not valid JSON. Reply with ONLY one JSON object: {"message","allocation","reasoning","isSharia"} as specified.'
-      );
-      raw = retry.response.text();
+      groqMessages.push({ role: 'assistant', content: raw });
+      groqMessages.push({
+        role: 'user',
+        content: 'Your last message was not valid JSON. Reply with ONLY one JSON object: {"message","allocation","reasoning","isSharia"} as specified.',
+      });
+      raw = await callGroq(groqMessages);
       const j2 = stripJsonBlock(raw);
       if (j2) {
-        try {
-          parsed = validatePayload(JSON.parse(j2));
-        } catch {
-          parsed = null;
-        }
+        try { parsed = validatePayload(JSON.parse(j2)); } catch { parsed = null; }
       }
     }
 
-    if (parsed && parsed.allocation) {
-      return res.json(parsed);
-    }
-
-    if (parsed && !parsed.allocation) {
-      return res.json({ message: parsed.message, allocation: null, reasoning: parsed.reasoning, isSharia: parsed.isSharia });
-    }
-
+    if (parsed?.allocation) return res.json(parsed);
+    if (parsed) return res.json({ message: parsed.message, allocation: null, reasoning: parsed.reasoning, isSharia: parsed.isSharia });
     return res.json({ message: raw, allocation: null, reasoning: null, isSharia: null });
   } catch (e) {
     console.error(e);
