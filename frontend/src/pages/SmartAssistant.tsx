@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { SubpageShell } from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
@@ -10,9 +11,6 @@ type Msg = { role: 'user' | 'assistant'; content: string };
 type Alloc = { stocks: number; baskets: number; bonds: number; gold: number };
 
 const COLORS = ['#BEF35E', '#76D74F', '#9CA3AF', '#FBBF24'];
-const GOAL_LABELS: Record<string, string> = { preserve: 'Save & preserve', grow: 'Grow & build' };
-const HORIZON_LABELS: Record<string, string> = { short: 'Short-term', medium: 'Medium-term', long: 'Long-term' };
-const RISK_LABELS: Record<string, string> = { low: 'Lower risk', medium: 'Balanced', high: 'Higher risk' };
 
 const slide = {
   initial: { opacity: 0, x: 40 },
@@ -21,8 +19,25 @@ const slide = {
 };
 
 export default function SmartAssistant() {
+  const { t } = useTranslation();
   const { user, refreshMe } = useAuth();
   const [mode, setMode] = useState<'chat' | 'wizard'>('chat');
+
+  // Label maps (inside component so t() is available)
+  const GOAL_LABELS: Record<string, string> = {
+    preserve: t('wizard_goal_preserve_label'),
+    grow: t('wizard_goal_grow_label'),
+  };
+  const HORIZON_LABELS: Record<string, string> = {
+    short: t('wizard_horizon_short_label'),
+    medium: t('wizard_horizon_medium_label'),
+    long: t('wizard_horizon_long_label'),
+  };
+  const RISK_LABELS: Record<string, string> = {
+    low: t('wizard_risk_low_label'),
+    medium: t('wizard_risk_medium_label'),
+    high: t('wizard_risk_high_label'),
+  };
 
   // Chat state
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -83,7 +98,7 @@ export default function SmartAssistant() {
         setIsSharia(null);
       }
     } catch {
-      setErr('Assistant request failed.');
+      setErr(t('chat_error_failed'));
     } finally {
       setLoading(false);
     }
@@ -105,7 +120,7 @@ export default function SmartAssistant() {
       setWizardExplanation(data.explanation || '');
       setWizardStep(6);
     } catch {
-      setErr('Could not load recommendation. Try again.');
+      setErr(t('wizard_error_robo'));
     } finally {
       setLoading(false);
     }
@@ -116,7 +131,7 @@ export default function SmartAssistant() {
     const amount = Number(investAmount);
     const a = mode === 'chat' ? alloc : wizardAlloc;
     if (!a || !amount || amount <= 0) {
-      setErr('Enter a valid amount.');
+      setErr(t('common_invest_error'));
       return;
     }
     try {
@@ -133,14 +148,14 @@ export default function SmartAssistant() {
       if (mode === 'chat') {
         setMessages((m) => [
           ...m,
-          { role: 'assistant', content: 'Your investment was recorded. Check Profile for history.' },
+          { role: 'assistant', content: t('chat_invest_recorded') },
         ]);
       } else {
         resetWizard();
       }
     } catch (e: unknown) {
       const ax = e as { response?: { data?: { error?: string } } };
-      setErr(ax.response?.data?.error || 'Could not invest.');
+      setErr(ax.response?.data?.error || t('common_invest_failed'));
     }
   }
 
@@ -176,19 +191,19 @@ export default function SmartAssistant() {
           onClick={() => { setMode('chat'); resetWizard(); }}
           className={`rounded-full px-4 py-2 text-sm font-medium ${mode === 'chat' ? 'bg-infinder-black text-white' : 'border border-gray-300'}`}
         >
-          Chat with AI
+          {t('chat_mode_btn')}
         </button>
         <button
           type="button"
           onClick={() => { setMode('wizard'); resetChat(); resetWizard(); }}
           className={`rounded-full px-4 py-2 text-sm font-medium ${mode === 'wizard' ? 'bg-infinder-black text-white' : 'border border-gray-300'}`}
         >
-          Quick wizard
+          {t('wizard_mode_btn')}
         </button>
       </div>
 
       <p className="text-xs text-gray-500 mb-6">
-        Educational only — not personalized financial advice. Speak with a licensed professional for your situation.
+        {t('chat_disclaimer')}
       </p>
 
       {/* CHAT MODE */}
@@ -197,13 +212,12 @@ export default function SmartAssistant() {
           <div className="rounded-2xl border border-gray-200 bg-white flex flex-col h-[480px]">
             <div className="px-4 py-3 border-b font-semibold flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-infinder-green" />
-              INFINDER Smart Assistant
+              {t('chat_title')}
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3 text-sm">
               {messages.length === 0 && (
                 <p className="text-gray-600">
-                  Hi! I&apos;m here to help you think through goals, risk, and a simple mix across stocks,
-                  baskets, bonds, and gold. What would you like to achieve?
+                  {t('chat_greeting')}
                 </p>
               )}
               {messages.map((m, i) => (
@@ -219,12 +233,12 @@ export default function SmartAssistant() {
                   </span>
                 </div>
               ))}
-              {loading && <p className="text-gray-500 text-sm">Thinking…</p>}
+              {loading && <p className="text-gray-500 text-sm">{t('chat_thinking')}</p>}
             </div>
             <div className="p-3 border-t flex gap-2">
               <input
                 className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                placeholder="Type your answer…"
+                placeholder={t('chat_placeholder')}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && sendChat()}
@@ -235,7 +249,7 @@ export default function SmartAssistant() {
                 disabled={loading}
                 className="rounded-xl bg-infinder-lime text-infinder-black font-semibold px-4 py-2 text-sm disabled:opacity-50"
               >
-                Send
+                {t('chat_send')}
               </button>
             </div>
           </div>
@@ -243,7 +257,7 @@ export default function SmartAssistant() {
           <div className="space-y-4">
             {alloc ? (
               <div className="rounded-2xl border border-gray-200 bg-white p-5">
-                <h2 className="font-semibold text-lg">Your personalized allocation</h2>
+                <h2 className="font-semibold text-lg">{t('chat_alloc_title')}</h2>
                 <div className="h-56 mt-4">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -257,9 +271,9 @@ export default function SmartAssistant() {
                 </div>
                 {reasoning && <p className="text-sm text-gray-700 mt-2">{reasoning}</p>}
                 {isSharia !== null && (
-                  <p className="text-xs text-gray-500 mt-2">Sharia preference: {isSharia ? 'yes' : 'no'}</p>
+                  <p className="text-xs text-gray-500 mt-2">{t('chat_sharia_pref')} {isSharia ? t('chat_sharia_yes') : t('chat_sharia_no')}</p>
                 )}
-                <label className="block mt-4 text-sm font-medium">How much would you like to invest?</label>
+                <label className="block mt-4 text-sm font-medium">{t('common_invest_amount_label')}</label>
                 <div className="mt-1 flex rounded-xl border border-gray-200 overflow-hidden">
                   <span className="px-3 flex items-center bg-gray-50 text-sm text-gray-600">EGP</span>
                   <input
@@ -271,15 +285,15 @@ export default function SmartAssistant() {
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Available: EGP {user.wallet_balance.toFixed(2)}</p>
                 <button type="button" onClick={confirmInvest} className="mt-4 w-full rounded-xl bg-infinder-lime text-infinder-black font-semibold py-3">
-                  Confirm &amp; invest
+                  {t('common_invest_confirm')}
                 </button>
                 <button type="button" onClick={resetChat} className="mt-3 w-full rounded-xl border border-gray-300 py-2 text-sm">
-                  Start over
+                  {t('common_start_over')}
                 </button>
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed border-gray-300 p-6 text-sm text-gray-600">
-                After a few messages, the assistant can output a suggested mix. It will appear here as a donut chart.
+                {t('chat_alloc_placeholder')}
               </div>
             )}
           </div>
@@ -297,7 +311,7 @@ export default function SmartAssistant() {
                   onClick={() => setWizardStep((s) => s - 1)}
                   className="text-sm text-gray-500 hover:text-infinder-black flex items-center gap-1 shrink-0"
                 >
-                  ← Back
+                  {t('common_back')}
                 </button>
               )}
               <div className="flex gap-1 flex-1">
@@ -320,12 +334,12 @@ export default function SmartAssistant() {
           <AnimatePresence mode="wait">
             {wizardStep === 0 && (
               <motion.div key="s0" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 bg-white p-6">
-                <h2 className="text-xl font-semibold text-center">What&apos;s your primary goal?</h2>
-                <p className="text-center text-sm text-gray-600 mt-1">This helps us understand your objective.</p>
+                <h2 className="text-xl font-semibold text-center">{t('wizard_goal_title')}</h2>
+                <p className="text-center text-sm text-gray-600 mt-1">{t('wizard_goal_sub')}</p>
                 <div className="mt-6 grid sm:grid-cols-2 gap-3">
                   {[
-                    { id: 'preserve', title: 'Save & preserve', desc: 'Stable, lower-risk focus.' },
-                    { id: 'grow', title: 'Grow & build', desc: 'More growth-oriented mix.' },
+                    { id: 'preserve', title: t('wizard_goal_preserve'), desc: t('wizard_goal_preserve_desc') },
+                    { id: 'grow', title: t('wizard_goal_grow'), desc: t('wizard_goal_grow_desc') },
                   ].map((opt) => (
                     <button
                       key={opt.id}
@@ -343,12 +357,12 @@ export default function SmartAssistant() {
 
             {wizardStep === 1 && (
               <motion.div key="s1" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 bg-white p-6">
-                <h2 className="text-xl font-semibold text-center">How long do you plan to invest?</h2>
+                <h2 className="text-xl font-semibold text-center">{t('wizard_horizon_title')}</h2>
                 <div className="mt-6 grid sm:grid-cols-3 gap-3">
                   {[
-                    { id: 'short', t: 'Short-term', d: 'Less than 2 years' },
-                    { id: 'medium', t: 'Medium-term', d: '2–5 years' },
-                    { id: 'long', t: 'Long-term', d: '5+ years' },
+                    { id: 'short', t: t('wizard_horizon_short'), d: t('wizard_horizon_short_desc') },
+                    { id: 'medium', t: t('wizard_horizon_medium'), d: t('wizard_horizon_medium_desc') },
+                    { id: 'long', t: t('wizard_horizon_long'), d: t('wizard_horizon_long_desc') },
                   ].map((h) => (
                     <button
                       key={h.id}
@@ -366,12 +380,12 @@ export default function SmartAssistant() {
 
             {wizardStep === 2 && (
               <motion.div key="s2" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 bg-white p-6">
-                <h2 className="text-xl font-semibold text-center">How do you feel about risk?</h2>
+                <h2 className="text-xl font-semibold text-center">{t('wizard_risk_title')}</h2>
                 <div className="mt-6 grid sm:grid-cols-3 gap-3">
                   {[
-                    { id: 'low', t: 'Lower', d: 'I prefer stable returns over big gains' },
-                    { id: 'medium', t: 'Balanced', d: 'Some ups and downs are fine' },
-                    { id: 'high', t: 'Higher', d: "I'm comfortable with volatility for better long-term returns" },
+                    { id: 'low', t: t('wizard_risk_low'), d: t('wizard_risk_low_desc') },
+                    { id: 'medium', t: t('wizard_risk_medium'), d: t('wizard_risk_medium_desc') },
+                    { id: 'high', t: t('wizard_risk_high'), d: t('wizard_risk_high_desc') },
                   ].map((r) => (
                     <button
                       key={r.id}
@@ -389,12 +403,12 @@ export default function SmartAssistant() {
 
             {wizardStep === 3 && (
               <motion.div key="s3" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 bg-white p-6">
-                <h2 className="text-xl font-semibold text-center">Do you want halal-only investments?</h2>
-                <p className="text-center text-sm text-gray-600 mt-1">Sharia-compliant portfolios avoid interest-based products.</p>
+                <h2 className="text-xl font-semibold text-center">{t('wizard_sharia_title')}</h2>
+                <p className="text-center text-sm text-gray-600 mt-1">{t('wizard_sharia_sub')}</p>
                 <div className="mt-6 grid sm:grid-cols-2 gap-3">
                   {[
-                    { id: true, title: 'Yes, halal only', desc: 'Avoid interest-based products' },
-                    { id: false, title: 'No preference', desc: 'Include all investment types' },
+                    { id: true, title: t('wizard_sharia_yes'), desc: t('wizard_sharia_yes_desc') },
+                    { id: false, title: t('wizard_sharia_no'), desc: t('wizard_sharia_no_desc') },
                   ].map((opt) => (
                     <button
                       key={String(opt.id)}
@@ -412,15 +426,15 @@ export default function SmartAssistant() {
 
             {wizardStep === 4 && (
               <motion.div key="s4" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 bg-white p-6">
-                <h2 className="text-xl font-semibold text-center">How much would you like to invest?</h2>
+                <h2 className="text-xl font-semibold text-center">{t('wizard_amount_title')}</h2>
                 <p className="text-center text-sm text-gray-600 mt-1">
-                  Available: EGP {user.wallet_balance.toFixed(2)}
+                  {t('wizard_amount_available')} EGP {user.wallet_balance.toFixed(2)}
                 </p>
                 <div className="mt-6 flex rounded-xl border border-gray-200 overflow-hidden">
                   <span className="px-4 flex items-center bg-gray-50 text-sm text-gray-600">EGP</span>
                   <input
                     className="flex-1 px-3 py-3 outline-none text-sm"
-                    placeholder="Enter amount"
+                    placeholder={t('wizard_amount_placeholder')}
                     value={investAmount}
                     onChange={(e) => setInvestAmount(e.target.value)}
                     inputMode="decimal"
@@ -433,33 +447,33 @@ export default function SmartAssistant() {
                   onClick={() => setWizardStep(5)}
                   className="mt-4 w-full rounded-xl bg-infinder-lime text-infinder-black font-semibold py-3 disabled:opacity-40 transition-opacity"
                 >
-                  Continue →
+                  {t('wizard_continue')}
                 </button>
               </motion.div>
             )}
 
             {wizardStep === 5 && (
               <motion.div key="s5" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 bg-white p-6">
-                <h2 className="text-xl font-semibold text-center">Confirm your answers</h2>
+                <h2 className="text-xl font-semibold text-center">{t('wizard_confirm_title')}</h2>
                 <div className="mt-6 rounded-xl bg-gray-50 p-4 space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Goal</span>
+                    <span className="text-gray-500">{t('wizard_goal_label')}</span>
                     <span className="font-medium">{goal ? GOAL_LABELS[goal] : ''}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Time horizon</span>
+                    <span className="text-gray-500">{t('wizard_horizon_label')}</span>
                     <span className="font-medium">{horizon ? HORIZON_LABELS[horizon] : ''}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Risk comfort</span>
+                    <span className="text-gray-500">{t('wizard_risk_label')}</span>
                     <span className="font-medium">{risk ? RISK_LABELS[risk] : ''}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Sharia-compliant</span>
-                    <span className="font-medium">{sharia ? 'Yes, halal only' : 'No preference'}</span>
+                    <span className="text-gray-500">{t('wizard_sharia_label')}</span>
+                    <span className="font-medium">{sharia ? t('wizard_sharia_yes') : t('wizard_sharia_no')}</span>
                   </div>
                   <div className="flex justify-between border-t pt-3">
-                    <span className="text-gray-500">Amount</span>
+                    <span className="text-gray-500">{t('wizard_amount_label')}</span>
                     <span className="font-semibold">EGP {Number(investAmount).toLocaleString()}</span>
                   </div>
                 </div>
@@ -469,7 +483,7 @@ export default function SmartAssistant() {
                   disabled={loading}
                   className="mt-6 w-full rounded-xl bg-infinder-lime text-infinder-black font-semibold py-3 disabled:opacity-50"
                 >
-                  {loading ? 'Loading…' : 'Get my portfolio →'}
+                  {loading ? t('wizard_loading') : t('wizard_get_portfolio')}
                 </button>
               </motion.div>
             )}
@@ -492,17 +506,17 @@ export default function SmartAssistant() {
                   </ResponsiveContainer>
                 </div>
                 <p className="text-sm text-gray-500 mt-4">
-                  Investing: <span className="font-semibold text-infinder-black">EGP {Number(investAmount).toLocaleString()}</span>
+                  {t('wizard_investing_label')} <span className="font-semibold text-infinder-black">EGP {Number(investAmount).toLocaleString()}</span>
                 </p>
                 <button
                   type="button"
                   onClick={confirmInvest}
                   className="mt-4 w-full rounded-xl bg-infinder-lime text-infinder-black font-semibold py-3"
                 >
-                  Invest now
+                  {t('wizard_invest_now')}
                 </button>
                 <button type="button" onClick={resetWizard} className="mt-3 w-full rounded-xl border border-gray-300 py-2 text-sm">
-                  Start over
+                  {t('common_start_over')}
                 </button>
               </motion.div>
             )}
@@ -516,7 +530,7 @@ export default function SmartAssistant() {
 
       <p className="mt-8 text-sm">
         <Link to="/dashboard" className="underline">
-          Back to dashboard
+          {t('chat_back_dashboard')}
         </Link>
       </p>
     </SubpageShell>
