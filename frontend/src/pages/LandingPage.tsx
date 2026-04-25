@@ -30,7 +30,7 @@ export default function LandingPage() {
         </Link>
         <div className="flex items-center gap-3 text-sm">
           <Link to="/learn" className="text-white/50 hover:text-white transition hidden sm:inline">
-            Learn
+            {t('landing_step_learn_title')}
           </Link>
           <Link
             to="/login"
