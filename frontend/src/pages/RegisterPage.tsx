@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 export default function RegisterPage() {
   const { register } = useAuth();
   const nav = useNavigate();
+  const { t } = useTranslation();
   const [full_name, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -21,7 +23,7 @@ export default function RegisterPage() {
       await register({ email, password, full_name, phone, sharia_mode });
       nav('/onboarding/review', { replace: true });
     } catch {
-      setErr('Could not create account. Email may already be in use.');
+      setErr(t('auth_create_error'));
     } finally {
       setLoading(false);
     }
@@ -43,7 +45,7 @@ export default function RegisterPage() {
           <span className="font-bold tracking-tight text-white">INFINDER</span>
         </Link>
         <Link to="/login" className="text-sm text-white/45 hover:text-white transition">
-          Sign in
+          {t('auth_have_account')}
         </Link>
       </div>
 
@@ -56,16 +58,16 @@ export default function RegisterPage() {
           {/* Step indicator */}
           <div className="flex items-center gap-2 text-xs mb-6">
             <span className="font-semibold text-infinder-lime bg-infinder-lime/10 border border-infinder-lime/25 rounded-full px-3 py-1">
-              1. Personal
+              {t('auth_step_personal')}
             </span>
             <span className="text-white/25">—</span>
-            <span className="text-white/30">2. Verification</span>
+            <span className="text-white/30">{t('auth_step_verification')}</span>
             <span className="text-white/25">—</span>
-            <span className="text-white/30">3. Review</span>
+            <span className="text-white/30">{t('auth_step_review')}</span>
           </div>
 
-          <h1 className="text-2xl font-bold text-white">Create your account</h1>
-          <p className="text-white/45 text-sm mt-1">Let's get started with some basic information.</p>
+          <h1 className="text-2xl font-bold text-white">{t('auth_create_account')}</h1>
+          <p className="text-white/45 text-sm mt-1">{t('auth_create_sub')}</p>
 
           {err && (
             <div className="mt-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3">
@@ -74,10 +76,10 @@ export default function RegisterPage() {
           )}
 
           {[
-            { label: 'Full name', value: full_name, setter: setFullName, type: 'text', placeholder: 'Your full name' },
-            { label: 'Email', value: email, setter: setEmail, type: 'email', placeholder: 'you@example.com' },
-            { label: 'Phone', value: phone, setter: setPhone, type: 'tel', placeholder: '+20 xxx xxx xxxx' },
-            { label: 'Password', value: password, setter: setPassword, type: 'password', placeholder: '••••••••', minLength: 6 },
+            { label: t('auth_full_name'), value: full_name, setter: setFullName, type: 'text', placeholder: 'Your full name' },
+            { label: t('auth_email'), value: email, setter: setEmail, type: 'email', placeholder: 'you@example.com' },
+            { label: t('auth_phone'), value: phone, setter: setPhone, type: 'tel', placeholder: '+20 xxx xxx xxxx' },
+            { label: t('auth_password'), value: password, setter: setPassword, type: 'password', placeholder: '••••••••', minLength: 6 },
           ].map(({ label, value, setter, type, placeholder, minLength }) => (
             <div key={label} className="mt-5">
               <label className="block text-sm font-medium text-white/70">{label}</label>
@@ -101,8 +103,8 @@ export default function RegisterPage() {
               className="mt-0.5 accent-infinder-lime"
             />
             <span>
-              <span className="font-medium text-white block text-sm">Enable Sharia-compliant mode</span>
-              <span className="text-xs text-white/40 mt-0.5 block">Only show halal investment options where applicable.</span>
+              <span className="font-medium text-white block text-sm">{t('auth_enable_sharia')}</span>
+              <span className="text-xs text-white/40 mt-0.5 block">{t('auth_sharia_desc')}</span>
             </span>
           </label>
 
@@ -111,7 +113,7 @@ export default function RegisterPage() {
             disabled={loading}
             className="mt-8 w-full rounded-xl bg-infinder-lime text-infinder-black font-semibold py-3.5 text-sm hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed shadow-[0_0_24px_rgba(190,243,94,0.2)]"
           >
-            {loading ? 'Creating account…' : 'Continue to verification →'}
+            {loading ? t('auth_creating_account') : t('auth_continue_verification')}
           </button>
         </form>
       </div>

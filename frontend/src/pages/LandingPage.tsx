@@ -1,20 +1,23 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-
-const steps = [
-  { title: 'Learn', desc: 'Master investing basics with bite-sized lessons.', icon: '📘', num: '01' },
-  { title: 'Fund', desc: 'Add money easily with Instapay or bank transfer.', icon: '👛', num: '02' },
-  { title: 'Invest', desc: 'Choose from stocks, bonds, gold, or smart baskets.', icon: '📈', num: '03' },
-  { title: 'Grow', desc: 'Watch your investments compound over time.', icon: '🌱', num: '04' },
-];
-
-const features = [
-  { icon: '🛡️', title: 'Safe & secure', desc: 'KYC identity checks and clear flows keep onboarding understandable and your funds protected.' },
-  { icon: '📚', title: 'Learn as you go', desc: 'Short modules explain every concept before you commit a single pound.' },
-  { icon: '✨', title: 'Smart guidance', desc: 'Chat with the AI assistant for a portfolio mix tailored to your goals and risk comfort.' },
-];
+import { useTranslation } from 'react-i18next';
 
 export default function LandingPage() {
+  const { t } = useTranslation();
+
+  const steps = [
+    { title: t('landing_step_learn_title'), desc: t('landing_step_learn_desc'), icon: '📘', num: '01' },
+    { title: t('landing_step_fund_title'), desc: t('landing_step_fund_desc'), icon: '👛', num: '02' },
+    { title: t('landing_step_invest_title'), desc: t('landing_step_invest_desc'), icon: '📈', num: '03' },
+    { title: t('landing_step_grow_title'), desc: t('landing_step_grow_desc'), icon: '🌱', num: '04' },
+  ];
+
+  const features = [
+    { icon: '🛡️', title: t('landing_feat_safe_title'), desc: t('landing_feat_safe_desc') },
+    { icon: '📚', title: t('landing_feat_learn_title'), desc: t('landing_feat_learn_desc') },
+    { icon: '✨', title: t('landing_feat_smart_title'), desc: t('landing_feat_smart_desc') },
+  ];
+
   return (
     <div className="min-h-screen bg-infinder-black">
       {/* Fixed header */}
@@ -33,7 +36,7 @@ export default function LandingPage() {
             to="/login"
             className="rounded-full border border-white/20 px-4 py-2 font-medium text-white hover:bg-white/10 transition"
           >
-            Sign In
+            {t('landing_sign_in')}
           </Link>
         </div>
       </header>
@@ -47,7 +50,7 @@ export default function LandingPage() {
         {/* Badge */}
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <span className="inline-flex items-center gap-2 rounded-full border border-infinder-lime/25 bg-infinder-lime/10 px-4 py-1.5 text-xs font-medium text-infinder-lime tracking-wide">
-            🇪🇬 Built for Egypt · EGP-native
+            {t('landing_badge')}
           </span>
         </motion.div>
 
@@ -58,8 +61,8 @@ export default function LandingPage() {
           transition={{ delay: 0.06 }}
           className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white text-center max-w-4xl leading-[1.1]"
         >
-          Your money,{' '}
-          <span className="text-infinder-lime">working smarter.</span>
+          {t('landing_hero_pre')}{' '}
+          <span className="text-infinder-lime">{t('landing_hero_highlight')}</span>
         </motion.h1>
 
         <motion.p
@@ -68,7 +71,7 @@ export default function LandingPage() {
           transition={{ delay: 0.12 }}
           className="mt-7 text-white/55 max-w-xl text-center text-lg leading-relaxed"
         >
-          Beginner-friendly investing with education, AI guidance, and Sharia-aware options — all in EGP.
+          {t('landing_hero_sub')}
         </motion.p>
 
         {/* CTAs */}
@@ -82,13 +85,13 @@ export default function LandingPage() {
             to="/register"
             className="rounded-full bg-infinder-lime text-infinder-black px-8 py-3.5 font-semibold text-sm shadow-[0_0_40px_rgba(190,243,94,0.35)] hover:shadow-[0_0_60px_rgba(190,243,94,0.5)] hover:scale-[1.02] transition-all duration-200"
           >
-            Get started — it's free
+            {t('landing_cta_start')}
           </Link>
           <Link
             to="/login"
             className="rounded-full border border-white/20 text-white px-8 py-3.5 font-medium text-sm hover:bg-white/8 transition"
           >
-            I have an account
+            {t('landing_cta_login')}
           </Link>
         </motion.div>
 
@@ -99,10 +102,10 @@ export default function LandingPage() {
           transition={{ delay: 0.28 }}
           className="mt-14 flex flex-wrap justify-center gap-6 text-white/30 text-xs tracking-wide"
         >
-          <span>✓ KYC verified</span>
-          <span>✓ Sharia-compliant options</span>
-          <span>✓ AI-powered guidance</span>
-          <span>✓ No hidden fees</span>
+          <span>{t('landing_trust_kyc')}</span>
+          <span>{t('landing_trust_sharia')}</span>
+          <span>{t('landing_trust_ai')}</span>
+          <span>{t('landing_trust_fees')}</span>
         </motion.div>
       </section>
 
@@ -115,17 +118,17 @@ export default function LandingPage() {
             viewport={{ once: true }}
           >
             <p className="text-infinder-lime text-xs font-semibold tracking-[0.2em] uppercase mb-3">
-              How it works
+              {t('landing_how_label')}
             </p>
             <h2 className="text-white text-3xl md:text-4xl font-bold">
-              Four steps to grow your wealth
+              {t('landing_how_title')}
             </h2>
           </motion.div>
 
           <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {steps.map((s, i) => (
               <motion.div
-                key={s.title}
+                key={s.num}
                 initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -156,9 +159,9 @@ export default function LandingPage() {
             className="text-center mb-14"
           >
             <p className="text-infinder-green text-xs font-semibold tracking-[0.2em] uppercase mb-3">
-              Why INFINDER
+              {t('landing_why_label')}
             </p>
-            <h2 className="text-3xl md:text-4xl font-bold">Built for beginners</h2>
+            <h2 className="text-3xl md:text-4xl font-bold">{t('landing_why_title')}</h2>
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-6">
@@ -192,17 +195,17 @@ export default function LandingPage() {
         >
           <div>
             <h2 className="text-infinder-black text-2xl md:text-3xl font-bold">
-              Ready to start investing?
+              {t('landing_cta_banner_title')}
             </h2>
             <p className="text-infinder-black/55 text-sm mt-1.5">
-              Create your account in under 2 minutes. No experience needed.
+              {t('landing_cta_banner_sub')}
             </p>
           </div>
           <Link
             to="/register"
             className="rounded-full bg-infinder-black text-white font-semibold px-8 py-3.5 text-sm hover:opacity-85 transition shrink-0 shadow-lg"
           >
-            Create free account →
+            {t('landing_cta_banner_btn')}
           </Link>
         </motion.div>
       </section>

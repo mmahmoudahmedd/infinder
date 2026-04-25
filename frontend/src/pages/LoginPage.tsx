@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 export default function LoginPage() {
   const { login } = useAuth();
   const nav = useNavigate();
   const loc = useLocation() as { state?: { from?: { pathname: string } } };
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [err, setErr] = useState('');
@@ -19,7 +21,7 @@ export default function LoginPage() {
       await login(email, password);
       nav(loc.state?.from?.pathname || '/dashboard', { replace: true });
     } catch {
-      setErr('Invalid email or password.');
+      setErr(t('auth_invalid_credentials'));
     } finally {
       setLoading(false);
     }
@@ -48,8 +50,8 @@ export default function LoginPage() {
           onSubmit={onSubmit}
           className="w-full max-w-md bg-white/[0.04] border border-white/[0.08] rounded-2xl p-8 backdrop-blur-sm"
         >
-          <h1 className="text-2xl font-bold text-white">Welcome back</h1>
-          <p className="text-white/45 text-sm mt-1">Sign in to continue to your dashboard.</p>
+          <h1 className="text-2xl font-bold text-white">{t('auth_welcome_back')}</h1>
+          <p className="text-white/45 text-sm mt-1">{t('auth_sign_in_sub')}</p>
 
           {err && (
             <div className="mt-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3">
@@ -57,7 +59,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          <label className="block mt-6 text-sm font-medium text-white/70">Email</label>
+          <label className="block mt-6 text-sm font-medium text-white/70">{t('auth_email')}</label>
           <input
             className="mt-1.5 w-full rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/25 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-infinder-lime/50 focus:border-infinder-lime/50 transition"
             value={email}
@@ -68,8 +70,8 @@ export default function LoginPage() {
           />
 
           <div className="flex items-center justify-between mt-5">
-            <label className="text-sm font-medium text-white/70">Password</label>
-            <span className="text-xs text-white/30">Forgot password? Contact support.</span>
+            <label className="text-sm font-medium text-white/70">{t('auth_password')}</label>
+            <span className="text-xs text-white/30">{t('auth_forgot_password')}</span>
           </div>
           <input
             className="mt-1.5 w-full rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/25 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-infinder-lime/50 focus:border-infinder-lime/50 transition"
@@ -85,13 +87,13 @@ export default function LoginPage() {
             disabled={loading}
             className="mt-8 w-full rounded-xl bg-infinder-lime text-infinder-black font-semibold py-3.5 text-sm hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed shadow-[0_0_24px_rgba(190,243,94,0.2)]"
           >
-            {loading ? 'Signing in…' : 'Sign in'}
+            {loading ? t('auth_signing_in') : t('auth_sign_in_btn')}
           </button>
 
           <p className="text-center text-sm text-white/35 mt-5">
-            No account?{' '}
+            {t('auth_no_account')}{' '}
             <Link to="/register" className="font-medium text-infinder-lime hover:opacity-80 transition">
-              Create one
+              {t('auth_create_one')}
             </Link>
           </p>
         </form>
