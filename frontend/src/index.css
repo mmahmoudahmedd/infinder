@@ -11,3 +11,7 @@ body,
 .glass {
   @apply bg-white/70 backdrop-blur-md border border-gray-200/80 shadow-sm;
 }
+
+[dir=rtl] {
+  font-family: 'Cairo', sans-serif;
+}
