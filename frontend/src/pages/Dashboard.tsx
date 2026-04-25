@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { AppShell } from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
 
 export default function Dashboard() {
   const { user, updateProfile, refreshMe } = useAuth();
+  const { t } = useTranslation();
   const [learnPct, setLearnPct] = useState(0);
 
   useEffect(() => {
@@ -31,13 +33,13 @@ export default function Dashboard() {
           {/* Header row */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-1">Dashboard</p>
+              <p className="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-1">{t('dashboard_label')}</p>
               <h1 className="text-2xl md:text-3xl font-bold text-infinder-black">
-                Welcome back{user.full_name ? `, ${user.full_name.split(' ')[0]}` : ''} 👋
+                {`${t('dashboard_welcome')}${user.full_name ? `, ${user.full_name.split(' ')[0]}` : ''} 👋`}
               </h1>
             </div>
             <label className="flex items-center gap-2.5 text-sm cursor-pointer self-start sm:self-center">
-              <span className="text-gray-500 font-medium">Sharia mode</span>
+              <span className="text-gray-500 font-medium">{t('dashboard_sharia_mode')}</span>
               <button
                 type="button"
                 role="switch"
@@ -64,7 +66,7 @@ export default function Dashboard() {
             <div className="rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-sm px-4 py-3 flex gap-2 items-start">
               <span>ℹ️</span>
               <div>
-                <strong>Account verification pending</strong> — your identity is being reviewed. Some actions may be limited until complete.
+                {t('dashboard_kyc_banner')}
               </div>
             </div>
           )}
@@ -82,17 +84,17 @@ export default function Dashboard() {
 
               <div className="relative flex justify-between items-start gap-4">
                 <div>
-                  <p className="text-white/50 text-xs font-medium tracking-widest uppercase">Total balance</p>
+                  <p className="text-white/50 text-xs font-medium tracking-widest uppercase">{t('dashboard_total_balance')}</p>
                   <p className="text-4xl md:text-5xl font-bold mt-2 tabular-nums">
                     EGP {user.wallet_balance.toFixed(2)}
                   </p>
-                  <p className="mt-3 text-sm text-white/40">Available cash</p>
+                  <p className="mt-3 text-sm text-white/40">{t('dashboard_available_cash')}</p>
                 </div>
                 <Link
                   to="/funding"
                   className="rounded-full bg-infinder-lime text-infinder-black font-semibold px-5 py-2.5 text-sm shrink-0 hover:shadow-[0_0_20px_rgba(190,243,94,0.4)] transition-shadow"
                 >
-                  + Add funds
+                  {t('dashboard_add_funds')}
                 </Link>
               </div>
             </motion.div>
@@ -105,16 +107,16 @@ export default function Dashboard() {
             >
               <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-infinder-black/5 blur-2xl pointer-events-none" />
               <div className="relative">
-                <p className="font-bold text-lg leading-snug">✨ Smart Assistant</p>
+                <p className="font-bold text-lg leading-snug">{t('dashboard_smart_assistant')}</p>
                 <p className="text-sm mt-2 text-infinder-black/65 leading-relaxed">
-                  Get a personalized portfolio mix based on your goals.
+                  {t('dashboard_assistant_desc')}
                 </p>
               </div>
               <Link
                 to="/assistant"
                 className="relative mt-5 inline-block text-center rounded-full bg-infinder-black text-white font-semibold py-2.5 text-sm hover:opacity-85 transition"
               >
-                Start now →
+                {t('dashboard_start_now')}
               </Link>
             </motion.div>
           </div>
@@ -125,12 +127,12 @@ export default function Dashboard() {
               {
                 to: '/learn',
                 emoji: '📘',
-                title: 'Learn',
-                desc: 'Continue your investing education.',
+                title: t('dashboard_learn_title'),
+                desc: t('dashboard_learn_desc'),
                 extra: (
                   <div className="mt-4">
                     <div className="flex justify-between text-xs text-gray-400 mb-1.5">
-                      <span>Progress</span>
+                      <span>{t('dashboard_progress')}</span>
                       <span>{learnPct}%</span>
                     </div>
                     <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
@@ -145,14 +147,14 @@ export default function Dashboard() {
               {
                 to: '/invest',
                 emoji: '📈',
-                title: 'Invest',
-                desc: 'Browse and manage your investments.',
+                title: t('dashboard_invest_title'),
+                desc: t('dashboard_invest_desc'),
               },
               {
                 to: '/profile',
                 emoji: '👤',
-                title: 'Profile',
-                desc: 'Manage account settings and wallet.',
+                title: t('dashboard_profile_title'),
+                desc: t('dashboard_profile_desc'),
               },
             ].map(({ to, emoji, title, desc, extra }, i) => (
               <motion.div
@@ -182,13 +184,13 @@ export default function Dashboard() {
               to="/rewards"
               className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium hover:border-infinder-black hover:shadow-sm transition-all"
             >
-              🏅 Rewards
+              {t('dashboard_rewards')}
             </Link>
             <Link
               to="/reports"
               className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium hover:border-infinder-black hover:shadow-sm transition-all"
             >
-              📊 Reports
+              {t('dashboard_reports')}
             </Link>
           </div>
 
