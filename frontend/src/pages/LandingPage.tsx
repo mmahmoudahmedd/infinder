@@ -1,9 +1,16 @@
+import { useEffect, useReducer } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 
 export default function LandingPage() {
   const { t } = useTranslation();
+  const [, forceUpdate] = useReducer(x => x + 1, 0);
+  useEffect(() => {
+    i18n.on('languageChanged', forceUpdate);
+    return () => i18n.off('languageChanged', forceUpdate);
+  }, []);
 
   const steps = [
     { title: t('landing_step_learn_title'), desc: t('landing_step_learn_desc'), icon: '📘', num: '01' },
@@ -32,6 +39,22 @@ export default function LandingPage() {
           <Link to="/learn" className="text-white/50 hover:text-white transition hidden sm:inline">
             {t('landing_step_learn_title')}
           </Link>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => i18n.changeLanguage('en')}
+              className={`rounded-full px-2 py-1 text-xs transition ${i18n.language === 'en' ? 'bg-infinder-lime text-infinder-black font-semibold' : 'border border-white/20 text-white/60 hover:border-white/40'}`}
+            >
+              EN 🇬🇧
+            </button>
+            <button
+              type="button"
+              onClick={() => i18n.changeLanguage('ar')}
+              className={`rounded-full px-2 py-1 text-xs transition ${i18n.language === 'ar' ? 'bg-infinder-lime text-infinder-black font-semibold' : 'border border-white/20 text-white/60 hover:border-white/40'}`}
+            >
+              عر 🇪🇬
+            </button>
+          </div>
           <Link
             to="/login"
             className="rounded-full border border-white/20 px-4 py-2 font-medium text-white hover:bg-white/10 transition"
