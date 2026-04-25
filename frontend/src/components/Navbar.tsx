@@ -1,7 +1,9 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Logo } from './Logo';
 import { useAuth } from '../context/AuthContext';
 import clsx from 'clsx';
+import i18n from '../i18n';
 
 type Props = {
   showNav?: boolean;
@@ -9,8 +11,37 @@ type Props = {
   className?: string;
 };
 
+function LangSwitcher() {
+  const lang = i18n.language;
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={() => i18n.changeLanguage('en')}
+        className={clsx(
+          'rounded-full px-2 py-1 text-xs transition',
+          lang === 'en' ? 'bg-infinder-lime text-infinder-black font-semibold' : 'border border-gray-300 text-gray-600 hover:border-gray-400'
+        )}
+      >
+        EN 🇬🇧
+      </button>
+      <button
+        type="button"
+        onClick={() => i18n.changeLanguage('ar')}
+        className={clsx(
+          'rounded-full px-2 py-1 text-xs transition',
+          lang === 'ar' ? 'bg-infinder-lime text-infinder-black font-semibold' : 'border border-gray-300 text-gray-600 hover:border-gray-400'
+        )}
+      >
+        عر 🇪🇬
+      </button>
+    </div>
+  );
+}
+
 export function Navbar({ showNav, right, className }: Props) {
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
   const nav = useNavigate();
 
   return (
@@ -20,11 +51,11 @@ export function Navbar({ showNav, right, className }: Props) {
         {showNav && user && (
           <>
             {[
-              { to: '/dashboard', label: 'Dashboard' },
-              { to: '/invest', label: 'Invest' },
-              { to: '/learn', label: 'Learn' },
-              { to: '/reports', label: 'Reports' },
-              { to: '/profile', label: 'Profile' },
+              { to: '/dashboard', label: t('nav_dashboard') },
+              { to: '/invest', label: t('nav_invest') },
+              { to: '/learn', label: t('nav_learn') },
+              { to: '/reports', label: t('nav_reports') },
+              { to: '/profile', label: t('nav_profile') },
             ].map(({ to, label }) => (
               <NavLink
                 key={to}
@@ -43,22 +74,20 @@ export function Navbar({ showNav, right, className }: Props) {
             ))}
             {user.role === 'admin' && (
               <Link to="/admin" className="text-amber-700 font-medium">
-                Admin
+                {t('nav_admin')}
               </Link>
             )}
           </>
         )}
         {right}
+        <LangSwitcher />
         {user && (
           <button
             type="button"
             className="text-gray-500 hover:text-infinder-black"
-            onClick={() => {
-              logout();
-              nav('/');
-            }}
+            onClick={() => { logout(); nav('/'); }}
           >
-            Sign out
+            {t('nav_sign_out')}
           </button>
         )}
       </div>
