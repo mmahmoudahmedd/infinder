@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import confetti from 'canvas-confetti';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { SubpageShell } from '../components/AppShell';
 
@@ -29,6 +30,7 @@ type LessonRow = {
 };
 
 export default function LearningModules() {
+  const { t } = useTranslation();
   const { moduleId } = useParams();
   const [modules, setModules] = useState<ModuleRow[]>([]);
   const [detail, setDetail] = useState<{ module: ModuleRow; lessons: LessonRow[] } | null>(null);
@@ -84,10 +86,10 @@ export default function LearningModules() {
   if (!moduleId) {
     return (
       <SubpageShell>
-        <h1 className="text-3xl font-bold">Learning modules</h1>
-        <p className="text-gray-600 text-sm mt-1">Short lessons with quick checks — learn at your pace.</p>
+        <h1 className="text-3xl font-bold">{t('learn_title')}</h1>
+        <p className="text-gray-600 text-sm mt-1">{t('learn_sub')}</p>
         {loading ? (
-          <p className="mt-8 text-gray-500 text-sm">Loading…</p>
+          <p className="mt-8 text-gray-500 text-sm">{t('common_loading')}</p>
         ) : (
           <div className="mt-8 grid md:grid-cols-2 gap-4">
             {modules.map((mod) => (
@@ -108,7 +110,7 @@ export default function LearningModules() {
                   <div className="h-full bg-infinder-green rounded-full transition-all" style={{ width: `${mod.progress_pct}%` }} />
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
-                  {mod.completed_lessons}/{mod.lesson_count} lessons · {mod.progress_pct}% complete
+                  {t('learn_lessons_count', { done: mod.completed_lessons, total: mod.lesson_count, pct: mod.progress_pct })}
                 </p>
               </Link>
             ))}
@@ -121,7 +123,7 @@ export default function LearningModules() {
   if (loading || !detail) {
     return (
       <SubpageShell>
-        <p className="text-gray-500 text-sm">Loading module…</p>
+        <p className="text-gray-500 text-sm">{t('learn_loading_module')}</p>
       </SubpageShell>
     );
   }
@@ -132,7 +134,7 @@ export default function LearningModules() {
     <SubpageShell>
       <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
         <Link to="/learn" className="underline">
-          All modules
+          {t('learn_all_modules')}
         </Link>
         <span>/</span>
         <span>{module.title}</span>
@@ -142,7 +144,7 @@ export default function LearningModules() {
 
       <div className="mt-8 grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-2">
-          <h2 className="font-semibold text-sm text-gray-500 uppercase tracking-wide">Lessons</h2>
+          <h2 className="font-semibold text-sm text-gray-500 uppercase tracking-wide">{t('learn_lessons_label')}</h2>
           {lessons.map((l) => (
             <button
               key={l.id}
@@ -158,15 +160,15 @@ export default function LearningModules() {
             >
               <div className="flex justify-between gap-2">
                 <span className="font-medium">{l.title}</span>
-                {l.completed && <span className="text-emerald-600 text-xs">Done</span>}
+                {l.completed && <span className="text-emerald-600 text-xs">{t('learn_done')}</span>}
               </div>
-              <p className="text-xs text-gray-500 mt-1">{l.duration_minutes} min</p>
+              <p className="text-xs text-gray-500 mt-1">{l.duration_minutes} {t('learn_min')}</p>
             </button>
           ))}
         </div>
 
         <div className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white p-6 min-h-[320px]">
-          {!activeLesson && <p className="text-gray-500 text-sm">Select a lesson to begin.</p>}
+          {!activeLesson && <p className="text-gray-500 text-sm">{t('learn_select_lesson')}</p>}
           {activeLesson && (
             <div>
               <h3 className="text-xl font-semibold">{activeLesson.title}</h3>
@@ -177,14 +179,14 @@ export default function LearningModules() {
                   onClick={() => markComplete(activeLesson.id)}
                   className="rounded-full bg-infinder-lime text-infinder-black font-medium px-4 py-2 text-sm"
                 >
-                  Mark lesson complete
+                  {t('learn_mark_complete')}
                 </button>
               </div>
 
               {activeLesson.quiz?.questions && activeLesson.quiz.questions.length > 0 && (
                 <div className="mt-10 border-t border-gray-100 pt-8">
-                  <h4 className="font-semibold">Quick check</h4>
-                  <p className="text-xs text-gray-500 mt-1">Pass at 60%+ to unlock a certificate banner.</p>
+                  <h4 className="font-semibold">{t('learn_quick_check')}</h4>
+                  <p className="text-xs text-gray-500 mt-1">{t('learn_pass_msg')}</p>
                   <div className="mt-4 space-y-6">
                     {activeLesson.quiz.questions.map((q, qi) => (
                       <div key={q.id}>
@@ -215,13 +217,13 @@ export default function LearningModules() {
                     onClick={() => submitQuiz(activeLesson.id)}
                     className="mt-6 rounded-full bg-infinder-black text-white font-medium px-5 py-2 text-sm disabled:opacity-40"
                   >
-                    Submit quiz
+                    {t('learn_submit_quiz')}
                   </button>
                   {quizResult && (
                     <p className="mt-4 text-sm">
-                      Score: <strong>{quizResult.score}%</strong> — {quizResult.passed ? 'Passed' : 'Try again'}
+                      {t('learn_score')} <strong>{quizResult.score}%</strong> — {quizResult.passed ? t('learn_passed') : t('learn_try_again')}
                       {quizResult.certificate_issued && (
-                        <span className="block mt-2 text-infinder-green font-semibold">🎓 Certificate unlocked!</span>
+                        <span className="block mt-2 text-infinder-green font-semibold">{t('learn_certificate')}</span>
                       )}
                     </p>
                   )}

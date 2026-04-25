@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { SubpageShell } from '../components/AppShell';
 
@@ -12,6 +13,7 @@ type Achievement = {
 };
 
 export default function RewardsDashboard() {
+  const { t } = useTranslation();
   const [items, setItems] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,23 +33,23 @@ export default function RewardsDashboard() {
     <SubpageShell>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Rewards</h1>
-          <p className="text-gray-600 text-sm mt-1">Badges unlock as you fund, invest, learn, and verify.</p>
+          <h1 className="text-3xl font-bold">{t('rewards_title')}</h1>
+          <p className="text-gray-600 text-sm mt-1">{t('rewards_sub')}</p>
         </div>
         <button
           type="button"
           onClick={recheck}
           className="rounded-full border border-infinder-black px-4 py-2 text-sm font-medium self-start"
         >
-          Refresh badges
+          {t('rewards_refresh')}
         </button>
       </div>
 
       {loading ? (
-        <p className="mt-10 text-gray-500 text-sm">Loading…</p>
+        <p className="mt-10 text-gray-500 text-sm">{t('common_loading')}</p>
       ) : items.length === 0 ? (
         <div className="mt-12 rounded-2xl border border-dashed border-gray-300 p-10 text-center text-gray-600 text-sm">
-          No badges yet — fund your wallet, finish a lesson, or get verified.
+          {t('rewards_none')}
         </div>
       ) : (
         <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
