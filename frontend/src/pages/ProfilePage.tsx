@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { SubpageShell } from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
@@ -11,13 +12,6 @@ type Tx = {
   created_at: string;
   status: string;
   reference?: string | null;
-};
-
-const kycLabel: Record<string, string> = {
-  pending: 'Pending verification',
-  under_review: 'Under review',
-  approved: 'Verified',
-  rejected: 'Rejected',
 };
 
 function downloadCsv(rows: Tx[]) {
@@ -43,6 +37,7 @@ function downloadCsv(rows: Tx[]) {
 }
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const { user, logout, updateProfile, refreshMe } = useAuth();
   const [txs, setTxs] = useState<Tx[]>([]);
   const [fullName, setFullName] = useState('');
@@ -50,6 +45,13 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [learnPct, setLearnPct] = useState(0);
+
+  const kycLabel: Record<string, string> = {
+    pending: t('profile_kyc_pending'),
+    under_review: t('profile_kyc_under_review'),
+    approved: t('profile_kyc_approved'),
+    rejected: t('profile_kyc_rejected'),
+  };
 
   useEffect(() => {
     if (user) {
@@ -74,7 +76,7 @@ export default function ProfilePage() {
       .catch(() => {});
   }, []);
 
-  const investmentRows = useMemo(() => txs.filter((t) => t.type === 'investment'), [txs]);
+  const investmentRows = useMemo(() => txs.filter((tx) => tx.type === 'investment'), [txs]);
 
   async function saveProfile() {
     if (!user) return;
@@ -83,9 +85,9 @@ export default function ProfilePage() {
     try {
       await updateProfile({ full_name: fullName || undefined, phone: phone || undefined });
       await refreshMe();
-      setMsg('Profile saved.');
+      setMsg(t('profile_saved'));
     } catch {
-      setMsg('Could not save profile.');
+      setMsg(t('profile_save_error'));
     } finally {
       setSaving(false);
     }
@@ -94,7 +96,7 @@ export default function ProfilePage() {
   function copyRef() {
     if (user?.deposit_ref_code) {
       navigator.clipboard.writeText(user.deposit_ref_code);
-      setMsg('Deposit reference copied.');
+      setMsg(t('profile_ref_copied'));
     }
   }
 
@@ -110,10 +112,10 @@ export default function ProfilePage() {
             {initial}
           </div>
           <div>
-            <h1 className="text-2xl font-bold">{user.full_name || 'Investor'}</h1>
+            <h1 className="text-2xl font-bold">{user.full_name || t('profile_investor')}</h1>
             <p className="text-gray-600 text-sm">{user.email}</p>
             {user.created_at && (
-              <p className="text-xs text-gray-500 mt-1">Member since {new Date(user.created_at).toLocaleDateString()}</p>
+              <p className="text-xs text-gray-500 mt-1">{t('profile_member_since')} {new Date(user.created_at).toLocaleDateString()}</p>
             )}
             <span
               className={`inline-block mt-2 text-xs px-2 py-0.5 rounded-full ${
@@ -134,10 +136,10 @@ export default function ProfilePage() {
             to="/reports"
             className="rounded-full bg-infinder-black text-white text-sm font-medium px-4 py-2 text-center"
           >
-            Analytics &amp; reports
+            {t('profile_analytics_btn')}
           </Link>
           <Link to="/funding" className="rounded-full border border-gray-300 text-sm font-medium px-4 py-2 text-center">
-            Funding
+            {t('profile_funding_btn')}
           </Link>
         </div>
       </div>
@@ -147,11 +149,11 @@ export default function ProfilePage() {
       <div className="mt-8 grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <div className="rounded-2xl border border-gray-200 bg-white p-5">
-            <h2 className="font-semibold text-lg">Account details</h2>
-            <p className="text-sm text-gray-600 mt-1">Update how we address you and reach you.</p>
+            <h2 className="font-semibold text-lg">{t('profile_account_details')}</h2>
+            <p className="text-sm text-gray-600 mt-1">{t('profile_account_sub')}</p>
             <div className="mt-4 grid sm:grid-cols-2 gap-4">
               <label className="block text-sm">
-                <span className="text-gray-600">Full name</span>
+                <span className="text-gray-600">{t('profile_full_name')}</span>
                 <input
                   className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
                   value={fullName}
@@ -160,7 +162,7 @@ export default function ProfilePage() {
                 />
               </label>
               <label className="block text-sm">
-                <span className="text-gray-600">Phone</span>
+                <span className="text-gray-600">{t('profile_phone')}</span>
                 <input
                   className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
                   value={phone}
@@ -175,13 +177,13 @@ export default function ProfilePage() {
               onClick={saveProfile}
               className="mt-4 rounded-full bg-infinder-lime text-infinder-black font-semibold px-5 py-2 text-sm disabled:opacity-50"
             >
-              {saving ? 'Saving…' : 'Save changes'}
+              {saving ? t('profile_saving') : t('profile_save')}
             </button>
           </div>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-5">
-            <h2 className="font-semibold text-lg">Deposit reference</h2>
-            <p className="text-sm text-gray-600 mt-1">Include this code in bank or Instapay notes so deposits match your account.</p>
+            <h2 className="font-semibold text-lg">{t('profile_deposit_ref')}</h2>
+            <p className="text-sm text-gray-600 mt-1">{t('profile_deposit_ref_sub')}</p>
             <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-gray-100 px-4 py-3">
               <code className="text-lg font-bold text-infinder-green tracking-tight">{user.deposit_ref_code || '—'}</code>
               <button
@@ -190,14 +192,14 @@ export default function ProfilePage() {
                 className="text-sm underline text-gray-700"
                 disabled={!user.deposit_ref_code}
               >
-                Copy
+                {t('profile_copy')}
               </button>
             </div>
           </div>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-5">
             <div className="flex flex-wrap justify-between gap-2 items-center">
-              <h2 className="font-semibold text-lg">Wallet &amp; activity</h2>
+              <h2 className="font-semibold text-lg">{t('profile_wallet')}</h2>
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -205,12 +207,12 @@ export default function ProfilePage() {
                   className="text-sm font-medium text-infinder-black underline"
                   disabled={txs.length === 0}
                 >
-                  Export CSV
+                  {t('profile_export_csv')}
                 </button>
               </div>
             </div>
             <div className="mt-4 rounded-xl bg-gray-50 px-4 py-3 flex justify-between text-sm">
-              <span className="text-gray-600">Available balance</span>
+              <span className="text-gray-600">{t('profile_available')}</span>
               <span className="font-semibold">EGP {user.wallet_balance.toFixed(2)}</span>
             </div>
             <div className="mt-4 flex gap-3 flex-wrap">
@@ -218,30 +220,30 @@ export default function ProfilePage() {
                 to="/funding"
                 className="flex-1 min-w-[120px] rounded-xl border border-gray-200 py-3 text-center font-medium hover:border-infinder-black"
               >
-                + Add funds
+                {t('profile_add_funds')}
               </Link>
               <Link
                 to="/funding"
                 className="flex-1 min-w-[120px] rounded-xl border border-gray-200 py-3 text-center text-gray-700 hover:border-infinder-black"
               >
-                Withdraw
+                {t('profile_withdraw')}
               </Link>
             </div>
           </div>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-5">
-            <h2 className="font-semibold">Investment history</h2>
+            <h2 className="font-semibold">{t('profile_investments')}</h2>
             {investmentRows.length === 0 ? (
               <div className="py-12 text-center text-gray-500 text-sm">
                 <div className="text-3xl mb-2">📅</div>
-                No investment history yet.
+                {t('profile_no_investments')}
               </div>
             ) : (
               <ul className="mt-4 space-y-2 text-sm max-h-64 overflow-y-auto">
-                {investmentRows.map((t) => (
-                  <li key={t.id} className="flex justify-between border-b border-gray-100 py-2 gap-2">
-                    <span className="text-gray-600">{new Date(t.created_at).toLocaleString()}</span>
-                    <span className="font-medium">EGP {t.amount.toFixed(2)}</span>
+                {investmentRows.map((tx) => (
+                  <li key={tx.id} className="flex justify-between border-b border-gray-100 py-2 gap-2">
+                    <span className="text-gray-600">{new Date(tx.created_at).toLocaleString()}</span>
+                    <span className="font-medium">EGP {tx.amount.toFixed(2)}</span>
                   </li>
                 ))}
               </ul>
@@ -249,16 +251,16 @@ export default function ProfilePage() {
           </div>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-5">
-            <h2 className="font-semibold">All transactions</h2>
+            <h2 className="font-semibold">{t('profile_transactions')}</h2>
             {txs.length === 0 ? (
-              <p className="mt-4 text-sm text-gray-500">No transactions yet.</p>
+              <p className="mt-4 text-sm text-gray-500">{t('profile_no_transactions')}</p>
             ) : (
               <ul className="mt-4 space-y-2 text-sm max-h-72 overflow-y-auto">
-                {txs.map((t) => (
-                  <li key={t.id} className="flex flex-wrap justify-between gap-2 border-b border-gray-100 py-2">
-                    <span className="capitalize text-gray-700">{t.type}</span>
-                    <span className="text-gray-500 text-xs">{new Date(t.created_at).toLocaleString()}</span>
-                    <span className="font-medium w-full sm:w-auto sm:ml-auto">EGP {t.amount.toFixed(2)}</span>
+                {txs.map((tx) => (
+                  <li key={tx.id} className="flex flex-wrap justify-between gap-2 border-b border-gray-100 py-2">
+                    <span className="capitalize text-gray-700">{tx.type}</span>
+                    <span className="text-gray-500 text-xs">{new Date(tx.created_at).toLocaleString()}</span>
+                    <span className="font-medium w-full sm:w-auto sm:ml-auto">EGP {tx.amount.toFixed(2)}</span>
                   </li>
                 ))}
               </ul>
@@ -268,8 +270,8 @@ export default function ProfilePage() {
           <div className="rounded-2xl border border-gray-200 bg-white p-5">
             <label className="flex items-center justify-between cursor-pointer gap-4">
               <div>
-                <p className="font-medium">Sharia-compliant mode</p>
-                <p className="text-sm text-gray-600">Prefer halal-aligned options in the catalog.</p>
+                <p className="font-medium">{t('profile_sharia_mode')}</p>
+                <p className="text-sm text-gray-600">{t('profile_sharia_desc')}</p>
               </div>
               <button
                 type="button"
@@ -293,33 +295,33 @@ export default function ProfilePage() {
                 window.location.href = '/';
               }}
             >
-              Sign out
+              {t('profile_sign_out')}
             </button>
           </div>
         </div>
 
         <div className="space-y-6">
           <div className="rounded-2xl border border-gray-200 bg-white p-5 text-sm text-gray-600">
-            <h2 className="font-semibold text-infinder-black mb-3">Achievements</h2>
-            <p>Visit rewards to see unlocked badges.</p>
+            <h2 className="font-semibold text-infinder-black mb-3">{t('profile_achievements')}</h2>
+            <p>{t('profile_achievements_sub')}</p>
             <Link to="/rewards" className="inline-block mt-3 text-infinder-black font-medium underline text-sm">
-              Open rewards
+              {t('profile_open_rewards')}
             </Link>
           </div>
           <div className="rounded-2xl bg-infinder-black text-white p-5">
-            <h2 className="font-semibold">Learning progress</h2>
+            <h2 className="font-semibold">{t('profile_learning')}</h2>
             <div className="mt-3 h-2 rounded-full bg-white/20 overflow-hidden">
               <div
                 className="h-full bg-infinder-lime rounded-full transition-all"
                 style={{ width: `${learnPct}%` }}
               />
             </div>
-            <p className="text-xs text-white/70 mt-2">{learnPct}% complete</p>
+            <p className="text-xs text-white/70 mt-2">{learnPct}{t('profile_learning_pct')}</p>
             <Link
               to="/learn"
               className="mt-4 inline-block w-full text-center rounded-full border border-white py-2 text-sm font-medium"
             >
-              Continue learning
+              {t('profile_continue_learning')}
             </Link>
           </div>
         </div>
