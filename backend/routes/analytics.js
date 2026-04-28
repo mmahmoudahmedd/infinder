@@ -9,7 +9,7 @@ const BUCKETS = ['stocks', 'baskets', 'bonds', 'gold'];
 // Maps each investment category to a real benchmark symbol
 const CATEGORY_SYMBOLS = {
   stocks: 'SPY',
-  basket: 'QQQ',
+  baskets: 'QQQ',
   bonds: 'TLT',
   gold: 'XAU/USD',
 };
