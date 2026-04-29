@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { SubpageShell } from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
+import { showToast, showAlert } from '../lib/swal';
 
 const presets = [100, 500, 1000, 5000];
 
@@ -11,29 +12,26 @@ export default function FundingPage() {
   const { t } = useTranslation();
   const [amount, setAmount] = useState('');
   const [method, setMethod] = useState<'instapay' | 'bank' | 'card'>('instapay');
-  const [msg, setMsg] = useState('');
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [withdrawAmt, setWithdrawAmt] = useState('');
 
   async function confirmFund() {
-    setMsg('');
     const n = Number(amount);
     if (!n || n <= 0) {
-      setMsg(t('fund_invalid'));
+      showAlert('Invalid amount', t('fund_invalid'), 'warning');
       return;
     }
     try {
       await api.post('/api/payments/fund', { amount: n, method });
       await refreshMe();
-      setMsg(t('fund_success'));
+      showToast(t('fund_success'));
       setAmount('');
     } catch {
-      setMsg(t('fund_error'));
+      showAlert('Payment failed', t('fund_error'));
     }
   }
 
   async function confirmWithdraw() {
-    setMsg('');
     const n = Number(withdrawAmt);
     if (!n || n <= 0) return;
     try {
@@ -41,15 +39,15 @@ export default function FundingPage() {
       await refreshMe();
       setWithdrawOpen(false);
       setWithdrawAmt('');
-      setMsg(t('fund_withdraw_success'));
+      showToast(t('fund_withdraw_success'));
     } catch (e: unknown) {
-      setMsg(t('fund_withdraw_error'));
+      showAlert('Withdrawal failed', t('fund_withdraw_error'));
     }
   }
 
   function copy(text: string) {
     navigator.clipboard.writeText(text);
-    setMsg(t('fund_copied'));
+    showToast('Copied!');
   }
 
   if (!user) return null;
@@ -215,8 +213,6 @@ export default function FundingPage() {
           {t('fund_withdraw_btn')}
         </button>
       </div>
-
-      {msg && <p className="mt-4 text-sm text-gray-700">{msg}</p>}
 
       {withdrawOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
