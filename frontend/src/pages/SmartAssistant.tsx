@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { SubpageShell } from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
+import { showAlert } from '../lib/swal';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 type Alloc = { stocks: number; baskets: number; bonds: number; gold: number };
@@ -57,7 +58,6 @@ export default function SmartAssistant() {
   const [wizardAlloc, setWizardAlloc] = useState<Alloc | null>(null);
   const [wizardLabel, setWizardLabel] = useState('');
   const [wizardExplanation, setWizardExplanation] = useState('');
-  const [err, setErr] = useState('');
 
   const chartData = useMemo(() => {
     const a = mode === 'chat' ? alloc : wizardAlloc;
@@ -73,7 +73,6 @@ export default function SmartAssistant() {
   async function sendChat() {
     const text = input.trim();
     if (!text) return;
-    setErr('');
     setInput('');
     const next: Msg[] = [...messages, { role: 'user', content: text }];
     setMessages(next);
@@ -98,7 +97,7 @@ export default function SmartAssistant() {
         setIsSharia(null);
       }
     } catch {
-      setErr(t('chat_error_failed'));
+      showAlert('Request failed', t('chat_error_failed'));
     } finally {
       setLoading(false);
     }
@@ -106,7 +105,6 @@ export default function SmartAssistant() {
 
   async function confirmWizard() {
     if (!goal || !horizon || !risk || sharia === null) return;
-    setErr('');
     setLoading(true);
     try {
       const { data } = await api.post('/api/investments/robo', {
@@ -120,18 +118,17 @@ export default function SmartAssistant() {
       setWizardExplanation(data.explanation || '');
       setWizardStep(6);
     } catch {
-      setErr(t('wizard_error_robo'));
+      showAlert('Error', t('wizard_error_robo'));
     } finally {
       setLoading(false);
     }
   }
 
   async function confirmInvest() {
-    setErr('');
     const amount = Number(investAmount);
     const a = mode === 'chat' ? alloc : wizardAlloc;
     if (!a || !amount || amount <= 0) {
-      setErr(t('common_invest_error'));
+      showAlert('Invalid amount', t('common_invest_error'), 'warning');
       return;
     }
     try {
@@ -143,7 +140,6 @@ export default function SmartAssistant() {
         name: wizardLabel,
       });
       await refreshMe();
-      setErr('');
       setInvestAmount('');
       if (mode === 'chat') {
         setMessages((m) => [
@@ -155,7 +151,7 @@ export default function SmartAssistant() {
       }
     } catch (e: unknown) {
       const ax = e as { response?: { data?: { error?: string } } };
-      setErr(ax.response?.data?.error || t('common_invest_failed'));
+      showAlert('Investment failed', ax.response?.data?.error || t('common_invest_failed'));
     }
   }
 
@@ -165,7 +161,6 @@ export default function SmartAssistant() {
     setReasoning(null);
     setIsSharia(null);
     setInvestAmount('');
-    setErr('');
   }
 
   function resetWizard() {
@@ -178,7 +173,6 @@ export default function SmartAssistant() {
     setWizardLabel('');
     setWizardExplanation('');
     setInvestAmount('');
-    setErr('');
   }
 
   if (!user) return null;
@@ -521,12 +515,8 @@ export default function SmartAssistant() {
               </motion.div>
             )}
           </AnimatePresence>
-
-          {err && <p className="mt-4 text-sm text-red-600">{err}</p>}
         </div>
       )}
-
-      {err && mode === 'chat' && <p className="mt-4 text-sm text-red-600">{err}</p>}
 
       <p className="mt-8 text-sm">
         <Link to="/dashboard" className="underline">
