@@ -106,42 +106,33 @@ export default function ProfilePage() {
 
   return (
     <SubpageShell>
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+      <div className="rounded-2xl bg-infinder-black text-white p-7 relative overflow-hidden mb-8">
+        <div className="absolute -top-8 -right-8 w-48 h-48 rounded-full bg-infinder-lime/8 blur-3xl pointer-events-none" />
         <div className="flex items-center gap-4">
           <div className="h-16 w-16 rounded-full bg-infinder-lime flex items-center justify-center text-2xl font-bold text-infinder-black shrink-0">
             {initial}
           </div>
           <div>
             <h1 className="text-2xl font-bold">{user.full_name || t('profile_investor')}</h1>
-            <p className="text-gray-600 text-sm">{user.email}</p>
+            <p className="text-white/60 text-sm">{user.email}</p>
             {user.created_at && (
-              <p className="text-xs text-gray-500 mt-1">{t('profile_member_since')} {new Date(user.created_at).toLocaleDateString()}</p>
+              <p className="text-xs text-white/40 mt-1">{t('profile_member_since')} {new Date(user.created_at).toLocaleDateString()}</p>
             )}
-            <span
-              className={`inline-block mt-2 text-xs px-2 py-0.5 rounded-full ${
-                user.kyc_status === 'approved'
-                  ? 'bg-emerald-100 text-emerald-800'
-                  : user.kyc_status === 'rejected'
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-amber-100 text-amber-900'
-              }`}
-            >
-              {kycLabel[user.kyc_status] || user.kyc_status}
-            </span>
-            {user.kyc_rejection_reason && <p className="text-xs text-red-700 mt-1">{user.kyc_rejection_reason}</p>}
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            to="/reports"
-            className="rounded-full bg-infinder-black text-white text-sm font-medium px-4 py-2 text-center"
-          >
-            {t('profile_analytics_btn')}
-          </Link>
-          <Link to="/funding" className="rounded-full border border-gray-300 text-sm font-medium px-4 py-2 text-center">
-            {t('profile_funding_btn')}
-          </Link>
+        <div className="flex flex-wrap gap-2 mt-4 items-center justify-between">
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+            user.kyc_status === 'approved' ? 'bg-emerald-100 text-emerald-800' :
+            user.kyc_status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-900'
+          }`}>
+            {kycLabel[user.kyc_status] || user.kyc_status}
+          </span>
+          <div className="flex gap-2 ml-auto">
+            <Link to="/reports" className="rounded-full bg-white/10 text-white text-xs font-medium px-3 py-1.5 hover:bg-white/20 transition">{t('profile_analytics_btn')}</Link>
+            <Link to="/funding" className="rounded-full bg-infinder-lime text-infinder-black text-xs font-semibold px-3 py-1.5">{t('profile_funding_btn')}</Link>
+          </div>
         </div>
+        {user.kyc_rejection_reason && <p className="text-xs text-red-400 mt-3">{user.kyc_rejection_reason}</p>}
       </div>
 
       {msg && <p className="mt-4 text-sm text-gray-700">{msg}</p>}
@@ -241,9 +232,12 @@ export default function ProfilePage() {
             ) : (
               <ul className="mt-4 space-y-2 text-sm max-h-64 overflow-y-auto">
                 {investmentRows.map((tx) => (
-                  <li key={tx.id} className="flex justify-between border-b border-gray-100 py-2 gap-2">
-                    <span className="text-gray-600">{new Date(tx.created_at).toLocaleString()}</span>
-                    <span className="font-medium">EGP {tx.amount.toFixed(2)}</span>
+                  <li key={tx.id} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm shrink-0">📈</div>
+                      <span className="text-xs text-gray-500">{new Date(tx.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    </div>
+                    <span className="font-semibold text-blue-700">EGP {tx.amount.toFixed(2)}</span>
                   </li>
                 ))}
               </ul>
@@ -257,10 +251,23 @@ export default function ProfilePage() {
             ) : (
               <ul className="mt-4 space-y-2 text-sm max-h-72 overflow-y-auto">
                 {txs.map((tx) => (
-                  <li key={tx.id} className="flex flex-wrap justify-between gap-2 border-b border-gray-100 py-2">
-                    <span className="capitalize text-gray-700">{tx.type}</span>
-                    <span className="text-gray-500 text-xs">{new Date(tx.created_at).toLocaleString()}</span>
-                    <span className="font-medium w-full sm:w-auto sm:ml-auto">EGP {tx.amount.toFixed(2)}</span>
+                  <li key={tx.id} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 ${
+                        tx.type === 'deposit' ? 'bg-green-100' : tx.type === 'withdrawal' ? 'bg-red-100' : 'bg-blue-100'
+                      }`}>
+                        {tx.type === 'deposit' ? '💵' : tx.type === 'withdrawal' ? '↩️' : '📈'}
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium capitalize text-gray-700">{tx.type}</span>
+                        <p className="text-xs text-gray-400">{new Date(tx.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                      </div>
+                    </div>
+                    <span className={`font-semibold text-sm ${
+                      tx.type === 'deposit' ? 'text-green-600' : tx.type === 'withdrawal' ? 'text-red-600' : 'text-blue-700'
+                    }`}>
+                      {tx.type === 'withdrawal' ? '−' : '+'}EGP {tx.amount.toFixed(2)}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -268,8 +275,9 @@ export default function ProfilePage() {
           </div>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-5">
-            <label className="flex items-center justify-between cursor-pointer gap-4">
-              <div>
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-lg shrink-0">☪️</div>
+              <div className="flex-1">
                 <p className="font-medium">{t('profile_sharia_mode')}</p>
                 <p className="text-sm text-gray-600">{t('profile_sharia_desc')}</p>
               </div>
@@ -280,20 +288,13 @@ export default function ProfilePage() {
                 onClick={() => updateProfile({ sharia_mode: !user.sharia_mode })}
                 className={`relative h-7 w-12 shrink-0 rounded-full transition ${user.sharia_mode ? 'bg-infinder-green' : 'bg-gray-300'}`}
               >
-                <span
-                  className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition ${
-                    user.sharia_mode ? 'translate-x-5' : ''
-                  }`}
-                />
+                <span className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition ${user.sharia_mode ? 'translate-x-5' : ''}`} />
               </button>
-            </label>
+            </div>
             <button
               type="button"
               className="mt-6 text-red-600 text-sm font-medium flex items-center gap-2"
-              onClick={() => {
-                logout();
-                window.location.href = '/';
-              }}
+              onClick={() => { logout(); window.location.href = '/'; }}
             >
               {t('profile_sign_out')}
             </button>
