@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Logo } from '../components/Logo';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
 
 export default function KycReviewPage() {
   const { t } = useTranslation();
@@ -26,7 +27,13 @@ export default function KycReviewPage() {
         <div className="mt-8 rounded-xl bg-gray-100 p-4 text-left text-sm">
           <div className="flex justify-between mb-2">
             <span className="text-gray-600">{t('kyc_progress_label')}</span>
-            <span className="text-infinder-green font-medium">{t('kyc_processing')}</span>
+            <motion.span
+              className="text-infinder-green font-medium"
+              animate={{ opacity: [1, 0.4, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              {t('kyc_processing')}
+            </motion.span>
           </div>
           <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
             <div className="h-full w-3/5 bg-infinder-green rounded-full" />

@@ -63,18 +63,24 @@ export default function ReportsPage() {
   return (
     <SubpageShell>
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold">{t('reports_title')}</h1>
-        <p className="text-gray-600 text-sm mt-1">
-          {t('reports_sub')}
-        </p>
+        <div className="mb-6">
+          <p className="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-1">INFINDER</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-infinder-black">{t('reports_title')}</h1>
+          <p className="text-gray-600 text-sm mt-1">{t('reports_sub')}</p>
+        </div>
 
         {loading ? (
-          <p className="mt-10 text-gray-500 text-sm">{t('common_loading')}</p>
+          <div className="mt-10 flex justify-center">
+            <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-infinder-green animate-spin" />
+          </div>
         ) : (
           <>
             <section className="mt-10">
-              <h2 className="text-lg font-semibold">{t('reports_allocation_title')}</h2>
-              <p className="text-sm text-gray-600 mt-1">{t('reports_allocation_sub')}</p>
+              <div>
+                <p className="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-1">INFINDER</p>
+                <h2 className="text-lg font-semibold">{t('reports_allocation_title')}</h2>
+                <p className="text-sm text-gray-600 mt-1">{t('reports_allocation_sub')}</p>
+              </div>
               {holdings && holdings.total_invested_egp > 0 ? (
                 <div className="mt-4 h-64 rounded-2xl border border-gray-200 bg-white p-4">
                   <ResponsiveContainer width="100%" height="100%">
@@ -100,10 +106,11 @@ export default function ReportsPage() {
             </section>
 
             <section className="mt-12 space-y-10">
-              <h2 className="text-lg font-semibold">{t('reports_benchmarks_title')}</h2>
-              <p className="text-sm text-gray-600">
-                {t('reports_benchmarks_sub')}
-              </p>
+              <div>
+                <p className="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-1">INFINDER</p>
+                <h2 className="text-lg font-semibold">{t('reports_benchmarks_title')}</h2>
+                <p className="text-sm text-gray-600">{t('reports_benchmarks_sub')}</p>
+              </div>
               {catalog.map((row) => (
                 <div key={row.id} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
                   <div className="flex flex-wrap justify-between gap-2 items-start">

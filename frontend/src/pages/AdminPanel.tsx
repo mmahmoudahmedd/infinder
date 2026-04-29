@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
 import api from '../lib/api';
 import { AppShell } from '../components/AppShell';
 
@@ -53,8 +54,14 @@ export default function AdminPanel() {
           {rows.length === 0 ? (
             <p className="text-gray-500 text-sm">{t('admin_none')}</p>
           ) : (
-            rows.map((u) => (
-              <div key={u.id} className="rounded-2xl border border-gray-200 bg-white p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            rows.map((u, i) => (
+              <motion.div
+                key={u.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.06 }}
+                className="rounded-2xl border border-gray-200 bg-white p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+              >
                 <div>
                   <p className="font-semibold">{u.full_name || '—'}</p>
                   <p className="text-sm text-gray-600">{u.email}</p>
@@ -84,7 +91,7 @@ export default function AdminPanel() {
                     onChange={(e) => setReason(e.target.value)}
                   />
                 </div>
-              </div>
+              </motion.div>
             ))
           )}
         </div>
