@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
@@ -92,27 +93,37 @@ export default function LearningModules() {
           <p className="mt-8 text-gray-500 text-sm">{t('common_loading')}</p>
         ) : (
           <div className="mt-8 grid md:grid-cols-2 gap-4">
-            {modules.map((mod) => (
-              <Link
+            {modules.map((mod, i) => (
+              <motion.div
                 key={mod.id}
-                to={`/learn/${mod.slug}`}
-                className="rounded-2xl border border-gray-200 bg-white p-5 hover:shadow-md transition hover:-translate-y-0.5"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.07 }}
               >
-                <div className="flex justify-between items-start gap-2">
-                  <div>
-                    <span className="text-xs uppercase text-gray-500">{mod.difficulty}</span>
-                    <h2 className="text-lg font-semibold mt-1">{mod.title}</h2>
-                    <p className="text-sm text-gray-600 mt-2 line-clamp-2">{mod.description}</p>
+                <Link
+                  to={`/learn/${mod.slug}`}
+                  className="block rounded-2xl border border-gray-200 bg-white p-5 hover:shadow-md hover:border-infinder-lime/50 transition hover:-translate-y-0.5"
+                >
+                  <div className="flex justify-between items-start gap-2">
+                    <div>
+                      <span className={`text-xs rounded-full px-2 py-0.5 font-medium ${
+                        mod.difficulty === 'beginner' ? 'bg-blue-100 text-blue-800' :
+                        mod.difficulty === 'intermediate' ? 'bg-amber-100 text-amber-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>{mod.difficulty}</span>
+                      <h2 className="text-lg font-semibold mt-2">{mod.title}</h2>
+                      <p className="text-sm text-gray-600 mt-2 line-clamp-2">{mod.description}</p>
+                    </div>
+                    <span className="text-2xl shrink-0">📘</span>
                   </div>
-                  <span className="text-2xl">📘</span>
-                </div>
-                <div className="mt-4 h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                  <div className="h-full bg-infinder-green rounded-full transition-all" style={{ width: `${mod.progress_pct}%` }} />
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  {t('learn_lessons_count', { done: mod.completed_lessons, total: mod.lesson_count, pct: mod.progress_pct })}
-                </p>
-              </Link>
+                  <div className="mt-4 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                    <div className="h-full bg-infinder-green rounded-full transition-all" style={{ width: `${mod.progress_pct}%` }} />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {t('learn_lessons_count', { done: mod.completed_lessons, total: mod.lesson_count, pct: mod.progress_pct })}
+                  </p>
+                </Link>
+              </motion.div>
             ))}
           </div>
         )}
@@ -145,7 +156,7 @@ export default function LearningModules() {
       <div className="mt-8 grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-2">
           <h2 className="font-semibold text-sm text-gray-500 uppercase tracking-wide">{t('learn_lessons_label')}</h2>
-          {lessons.map((l) => (
+          {lessons.map((l, li) => (
             <button
               key={l.id}
               type="button"
@@ -154,15 +165,19 @@ export default function LearningModules() {
                 setAnswers([]);
                 setQuizResult(null);
               }}
-              className={`w-full text-left rounded-xl border px-4 py-3 text-sm transition ${
-                activeLesson?.id === l.id ? 'border-infinder-green bg-emerald-50' : 'border-gray-200 hover:border-gray-300'
+              className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl transition ${
+                activeLesson?.id === l.id
+                  ? 'bg-infinder-lime/10 border border-infinder-lime/30'
+                  : 'hover:bg-gray-50'
               }`}
             >
-              <div className="flex justify-between gap-2">
-                <span className="font-medium">{l.title}</span>
-                {l.completed && <span className="text-emerald-600 text-xs">{t('learn_done')}</span>}
-              </div>
-              <p className="text-xs text-gray-500 mt-1">{l.duration_minutes} {t('learn_min')}</p>
+              {l.completed ? (
+                <span className="w-6 h-6 rounded-full bg-infinder-green/20 flex items-center justify-center text-infinder-green text-xs shrink-0">✓</span>
+              ) : (
+                <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-600 shrink-0">{li + 1}</span>
+              )}
+              <span className="flex-1 text-sm font-medium text-left">{l.title}</span>
+              <span className="text-xs text-gray-400 shrink-0">{l.duration_minutes}m</span>
             </button>
           ))}
         </div>
@@ -171,13 +186,14 @@ export default function LearningModules() {
           {!activeLesson && <p className="text-gray-500 text-sm">{t('learn_select_lesson')}</p>}
           {activeLesson && (
             <div>
-              <h3 className="text-xl font-semibold">{activeLesson.title}</h3>
-              <p className="text-gray-700 text-sm mt-4 whitespace-pre-wrap">{activeLesson.content}</p>
+              <p className="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-1">{module.title}</p>
+              <h3 className="text-2xl font-bold">{activeLesson.title}</h3>
+              <p className="text-gray-700 text-sm mt-4 leading-relaxed whitespace-pre-wrap">{activeLesson.content}</p>
               <div className="mt-6 flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => markComplete(activeLesson.id)}
-                  className="rounded-full bg-infinder-lime text-infinder-black font-medium px-4 py-2 text-sm"
+                  className="rounded-full bg-infinder-lime text-infinder-black font-semibold px-5 py-2.5 text-sm"
                 >
                   {t('learn_mark_complete')}
                 </button>
@@ -193,7 +209,12 @@ export default function LearningModules() {
                         <p className="text-sm font-medium">{q.prompt}</p>
                         <div className="mt-2 space-y-2">
                           {q.options.map((opt, oi) => (
-                            <label key={oi} className="flex items-center gap-2 text-sm cursor-pointer">
+                            <label
+                              key={oi}
+                              className={`flex items-center gap-3 rounded-xl border p-3 cursor-pointer hover:border-infinder-lime/50 transition ${
+                                answers[qi] === oi ? 'border-infinder-lime bg-infinder-lime/5' : 'border-gray-200'
+                              }`}
+                            >
                               <input
                                 type="radio"
                                 name={q.id}
@@ -203,6 +224,7 @@ export default function LearningModules() {
                                   next[qi] = oi;
                                   setAnswers(next);
                                 }}
+                                className="accent-infinder-lime"
                               />
                               {opt}
                             </label>
@@ -220,12 +242,14 @@ export default function LearningModules() {
                     {t('learn_submit_quiz')}
                   </button>
                   {quizResult && (
-                    <p className="mt-4 text-sm">
+                    <div className={`mt-4 rounded-xl p-4 text-sm font-medium ${
+                      quizResult.passed ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-amber-50 text-amber-800 border border-amber-200'
+                    }`}>
                       {t('learn_score')} <strong>{quizResult.score}%</strong> — {quizResult.passed ? t('learn_passed') : t('learn_try_again')}
                       {quizResult.certificate_issued && (
                         <span className="block mt-2 text-infinder-green font-semibold">{t('learn_certificate')}</span>
                       )}
-                    </p>
+                    </div>
                   )}
                 </div>
               )}
