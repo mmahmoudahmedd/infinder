@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { SubpageShell } from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
+import { showToast, showAlert } from '../lib/swal';
 
 type Tx = {
   id: string;
@@ -43,7 +44,6 @@ export default function ProfilePage() {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState('');
   const [learnPct, setLearnPct] = useState(0);
 
   const kycLabel: Record<string, string> = {
@@ -81,13 +81,12 @@ export default function ProfilePage() {
   async function saveProfile() {
     if (!user) return;
     setSaving(true);
-    setMsg('');
     try {
       await updateProfile({ full_name: fullName || undefined, phone: phone || undefined });
       await refreshMe();
-      setMsg(t('profile_saved'));
+      showToast(t('profile_saved'));
     } catch {
-      setMsg(t('profile_save_error'));
+      showAlert('Save failed', t('profile_save_error'));
     } finally {
       setSaving(false);
     }
@@ -96,7 +95,7 @@ export default function ProfilePage() {
   function copyRef() {
     if (user?.deposit_ref_code) {
       navigator.clipboard.writeText(user.deposit_ref_code);
-      setMsg(t('profile_ref_copied'));
+      showToast('Copied!');
     }
   }
 
@@ -134,8 +133,6 @@ export default function ProfilePage() {
         </div>
         {user.kyc_rejection_reason && <p className="text-xs text-red-400 mt-3">{user.kyc_rejection_reason}</p>}
       </div>
-
-      {msg && <p className="mt-4 text-sm text-gray-700">{msg}</p>}
 
       <div className="mt-8 grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
