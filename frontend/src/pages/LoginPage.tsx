@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { showAlert } from '../lib/swal';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -10,18 +11,16 @@ export default function LoginPage() {
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setErr('');
     setLoading(true);
     try {
       await login(email, password);
       nav(loc.state?.from?.pathname || '/dashboard', { replace: true });
     } catch {
-      setErr(t('auth_invalid_credentials'));
+      showAlert('Login failed', t('auth_invalid_credentials'));
     } finally {
       setLoading(false);
     }
@@ -52,12 +51,6 @@ export default function LoginPage() {
         >
           <h1 className="text-2xl font-bold text-white">{t('auth_welcome_back')}</h1>
           <p className="text-white/45 text-sm mt-1">{t('auth_sign_in_sub')}</p>
-
-          {err && (
-            <div className="mt-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3">
-              {err}
-            </div>
-          )}
 
           <label className="block mt-6 text-sm font-medium text-white/70">{t('auth_email')}</label>
           <input

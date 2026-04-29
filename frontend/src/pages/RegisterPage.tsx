@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { showAlert } from '../lib/swal';
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -12,18 +13,16 @@ export default function RegisterPage() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [sharia_mode, setSharia] = useState(false);
-  const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setErr('');
     setLoading(true);
     try {
       await register({ email, password, full_name, phone, sharia_mode });
       nav('/onboarding/review', { replace: true });
     } catch {
-      setErr(t('auth_create_error'));
+      showAlert('Registration failed', t('auth_create_error'));
     } finally {
       setLoading(false);
     }
@@ -68,12 +67,6 @@ export default function RegisterPage() {
 
           <h1 className="text-2xl font-bold text-white">{t('auth_create_account')}</h1>
           <p className="text-white/45 text-sm mt-1">{t('auth_create_sub')}</p>
-
-          {err && (
-            <div className="mt-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3">
-              {err}
-            </div>
-          )}
 
           {[
             { label: t('auth_full_name'), value: full_name, setter: setFullName, type: 'text', placeholder: 'Your full name' },
