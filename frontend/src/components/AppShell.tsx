@@ -1,5 +1,3 @@
-import { Link } from 'react-router-dom';
-import { Logo } from './Logo';
 import { Navbar } from './Navbar';
 import { BottomNav } from './BottomNav';
 
@@ -16,13 +14,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 export function SubpageShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50 pb-24 md:pb-8">
-      <header className="flex items-center justify-between px-4 py-3 border-b bg-white">
-        <Logo />
-        <Link to="/dashboard" className="text-sm text-gray-600">
-          ← Back to Dashboard
-        </Link>
-      </header>
-      <div className="max-w-5xl mx-auto px-4 py-6">{children}</div>
+      <Navbar showNav />
+      <div className="max-w-5xl mx-auto px-4 py-8">{children}</div>
       <BottomNav />
     </div>
   );
