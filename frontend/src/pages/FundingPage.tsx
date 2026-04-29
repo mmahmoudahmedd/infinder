@@ -56,13 +56,17 @@ export default function FundingPage() {
 
   return (
     <SubpageShell>
-      <h1 className="text-3xl font-bold">{t('fund_title')}</h1>
-      <p className="text-gray-600 text-sm mt-1">{t('fund_sub')}</p>
+      <div className="mb-6">
+        <p className="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-1">INFINDER</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-infinder-black">{t('fund_title')}</h1>
+        <p className="text-gray-600 text-sm mt-1">{t('fund_sub')}</p>
+      </div>
 
       <div className="mt-8 grid md:grid-cols-2 gap-4">
-        <div className="rounded-2xl bg-infinder-black text-white p-6">
-          <p className="text-white/70 text-sm">{t('fund_current_balance')}</p>
-          <p className="text-4xl font-bold mt-2">EGP {user.wallet_balance.toFixed(2)}</p>
+        <div className="rounded-2xl bg-infinder-black text-white p-5 relative overflow-hidden">
+          <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-infinder-lime/8 blur-2xl pointer-events-none" />
+          <p className="text-white/50 text-xs tracking-widest uppercase">{t('fund_current_balance')}</p>
+          <p className="text-3xl font-bold mt-1 tabular-nums">EGP {user.wallet_balance.toFixed(2)}</p>
         </div>
         <div className="rounded-2xl border border-gray-200 bg-white p-6">
           <label className="text-sm font-medium">{t('fund_amount_label')}</label>
@@ -111,16 +115,20 @@ export default function FundingPage() {
             key={m.id}
             type="button"
             onClick={() => setMethod(m.id)}
-            className={`rounded-2xl border p-4 text-left transition ${
-              method === m.id ? 'border-infinder-green ring-2 ring-infinder-green/30' : 'border-gray-200'
+            className={`rounded-2xl border-2 p-4 text-left transition-all ${
+              method === m.id
+                ? 'border-infinder-lime bg-infinder-lime/5 shadow-[0_0_20px_rgba(190,243,94,0.2)]'
+                : 'border-gray-200 bg-white hover:border-gray-300'
             }`}
           >
-            <div className="flex justify-between items-center">
-              <span className="text-xl">{m.icon}</span>
-              {method === m.id && <span className="text-xs text-infinder-green font-semibold">{t('fund_selected')}</span>}
+            <div className="flex items-center justify-between">
+              <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center text-2xl">{m.icon}</div>
+              {method === m.id && (
+                <span className="rounded-full bg-infinder-lime text-infinder-black text-xs font-bold px-2 py-0.5">✓</span>
+              )}
             </div>
-            <p className="font-semibold mt-2">{m.title}</p>
-            <p className="text-xs text-gray-600 mt-1">{m.sub}</p>
+            <p className="font-semibold mt-3">{m.title}</p>
+            <p className="text-xs text-gray-500 mt-1">{m.sub}</p>
           </button>
         ))}
       </div>
