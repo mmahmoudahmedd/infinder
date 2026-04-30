@@ -116,7 +116,7 @@ export default function LearningModules() {
                     </div>
                     <span className="text-2xl shrink-0">📘</span>
                   </div>
-                  <div className="mt-4 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                  <div className="mt-4 h-2 rounded-full bg-gray-100 overflow-hidden">
                     <div className="h-full bg-infinder-green rounded-full transition-all" style={{ width: `${mod.progress_pct}%` }} />
                   </div>
                   <p className="text-xs text-gray-500 mt-2">
@@ -168,7 +168,7 @@ export default function LearningModules() {
               className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl transition ${
                 activeLesson?.id === l.id
                   ? 'bg-infinder-lime/10 border border-infinder-lime/30'
-                  : 'hover:bg-gray-50'
+                  : 'hover:bg-gray-100'
               }`}
             >
               {l.completed ? (
@@ -242,13 +242,24 @@ export default function LearningModules() {
                     {t('learn_submit_quiz')}
                   </button>
                   {quizResult && (
-                    <div className={`mt-4 rounded-xl p-4 text-sm font-medium ${
+                    <div className={`mt-4 rounded-xl p-4 text-sm font-medium flex items-start gap-2 ${
                       quizResult.passed ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-amber-50 text-amber-800 border border-amber-200'
                     }`}>
-                      {t('learn_score')} <strong>{quizResult.score}%</strong> — {quizResult.passed ? t('learn_passed') : t('learn_try_again')}
-                      {quizResult.certificate_issued && (
-                        <span className="block mt-2 text-infinder-green font-semibold">{t('learn_certificate')}</span>
+                      {quizResult.passed ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                       )}
+                      <div>
+                        {t('learn_score')} <strong>{quizResult.score}%</strong> — {quizResult.passed ? t('learn_passed') : t('learn_try_again')}
+                        {quizResult.certificate_issued && (
+                          <span className="block mt-2 text-infinder-green font-semibold">{t('learn_certificate')}</span>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

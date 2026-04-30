@@ -92,7 +92,7 @@ export default function LandingPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.12 }}
-          className="mt-7 text-white/55 max-w-xl text-center text-lg leading-relaxed"
+          className="mt-7 text-white/80 max-w-xl text-center text-lg leading-relaxed"
         >
           {t('landing_hero_sub')}
         </motion.p>
@@ -172,6 +172,9 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Gradient bridge: dark → white */}
+      <div className="h-16 bg-gradient-to-b from-[#0a0a0a] to-white" />
+
       {/* Features */}
       <section className="bg-white px-6 py-24">
         <div className="max-w-6xl mx-auto">
@@ -195,12 +198,12 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.07 }}
-                className="group p-7 rounded-2xl border border-gray-100 hover:border-infinder-lime/50 hover:shadow-xl transition-all duration-300"
+                className="group p-7 rounded-2xl border border-gray-200 hover:border-infinder-lime/50 hover:shadow-md hover:-translate-y-1 transition-all duration-200"
               >
                 <div className="w-11 h-11 rounded-xl bg-infinder-black flex items-center justify-center text-lg mb-5">
                   {f.icon}
                 </div>
-                <h3 className="font-semibold text-lg">{f.title}</h3>
+                <h3 className="font-semibold text-gray-900 text-lg">{f.title}</h3>
                 <p className="text-gray-500 text-sm mt-2 leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
@@ -226,7 +229,7 @@ export default function LandingPage() {
           </div>
           <Link
             to="/register"
-            className="rounded-full bg-infinder-black text-white font-semibold px-8 py-3.5 text-sm hover:opacity-85 transition shrink-0 shadow-lg"
+            className="rounded-full bg-infinder-black text-white font-semibold px-8 py-3.5 text-sm hover:opacity-90 transition-opacity duration-150 shrink-0 shadow-lg"
           >
             {t('landing_cta_banner_btn')}
           </Link>

@@ -317,7 +317,8 @@ const en = {
   rewards_title: 'Rewards',
   rewards_sub: 'Badges unlock as you fund, invest, learn, and verify.',
   rewards_refresh: 'Refresh badges',
-  rewards_none: 'No badges yet — fund your wallet, finish a lesson, or get verified.',
+  rewards_none: 'No badges yet',
+  rewards_none_sub: 'Complete investments, lessons and KYC to earn badges.',
 
   // Admin
   admin_title: 'Admin — KYC queue',

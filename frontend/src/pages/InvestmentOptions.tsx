@@ -98,7 +98,7 @@ export default function InvestmentOptions() {
                 : 'border border-gray-200 text-gray-600 hover:border-gray-400'
             }`}
           >
-            {cat === 'all' ? 'All' : cat}
+            {cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1)}
           </button>
         ))}
       </div>
@@ -115,7 +115,7 @@ export default function InvestmentOptions() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.07 }}
-              className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:border-infinder-lime/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+              className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:border-infinder-lime/50 hover:shadow-md hover:-translate-y-1 transition-all duration-200"
             >
               <div className="flex justify-between items-start gap-2">
                 <h3 className="font-semibold text-lg">{inv.title}</h3>
@@ -131,7 +131,7 @@ export default function InvestmentOptions() {
                 )}
               </div>
               <p className="text-sm text-gray-600 mt-3">{inv.description}</p>
-              <div className="mt-4 rounded-xl bg-gray-100 p-3 text-sm space-y-1">
+              <div className="mt-4 rounded-xl bg-gray-50 border-l-4 border-infinder-lime pl-4 p-3 text-sm space-y-1">
                 <div className="flex justify-between">
                   <span className="text-gray-600">{t('invest_min_investment')}</span>
                   <span className="font-medium">EGP {inv.min_investment}</span>
@@ -145,7 +145,7 @@ export default function InvestmentOptions() {
               </div>
               <button
                 type="button"
-                className="mt-3 text-sm text-gray-600 flex items-center gap-1 hover:text-infinder-black transition"
+                className="mt-3 text-sm text-gray-600 flex items-center gap-1 hover:text-infinder-black transition p-2 -ml-2"
                 onClick={() => setOpen((o) => ({ ...o, [inv.id]: !isOpen }))}
               >
                 {t('invest_learn_more')}
@@ -194,7 +194,7 @@ export default function InvestmentOptions() {
       <section className="mt-12 rounded-2xl bg-infinder-black text-white p-6 relative overflow-hidden">
         <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-infinder-lime/5 blur-3xl pointer-events-none" />
         <h2 className="text-lg font-bold">{t('invest_risk_title')}</h2>
-        <div className="mt-4 grid md:grid-cols-3 gap-4 text-sm text-gray-300">
+        <div className="mt-4 grid md:grid-cols-3 gap-4 text-sm text-gray-200">
           <div className="border-l-2 border-white/10 pl-4">
             <span className="inline-block w-2 h-2 rounded-full bg-blue-400 mr-2" />
             {t('invest_risk_low_text')}

@@ -319,7 +319,8 @@ const ar: Record<TranslationKey, string> = {
   rewards_title: 'المكافآت',
   rewards_sub: 'تُفتح الشارات عند التمويل والاستثمار والتعلم والتحقق.',
   rewards_refresh: 'تحديث الشارات',
-  rewards_none: 'لا توجد شارات بعد — أضف رصيدًا أو أكمل درسًا أو أكمل التحقق.',
+  rewards_none: 'لا توجد شارات بعد',
+  rewards_none_sub: 'أكمل الاستثمارات والدروس والتحقق من الهوية لكسب الشارات.',
 
   // Admin
   admin_title: 'المشرف — طابور KYC',

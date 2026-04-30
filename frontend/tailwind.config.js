@@ -14,7 +14,10 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        glow: '0 0 24px rgba(190, 243, 94, 0.35)',
+        glow:              '0 0 24px rgba(190, 243, 94, 0.35)',
+        'glow-lime':       '0 0 24px rgba(190, 243, 94, 0.35)',
+        'glow-lime-hover': '0 0 60px rgba(190, 243, 94, 0.50)',
+        'glow-lime-sm':    '0 0 20px rgba(190, 243, 94, 0.40)',
       },
     },
   },

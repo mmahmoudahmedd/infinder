@@ -14,6 +14,7 @@ export default function FundingPage() {
   const [method, setMethod] = useState<'instapay' | 'bank' | 'card'>('instapay');
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [withdrawAmt, setWithdrawAmt] = useState('');
+  const [selectedPreset, setSelectedPreset] = useState<number | null>(null);
 
   async function confirmFund() {
     const n = Number(amount);
@@ -26,6 +27,7 @@ export default function FundingPage() {
       await refreshMe();
       showToast(t('fund_success'));
       setAmount('');
+      setSelectedPreset(null);
     } catch {
       showAlert('Payment failed', t('fund_error'));
     }
@@ -61,7 +63,7 @@ export default function FundingPage() {
       </div>
 
       <div className="mt-8 grid md:grid-cols-2 gap-4">
-        <div className="rounded-2xl bg-infinder-black text-white p-5 relative overflow-hidden">
+        <div className="rounded-2xl bg-infinder-black text-white p-5 relative overflow-hidden border border-gray-200 shadow-sm">
           <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-infinder-lime/8 blur-2xl pointer-events-none" />
           <p className="text-white/50 text-xs tracking-widest uppercase">{t('fund_current_balance')}</p>
           <p className="text-3xl font-bold mt-1 tabular-nums">EGP {user.wallet_balance.toFixed(2)}</p>
@@ -83,8 +85,15 @@ export default function FundingPage() {
               <button
                 key={p}
                 type="button"
-                onClick={() => setAmount(String(p))}
-                className="rounded-full border border-gray-200 px-3 py-1 text-sm hover:border-infinder-black"
+                onClick={() => {
+                  setSelectedPreset(p);
+                  setAmount(String(p));
+                }}
+                className={`rounded-full border px-3 py-1 text-sm transition-colors ${
+                  selectedPreset === p
+                    ? 'bg-infinder-lime text-infinder-black font-semibold border-infinder-lime'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-infinder-black'
+                }`}
               >
                 {p}
               </button>
@@ -115,7 +124,7 @@ export default function FundingPage() {
             onClick={() => setMethod(m.id)}
             className={`rounded-2xl border-2 p-4 text-left transition-all ${
               method === m.id
-                ? 'border-infinder-lime bg-infinder-lime/5 shadow-[0_0_20px_rgba(190,243,94,0.2)]'
+                ? 'border-2 border-infinder-lime bg-infinder-lime/5'
                 : 'border-gray-200 bg-white hover:border-gray-300'
             }`}
           >
@@ -137,32 +146,32 @@ export default function FundingPage() {
             <h3 className="font-semibold flex items-center gap-2">📱 {t('fund_instapay_title')}</h3>
             <p className="text-sm text-gray-600 mt-1">{t('fund_instapay_note')}</p>
             <ol className="mt-6 space-y-4 text-sm">
-              <li className="flex gap-3">
+              <li className="flex items-start gap-3">
                 <span className="h-7 w-7 rounded-full bg-infinder-lime flex items-center justify-center text-xs font-bold shrink-0">1</span>
                 <div>
                   <p className="font-medium">{t('fund_instapay_step1_title')}</p>
                   <p className="text-gray-600">{t('fund_instapay_step1_desc')}</p>
                 </div>
               </li>
-              <li className="flex gap-3">
+              <li className="flex items-start gap-3">
                 <span className="h-7 w-7 rounded-full bg-infinder-lime flex items-center justify-center text-xs font-bold shrink-0">2</span>
                 <div className="flex-1">
                   <p className="font-medium">{t('fund_instapay_step2_title')}</p>
-                  <div className="mt-2 flex items-center gap-2 rounded-xl bg-gray-100 px-3 py-2">
-                    <code className="flex-1 text-sm">$InvestEd</code>
+                  <div className="mt-2 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                    <code className="flex-1 font-mono text-sm select-all">$InvestEd</code>
                     <button type="button" className="text-xs underline" onClick={() => copy('$InvestEd')}>
                       {t('common_copy')}
                     </button>
                   </div>
                 </div>
               </li>
-              <li className="flex gap-3">
+              <li className="flex items-start gap-3">
                 <span className="h-7 w-7 rounded-full bg-infinder-lime flex items-center justify-center text-xs font-bold shrink-0">3</span>
                 <div className="flex-1">
                   <p className="font-medium">{t('fund_instapay_step3_title')}</p>
-                  <div className="mt-2 flex items-center gap-2 rounded-xl bg-gray-100 px-3 py-2">
+                  <div className="mt-2 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                     <span className="text-xs text-gray-600">{t('fund_instapay_code_label')}</span>
-                    <code className="flex-1 text-sm font-bold text-infinder-green">{user.deposit_ref_code || '—'}</code>
+                    <code className="flex-1 font-mono text-sm font-bold text-infinder-green select-all">{user.deposit_ref_code || '—'}</code>
                     <button type="button" className="text-xs underline" onClick={() => copy(user.deposit_ref_code || '')}>
                       {t('common_copy')}
                     </button>
@@ -178,15 +187,15 @@ export default function FundingPage() {
             <h3 className="font-semibold flex items-center gap-2">🏦 {t('fund_bank_title')}</h3>
             <p className="text-sm text-gray-600 mt-1">{t('fund_bank_note')}</p>
             <div className="mt-4 space-y-3 text-sm">
-              <div className="flex items-center gap-2 rounded-xl bg-gray-100 px-3 py-2">
-                <code className="flex-1">1234567890123456</code>
+              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                <code className="flex-1 font-mono text-sm select-all">1234567890123456</code>
                 <button type="button" className="text-xs underline" onClick={() => copy('1234567890123456')}>
                   {t('common_copy')}
                 </button>
               </div>
-              <div className="flex items-center gap-2 rounded-xl bg-gray-100 px-3 py-2">
+              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                 <span className="text-xs text-gray-600">{t('fund_bank_ref')}</span>
-                <code className="flex-1 font-bold text-infinder-green">{user.deposit_ref_code}</code>
+                <code className="flex-1 font-mono text-sm font-bold text-infinder-green select-all">{user.deposit_ref_code}</code>
                 <button type="button" className="text-xs underline" onClick={() => copy(user.deposit_ref_code || '')}>
                   {t('common_copy')}
                 </button>

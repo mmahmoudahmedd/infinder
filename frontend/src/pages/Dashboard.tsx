@@ -64,7 +64,9 @@ export default function Dashboard() {
           {/* KYC banner */}
           {user.kyc_status !== 'approved' && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-sm px-4 py-3 flex gap-2 items-start">
-              <span>ℹ️</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
               <div>
                 {t('dashboard_kyc_banner')}
               </div>
@@ -135,7 +137,7 @@ export default function Dashboard() {
                       <span>{t('dashboard_progress')}</span>
                       <span>{learnPct}%</span>
                     </div>
-                    <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                    <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
                       <div
                         className="h-full bg-infinder-green rounded-full transition-all duration-500"
                         style={{ width: `${learnPct}%` }}
@@ -165,7 +167,7 @@ export default function Dashboard() {
               >
                 <Link
                   to={to}
-                  className="group block rounded-2xl border border-gray-200 bg-white p-6 hover:border-infinder-lime/50 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+                  className="group block rounded-2xl border border-gray-200 bg-white p-6 hover:border-infinder-lime/50 hover:shadow-md transition-all duration-200 hover:-translate-y-1"
                 >
                   <div className="w-10 h-10 rounded-xl bg-gray-50 group-hover:bg-infinder-lime/10 flex items-center justify-center text-xl transition-colors mb-4">
                     {emoji}
