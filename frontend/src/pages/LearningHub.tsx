@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { SubpageShell } from '../components/AppShell';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -18,7 +18,7 @@ interface Course {
   id: number;
   category: string;
   title: string;
-  lessons: number;
+  price: number;
   totalTime: string;
   overview: string;
   color: string;
@@ -32,7 +32,7 @@ const COURSES: Course[] = [
     id: 1,
     category: 'Startups',
     title: 'Startup Investing & Venture Capital',
-    lessons: 5,
+    price: 299,
     totalTime: '3h 20m',
     overview:
       'Discover how venture capital fuels innovation. Learn how early-stage investors evaluate startups, structure deals, and manage risk across a diversified portfolio.',
@@ -49,7 +49,7 @@ const COURSES: Course[] = [
     id: 2,
     category: 'Real Estate',
     title: 'Real Estate Investment Fundamentals',
-    lessons: 5,
+    price: 199,
     totalTime: '4h 10m',
     overview:
       'Build a foundation in property investment. Understand how to analyze markets, evaluate yields, and leverage financing to grow a real estate portfolio.',
@@ -66,7 +66,7 @@ const COURSES: Course[] = [
     id: 3,
     category: 'Investment',
     title: 'Introduction to Investing',
-    lessons: 5,
+    price: 149,
     totalTime: '3h 40m',
     overview:
       'Explore advanced financial markets mechanics including derivative instruments, risk assessment frameworks, and strategic portfolio construction for navigating complex investment landscapes.',
@@ -83,49 +83,9 @@ const COURSES: Course[] = [
 
 // ── SVG Icons ──────────────────────────────────────────────────────────────
 
-function IcHome({ active }: { active?: boolean }) {
-  const c = active ? '#22c55e' : '#9ca3af';
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
-    </svg>
-  );
-}
-
-function IcLearn({ active }: { active?: boolean }) {
-  const c = active ? '#22c55e' : '#9ca3af';
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" />
-      <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />
-    </svg>
-  );
-}
-
-function IcTrade({ active }: { active?: boolean }) {
-  const c = active ? '#22c55e' : '#9ca3af';
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-      <polyline points="16 7 22 7 22 13" />
-    </svg>
-  );
-}
-
-function IcInvest({ active }: { active?: boolean }) {
-  const c = active ? '#22c55e' : '#9ca3af';
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="1" x2="12" y2="23" />
-      <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
-    </svg>
-  );
-}
-
 function IcArrowLeft() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1f2937" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <line x1="19" y1="12" x2="5" y2="12" />
       <polyline points="12 19 5 12 12 5" />
     </svg>
@@ -140,9 +100,9 @@ function IcPlay({ size = 20, color = '#22c55e' }: { size?: number; color?: strin
   );
 }
 
-function IcCheck() {
+function IcCheck({ size = 13 }: { size?: number }) {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
       <polyline points="20 6 9 17 4 12" />
     </svg>
   );
@@ -166,86 +126,54 @@ function IcBook() {
   );
 }
 
-function IcDots() {
+function IcCertificate() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="#6b7280" stroke="none">
-      <circle cx="12" cy="5" r="1.5" />
-      <circle cx="12" cy="12" r="1.5" />
-      <circle cx="12" cy="19" r="1.5" />
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="6" />
+      <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32" />
     </svg>
   );
 }
 
-// ── Bottom Nav ─────────────────────────────────────────────────────────────
-
-function BottomNavBar({
-  onHome,
-  onLearn,
-  onTrade,
-  onInvest,
-}: {
-  onHome: () => void;
-  onLearn: () => void;
-  onTrade: () => void;
-  onInvest: () => void;
-}) {
-  const items = [
-    { id: 'home',   label: 'Home',   icon: <IcHome />,   activeIcon: <IcHome active />,   fn: onHome },
-    { id: 'learn',  label: 'Learn',  icon: <IcLearn />,  activeIcon: <IcLearn active />,  fn: onLearn },
-    { id: 'trade',  label: 'Trade',  icon: <IcTrade />,  activeIcon: <IcTrade active />,  fn: onTrade },
-    { id: 'invest', label: 'Invest', icon: <IcInvest />, activeIcon: <IcInvest active />, fn: onInvest },
-  ];
-
+function IcInfinity() {
   return (
-    <nav
-      className="bg-white border-t border-gray-200 flex justify-around shrink-0"
-      role="navigation"
-      aria-label="Main navigation"
-    >
-      {items.map((item) => {
-        const isActive = item.id === 'learn';
-        return (
-          <button
-            key={item.id}
-            type="button"
-            onClick={item.fn}
-            aria-label={item.label}
-            aria-current={isActive ? 'page' : undefined}
-            className={`flex flex-col items-center gap-1 px-4 py-3 min-w-[56px] transition-colors cursor-pointer ${
-              isActive ? 'text-[#22c55e]' : 'text-gray-400'
-            }`}
-          >
-            {isActive ? item.activeIcon : item.icon}
-            <span className="text-[10px] font-semibold leading-none tracking-wide">
-              {item.label}
-            </span>
-          </button>
-        );
-      })}
-    </nav>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 12c-2-2.5-4-4-6-4a4 4 0 000 8c2 0 4-1.5 6-4z" />
+      <path d="M12 12c2 2.5 4 4 6 4a4 4 0 000-8c-2 0-4 1.5-6 4z" />
+    </svg>
   );
 }
 
+// ── Fade transition ────────────────────────────────────────────────────────
+
+const fade = {
+  enter: { opacity: 0, y: 6 },
+  center: { opacity: 1, y: 0, transition: { duration: 0.18 } },
+  exit: { opacity: 0, transition: { duration: 0.12 } },
+};
+
 // ── Screen 1: Hub ──────────────────────────────────────────────────────────
 
-function HubScreen({ onStartCourse }: { onStartCourse: (course: Course) => void }) {
+function HubScreen({ onEnroll }: { onEnroll: (course: Course) => void }) {
   return (
-    <div className="px-4 pt-7 pb-6">
-      <h1 className="text-[26px] font-bold text-gray-900 leading-tight">Learning Hub</h1>
-      <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">
-        Master investment strategies with interactive courses.
-      </p>
+    <div>
+      <div className="mb-8">
+        <p className="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-1">INFINDER</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Learning Hub</h1>
+        <p className="text-gray-500 mt-1 text-sm">Master investment strategies with expert-led courses.</p>
+      </div>
 
-      <div className="mt-6 space-y-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {COURSES.map((course, i) => (
           <motion.div
             key={course.id}
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.07, duration: 0.22, ease: 'easeOut' }}
-            className="bg-white rounded-2xl shadow-sm overflow-hidden"
+            className="bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col"
           >
-            <div className="relative h-44 overflow-hidden" style={{ backgroundColor: course.color }}>
+            {/* Coloured banner */}
+            <div className="relative h-40 overflow-hidden" style={{ backgroundColor: course.color }}>
               <div
                 className="absolute inset-0"
                 style={{ background: 'radial-gradient(ellipse at 75% 15%, rgba(255,255,255,0.18) 0%, transparent 65%)' }}
@@ -255,21 +183,30 @@ function HubScreen({ onStartCourse }: { onStartCourse: (course: Course) => void 
               </span>
             </div>
 
-            <div className="px-4 pt-3 pb-4">
+            {/* Content */}
+            <div className="p-5 flex flex-col flex-1">
               <p className="text-[11px] font-bold text-[#22c55e] tracking-widest uppercase">
                 {course.category}
               </p>
-              <h3 className="text-[15px] font-bold text-gray-900 mt-0.5 leading-snug">
+              <h3 className="text-[15px] font-bold text-gray-900 mt-0.5 leading-snug flex-1">
                 {course.title}
               </h3>
-              <button
-                type="button"
-                onClick={() => onStartCourse(course)}
-                className="mt-3 w-full rounded-xl border border-gray-200 bg-white py-2.5 text-sm font-semibold text-gray-700 flex items-center justify-center gap-2 hover:border-gray-300 hover:bg-gray-50 transition-colors active:scale-[0.98]"
-              >
-                <IcPlay size={13} color="#374151" />
-                Start Course
-              </button>
+
+              <div className="mt-3 flex items-center gap-4 text-xs text-gray-400">
+                <span className="flex items-center gap-1"><IcBook />{course.curriculum.length} lessons</span>
+                <span className="flex items-center gap-1"><IcClock />{course.totalTime}</span>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                <span className="text-2xl font-bold text-gray-900">${course.price}</span>
+                <button
+                  type="button"
+                  onClick={() => onEnroll(course)}
+                  className="rounded-xl bg-[#22c55e] text-white text-sm font-bold px-4 py-2.5 hover:opacity-90 active:opacity-80 transition-opacity"
+                >
+                  Enroll Now
+                </button>
+              </div>
             </div>
           </motion.div>
         ))}
@@ -294,98 +231,126 @@ function DetailScreen({
   const pct = Math.round((completedCount / course.curriculum.length) * 100);
 
   return (
-    <div className="pb-4">
-      <div className="px-4 pt-5 pb-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-700 min-h-[44px] pr-2 hover:text-gray-900 transition-colors"
-          aria-label="Back to courses"
-        >
-          <IcArrowLeft />
-          <span>Back to Courses</span>
-        </button>
-      </div>
+    <div>
+      {/* Back */}
+      <button
+        type="button"
+        onClick={onBack}
+        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors mb-6"
+      >
+        <IcArrowLeft />
+        Back to courses
+      </button>
 
-      <div className="mx-4 rounded-2xl overflow-hidden relative" style={{ height: 216 }}>
-        <div
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(145deg, #1e293b 0%, #0f172a 100%)' }}
-        />
+      {/* Hero banner */}
+      <div className="rounded-2xl overflow-hidden relative mb-6" style={{ height: 260 }}>
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(145deg, #1e293b 0%, #0f172a 100%)' }} />
         <div
           className="absolute inset-0"
           style={{ background: `radial-gradient(ellipse at 30% 30%, ${course.color}20 0%, transparent 70%)` }}
         />
-
         {currentLesson && (
-          <div className="absolute top-4 left-4 z-10">
+          <div className="absolute top-5 left-5 z-10">
             <span className="bg-[#22c55e] text-white text-[11px] font-bold px-3 py-1.5 rounded-full">
               Current Lesson
             </span>
           </div>
         )}
-
         <div className="absolute inset-0 flex items-center justify-center z-10">
           <button
             type="button"
             onClick={onViewCurriculum}
             aria-label="Play current lesson"
-            className="w-[64px] h-[64px] bg-white rounded-full flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-transform pl-1"
+            className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-transform pl-1"
           >
             <IcPlay size={26} color="#1f2937" />
           </button>
         </div>
-
         {currentLesson && (
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/65 to-transparent px-4 pt-8 pb-4 z-10">
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-6 pt-8 pb-5 z-10">
             <p className="text-white text-sm font-semibold">{currentLesson.title}</p>
           </div>
         )}
       </div>
 
-      <div className="mx-4 mt-4 bg-white rounded-2xl shadow-sm p-5">
-        <h2 className="text-xl font-bold text-gray-900">{course.title}</h2>
+      {/* Two-column layout */}
+      <div className="grid md:grid-cols-3 gap-6 items-start">
 
-        <div className="mt-3 flex items-center gap-5 text-sm text-gray-500">
-          <span className="flex items-center gap-1.5">
-            <IcBook />
-            {course.curriculum.length} Lessons
-          </span>
-          <span className="flex items-center gap-1.5">
-            <IcClock />
-            {course.totalTime} Total
-          </span>
+        {/* Left: info + overview */}
+        <div className="md:col-span-2 space-y-5">
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <p className="text-[11px] font-bold text-[#22c55e] tracking-widest uppercase mb-1">
+              {course.category}
+            </p>
+            <h1 className="text-xl font-bold text-gray-900">{course.title}</h1>
+
+            <div className="mt-4 flex items-center gap-5 text-sm text-gray-500">
+              <span className="flex items-center gap-1.5">
+                <IcBook />{course.curriculum.length} Lessons
+              </span>
+              <span className="flex items-center gap-1.5">
+                <IcClock />{course.totalTime} Total
+              </span>
+            </div>
+
+            {/* Progress */}
+            <div className="mt-5">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs text-gray-500">Your Progress</span>
+                <span className="text-xs font-bold text-[#22c55e]">{pct}%</span>
+              </div>
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{ backgroundColor: '#22c55e' }}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${pct}%` }}
+                  transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 h-px bg-gray-100" />
+
+            <h2 className="mt-6 font-bold text-gray-900">Course Overview</h2>
+            <p className="mt-2 text-sm text-gray-600 leading-relaxed">{course.overview}</p>
+          </div>
         </div>
 
-        <div className="mt-4">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs text-gray-500">Your Progress</span>
-            <span className="text-xs font-bold text-[#22c55e]">{pct}%</span>
-          </div>
-          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-            <motion.div
-              className="h-full rounded-full"
-              style={{ backgroundColor: '#22c55e' }}
-              initial={{ width: 0 }}
-              animate={{ width: `${pct}%` }}
-              transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
-            />
-          </div>
+        {/* Right: pricing card */}
+        <div className="bg-white rounded-2xl shadow-sm p-6 sticky top-6">
+          <p className="text-3xl font-bold text-gray-900">${course.price}</p>
+          <p className="text-sm text-gray-400 mt-0.5">One-time payment · Lifetime access</p>
+
+          <button
+            type="button"
+            onClick={onViewCurriculum}
+            className="mt-5 w-full rounded-xl py-3 text-sm font-bold text-white bg-[#22c55e] hover:opacity-90 active:opacity-80 transition-opacity"
+          >
+            Enroll & Start Learning
+          </button>
+          <button
+            type="button"
+            onClick={onViewCurriculum}
+            className="mt-2 w-full rounded-xl py-3 text-sm font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors"
+          >
+            View Curriculum
+          </button>
+
+          <ul className="mt-5 space-y-2.5 text-sm text-gray-600">
+            {[
+              { icon: <IcBook />,         text: `${course.curriculum.length} lessons` },
+              { icon: <IcClock />,        text: `${course.totalTime} of content` },
+              { icon: <IcInfinity />,     text: 'Lifetime access' },
+              { icon: <IcCertificate />,  text: 'Certificate of completion' },
+            ].map(({ icon, text }) => (
+              <li key={text} className="flex items-center gap-2.5">
+                <span className="text-[#22c55e]">{icon}</span>
+                {text}
+              </li>
+            ))}
+          </ul>
         </div>
-
-        <div className="mt-5 h-px bg-gray-100" />
-
-        <h3 className="mt-5 text-sm font-bold text-gray-900">Course Overview</h3>
-        <p className="mt-2 text-sm text-gray-600 leading-relaxed">{course.overview}</p>
-
-        <button
-          type="button"
-          onClick={onViewCurriculum}
-          className="mt-5 w-full rounded-xl py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 active:opacity-80"
-          style={{ backgroundColor: '#22c55e' }}
-        >
-          View Curriculum
-        </button>
       </div>
     </div>
   );
@@ -398,32 +363,27 @@ function CurriculumScreen({ course, onBack }: { course: Course; onBack: () => vo
   const pct = Math.round((completedCount / course.curriculum.length) * 100);
 
   return (
-    <div className="px-4 pt-5 pb-4">
-      <div className="flex items-center justify-between mb-5">
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label="Go back"
-          className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors -ml-1"
-        >
-          <IcArrowLeft />
-        </button>
-        <button
-          type="button"
-          aria-label="More options"
-          className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
-        >
-          <IcDots />
-        </button>
-      </div>
+    <div>
+      {/* Back */}
+      <button
+        type="button"
+        onClick={onBack}
+        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors mb-6"
+      >
+        <IcArrowLeft />
+        Back to course
+      </button>
 
-      <div className="bg-white rounded-2xl shadow-sm p-5">
+      {/* Progress card */}
+      <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-gray-900">Curriculum</h2>
-          <span className="text-sm font-bold text-[#22c55e]">{pct}%</span>
+          <div>
+            <h2 className="font-bold text-gray-900">{course.title}</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Your Progress: {pct}%</p>
+          </div>
+          <span className="text-lg font-bold text-[#22c55e]">{pct}%</span>
         </div>
-        <p className="text-xs text-gray-500 mt-1 mb-3">Your Progress: {pct}%</p>
-        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+        <div className="mt-4 h-2 bg-gray-100 rounded-full overflow-hidden">
           <motion.div
             className="h-full rounded-full"
             style={{ backgroundColor: '#22c55e' }}
@@ -434,48 +394,40 @@ function CurriculumScreen({ course, onBack }: { course: Course; onBack: () => vo
         </div>
       </div>
 
-      <div className="mt-4 bg-white rounded-2xl shadow-sm overflow-hidden">
+      {/* Lesson list */}
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         {course.curriculum.map((lesson, i) => (
           <div key={lesson.id}>
-            {i > 0 && <div className="h-px bg-gray-100 mx-4" />}
+            {i > 0 && <div className="h-px bg-gray-100 mx-5" />}
             <div
-              className={`flex items-center gap-3 px-4 py-4 transition-colors ${
+              className={`flex items-center gap-4 px-5 py-4 transition-colors ${
                 lesson.status === 'current'
-                  ? 'border-l-[3px] border-[#22c55e] bg-green-50/60 pl-[13px]'
+                  ? 'border-l-[3px] border-[#22c55e] bg-green-50/60 pl-[17px]'
                   : lesson.status === 'completed'
                   ? 'hover:bg-gray-50'
                   : 'opacity-60'
               }`}
             >
               {lesson.status === 'completed' ? (
-                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                  <IcCheck />
+                <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                  <IcCheck size={14} />
                 </div>
               ) : (
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                  className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
                   style={{ backgroundColor: lesson.status === 'current' ? '#22c55e' : '#f3f4f6' }}
                 >
-                  <IcPlay
-                    size={13}
-                    color={lesson.status === 'current' ? 'white' : '#9ca3af'}
-                  />
+                  <IcPlay size={14} color={lesson.status === 'current' ? 'white' : '#9ca3af'} />
                 </div>
               )}
 
               <div className="flex-1 min-w-0">
-                <p
-                  className={`text-sm font-medium leading-snug ${
-                    lesson.status === 'locked' ? 'text-gray-400' : 'text-gray-900'
-                  }`}
-                >
+                <p className={`text-sm font-medium leading-snug ${lesson.status === 'locked' ? 'text-gray-400' : 'text-gray-900'}`}>
                   {lesson.title}
                 </p>
               </div>
 
-              <span className="text-xs text-gray-400 shrink-0 tabular-nums">
-                {lesson.duration}
-              </span>
+              <span className="text-xs text-gray-400 shrink-0 tabular-nums">{lesson.duration}</span>
             </div>
           </div>
         ))}
@@ -484,113 +436,52 @@ function CurriculumScreen({ course, onBack }: { course: Course; onBack: () => vo
   );
 }
 
-// ── Slide variants ─────────────────────────────────────────────────────────
-
-const slideVariants = {
-  enter: (dir: number) => ({ x: dir * 32, opacity: 0 }),
-  center: {
-    x: 0,
-    opacity: 1,
-    transition: { duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] as const },
-  },
-  exit: (dir: number) => ({
-    x: dir * -32,
-    opacity: 0,
-    transition: { duration: 0.16, ease: [0.55, 0, 1, 0.45] as const },
-  }),
-};
-
 // ── Root ───────────────────────────────────────────────────────────────────
 
 export default function LearningHub() {
-  const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<CurrentView>('hub');
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<CurriculumItem | null>(null);
-  const dir = useRef(1);
 
-  function goTo(to: CurrentView, forward = true) {
-    dir.current = forward ? 1 : -1;
-    setCurrentView(to);
-  }
-
-  function handleStartCourse(course: Course) {
-    setSelectedCourse(course);
-    goTo('courseDetail', true);
-  }
-
-  function handleBackToHub() {
-    setSelectedCourse(null);
-    goTo('hub', false);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- required by state contract, wired in future lesson-player task
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- state contract for future lesson-player
   void setSelectedLesson;
 
   return (
-    <div
-      className="h-dvh w-full max-w-[390px] mx-auto flex flex-col overflow-hidden"
-      style={{ background: '#f5f5f5' }}
-    >
-      <main
-        className="flex-1 overflow-y-auto overscroll-y-contain"
-        style={{ scrollbarWidth: 'none' }}
-      >
-        <AnimatePresence mode="wait" custom={dir.current} initial={false}>
-          {currentView === 'hub' && (
-            <motion.div
-              key="hub"
-              custom={dir.current}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-            >
-              <HubScreen onStartCourse={handleStartCourse} />
-            </motion.div>
-          )}
+    <SubpageShell>
+      <AnimatePresence mode="wait">
+        {currentView === 'hub' && (
+          <motion.div key="hub" variants={fade} initial="enter" animate="center" exit="exit">
+            <HubScreen
+              onEnroll={(course) => {
+                setSelectedCourse(course);
+                setCurrentView('courseDetail');
+              }}
+            />
+          </motion.div>
+        )}
 
-          {currentView === 'courseDetail' && selectedCourse && (
-            <motion.div
-              key="courseDetail"
-              custom={dir.current}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-            >
-              <DetailScreen
-                course={selectedCourse}
-                onBack={handleBackToHub}
-                onViewCurriculum={() => goTo('curriculum', true)}
-              />
-            </motion.div>
-          )}
+        {currentView === 'courseDetail' && selectedCourse && (
+          <motion.div key="courseDetail" variants={fade} initial="enter" animate="center" exit="exit">
+            <DetailScreen
+              course={selectedCourse}
+              onBack={() => {
+                setSelectedCourse(null);
+                setCurrentView('hub');
+              }}
+              onViewCurriculum={() => setCurrentView('curriculum')}
+            />
+          </motion.div>
+        )}
 
-          {currentView === 'curriculum' && selectedCourse && (
-            <motion.div
-              key="curriculum"
-              custom={dir.current}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-            >
-              <CurriculumScreen
-                course={selectedCourse}
-                onBack={() => goTo('courseDetail', false)}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
-
-      <BottomNavBar
-        onHome={() => navigate('/dashboard')}
-        onLearn={() => goTo('hub')}
-        onTrade={() => navigate('/invest')}
-        onInvest={() => navigate('/invest')}
-      />
-    </div>
+        {currentView === 'curriculum' && selectedCourse && (
+          <motion.div key="curriculum" variants={fade} initial="enter" animate="center" exit="exit">
+            <CurriculumScreen
+              course={selectedCourse}
+              onBack={() => setCurrentView('courseDetail')}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </SubpageShell>
   );
 }
