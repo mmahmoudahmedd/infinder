@@ -4,14 +4,19 @@ import { SubpageShell } from '../components/AppShell';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-type CurrentView = 'hub' | 'courseDetail' | 'curriculum';
-type LessonStatus = 'completed' | 'current' | 'locked';
+type CurrentView = 'hub' | 'courseDetail' | 'lessonView';
+type LevelId = 'beginner' | 'intermediate' | 'advanced';
 
-interface CurriculumItem {
+interface Lesson {
   id: number;
   title: string;
   duration: string;
-  status: LessonStatus;
+}
+
+interface Level {
+  id: LevelId;
+  label: string;
+  lessons: Lesson[];
 }
 
 interface Course {
@@ -22,7 +27,45 @@ interface Course {
   totalTime: string;
   overview: string;
   color: string;
-  curriculum: CurriculumItem[];
+  levels: Level[];
+}
+
+// ── Progress (localStorage-backed) ────────────────────────────────────────
+
+const STORAGE_KEY = 'infinder_learning_progress';
+
+function lessonKey(courseId: number, levelId: LevelId, lessonId: number): string {
+  return `${courseId}:${levelId}:${lessonId}`;
+}
+
+function loadCompleted(): Set<string> {
+  try {
+    const s = localStorage.getItem(STORAGE_KEY);
+    return s ? new Set<string>(JSON.parse(s) as string[]) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function saveCompleted(set: Set<string>) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...set])); } catch { /* ignore */ }
+}
+
+function courseProgress(course: Course, completed: Set<string>): number {
+  const total = course.levels.reduce((s, l) => s + l.lessons.length, 0);
+  if (!total) return 0;
+  const done = course.levels.reduce(
+    (s, l) => s + l.lessons.filter(ls => completed.has(lessonKey(course.id, l.id, ls.id))).length,
+    0,
+  );
+  return Math.round((done / total) * 100);
+}
+
+function levelProgress(course: Course, levelId: LevelId, completed: Set<string>): number {
+  const level = course.levels.find(l => l.id === levelId);
+  if (!level?.lessons.length) return 0;
+  const done = level.lessons.filter(ls => completed.has(lessonKey(course.id, levelId, ls.id))).length;
+  return Math.round((done / level.lessons.length) * 100);
 }
 
 // ── Data ───────────────────────────────────────────────────────────────────
@@ -33,16 +76,41 @@ const COURSES: Course[] = [
     category: 'Startups',
     title: 'Startup Investing & Venture Capital',
     price: 299,
-    totalTime: '3h 20m',
+    totalTime: '6h 45m',
     overview:
       'Discover how venture capital fuels innovation. Learn how early-stage investors evaluate startups, structure deals, and manage risk across a diversified portfolio.',
     color: '#22c55e',
-    curriculum: [
-      { id: 1, title: 'Introduction to Venture Capital', duration: '20m', status: 'completed' },
-      { id: 2, title: 'Deal Flow & Due Diligence', duration: '45m', status: 'completed' },
-      { id: 3, title: 'Term Sheets & Valuations', duration: '50m', status: 'current' },
-      { id: 4, title: 'Portfolio Construction', duration: '55m', status: 'locked' },
-      { id: 5, title: 'Exit Strategies & Returns', duration: '30m', status: 'locked' },
+    levels: [
+      {
+        id: 'beginner',
+        label: 'Beginner',
+        lessons: [
+          { id: 1, title: 'What is Venture Capital?', duration: '15m' },
+          { id: 2, title: 'What is a Startup?', duration: '20m' },
+          { id: 3, title: 'Equity 101', duration: '25m' },
+          { id: 4, title: 'Cap Tables Explained', duration: '20m' },
+        ],
+      },
+      {
+        id: 'intermediate',
+        label: 'Intermediate',
+        lessons: [
+          { id: 1, title: 'Deal Flow & Sourcing', duration: '35m' },
+          { id: 2, title: 'Due Diligence Process', duration: '45m' },
+          { id: 3, title: 'Term Sheets & Valuations', duration: '50m' },
+          { id: 4, title: 'Portfolio Construction', duration: '40m' },
+        ],
+      },
+      {
+        id: 'advanced',
+        label: 'Advanced',
+        lessons: [
+          { id: 1, title: 'Exit Strategies & M&A', duration: '45m' },
+          { id: 2, title: 'LP/GP Dynamics', duration: '40m' },
+          { id: 3, title: 'Carry & Fund Economics', duration: '35m' },
+          { id: 4, title: 'Secondary Markets', duration: '35m' },
+        ],
+      },
     ],
   },
   {
@@ -50,16 +118,41 @@ const COURSES: Course[] = [
     category: 'Real Estate',
     title: 'Real Estate Investment Fundamentals',
     price: 199,
-    totalTime: '4h 10m',
+    totalTime: '7h 10m',
     overview:
       'Build a foundation in property investment. Understand how to analyze markets, evaluate yields, and leverage financing to grow a real estate portfolio.',
     color: '#3b82f6',
-    curriculum: [
-      { id: 1, title: 'Types of Real Estate Assets', duration: '25m', status: 'completed' },
-      { id: 2, title: 'Market Analysis Basics', duration: '40m', status: 'current' },
-      { id: 3, title: 'Financing & Leverage', duration: '55m', status: 'locked' },
-      { id: 4, title: 'Rental Yield Calculations', duration: '50m', status: 'locked' },
-      { id: 5, title: 'Risk Mitigation Strategies', duration: '1h 20m', status: 'locked' },
+    levels: [
+      {
+        id: 'beginner',
+        label: 'Beginner',
+        lessons: [
+          { id: 1, title: 'Types of Properties', duration: '20m' },
+          { id: 2, title: 'Understanding Markets', duration: '25m' },
+          { id: 3, title: 'Basic Financing Concepts', duration: '30m' },
+          { id: 4, title: 'ROI Basics', duration: '20m' },
+        ],
+      },
+      {
+        id: 'intermediate',
+        label: 'Intermediate',
+        lessons: [
+          { id: 1, title: 'Rental Yield Analysis', duration: '40m' },
+          { id: 2, title: 'Leveraged Purchases', duration: '45m' },
+          { id: 3, title: 'Commercial vs Residential', duration: '35m' },
+          { id: 4, title: 'Market Deep Dive', duration: '50m' },
+        ],
+      },
+      {
+        id: 'advanced',
+        label: 'Advanced',
+        lessons: [
+          { id: 1, title: 'REITs & Property Funds', duration: '45m' },
+          { id: 2, title: 'Tax Optimization Strategies', duration: '40m' },
+          { id: 3, title: 'Portfolio Diversification', duration: '35m' },
+          { id: 4, title: 'Risk Mitigation', duration: '45m' },
+        ],
+      },
     ],
   },
   {
@@ -67,16 +160,41 @@ const COURSES: Course[] = [
     category: 'Investment',
     title: 'Introduction to Investing',
     price: 149,
-    totalTime: '3h 40m',
+    totalTime: '7h 25m',
     overview:
-      'Explore advanced financial markets mechanics including derivative instruments, risk assessment frameworks, and strategic portfolio construction for navigating complex investment landscapes.',
+      'Explore financial markets mechanics including derivative instruments, risk assessment frameworks, and strategic portfolio construction for navigating complex investment landscapes.',
     color: '#8b5cf6',
-    curriculum: [
-      { id: 1, title: 'Introduction to Core Concepts', duration: '15m', status: 'completed' },
-      { id: 2, title: 'Understanding Market Cycles', duration: '45m', status: 'completed' },
-      { id: 3, title: 'Risk Management Protocols', duration: '35m', status: 'current' },
-      { id: 4, title: 'Advanced Order Types', duration: '55m', status: 'locked' },
-      { id: 5, title: 'Portfolio Allocation Strategy', duration: '1h 10m', status: 'locked' },
+    levels: [
+      {
+        id: 'beginner',
+        label: 'Beginner',
+        lessons: [
+          { id: 1, title: 'Stock Market Basics', duration: '20m' },
+          { id: 2, title: 'Bonds & Fixed Income', duration: '25m' },
+          { id: 3, title: 'ETFs & Index Funds', duration: '20m' },
+          { id: 4, title: 'Risk vs Return', duration: '20m' },
+        ],
+      },
+      {
+        id: 'intermediate',
+        label: 'Intermediate',
+        lessons: [
+          { id: 1, title: 'Portfolio Theory', duration: '40m' },
+          { id: 2, title: 'Asset Allocation', duration: '45m' },
+          { id: 3, title: 'Technical Analysis Basics', duration: '50m' },
+          { id: 4, title: 'Understanding Market Cycles', duration: '40m' },
+        ],
+      },
+      {
+        id: 'advanced',
+        label: 'Advanced',
+        lessons: [
+          { id: 1, title: 'Options & Derivatives', duration: '55m' },
+          { id: 2, title: 'Factor Investing', duration: '45m' },
+          { id: 3, title: 'Macro Economics & Markets', duration: '40m' },
+          { id: 4, title: 'Alternative Investments', duration: '45m' },
+        ],
+      },
     ],
   },
 ];
@@ -100,17 +218,25 @@ function IcPlay({ size = 20, color = '#22c55e' }: { size?: number; color?: strin
   );
 }
 
-function IcCheck({ size = 13 }: { size?: number }) {
+function IcCheck({ size = 13, color = '#22c55e' }: { size?: number; color?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
       <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function IcChevronRight() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6" />
     </svg>
   );
 }
 
 function IcClock() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" />
       <polyline points="12 6 12 12 16 14" />
     </svg>
@@ -119,27 +245,27 @@ function IcClock() {
 
 function IcBook() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
       <path d="M6.5 2H20v20l-7-3-7 3V2z" />
     </svg>
   );
 }
 
-function IcCertificate() {
+function IcInfinity() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="8" r="6" />
-      <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32" />
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 12c-2-2.5-4-4-6-4a4 4 0 000 8c2 0 4-1.5 6-4z" />
+      <path d="M12 12c2 2.5 4 4 6 4a4 4 0 000-8c-2 0-4 1.5-6 4z" />
     </svg>
   );
 }
 
-function IcInfinity() {
+function IcCertificate() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 12c-2-2.5-4-4-6-4a4 4 0 000 8c2 0 4-1.5 6-4z" />
-      <path d="M12 12c2 2.5 4 4 6 4a4 4 0 000-8c-2 0-4 1.5-6 4z" />
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="6" />
+      <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85" />
     </svg>
   );
 }
@@ -152,64 +278,109 @@ const fade = {
   exit: { opacity: 0, transition: { duration: 0.12 } },
 };
 
+// ── Level badge colours ────────────────────────────────────────────────────
+
+const LEVEL_COLORS: Record<LevelId, { bg: string; text: string }> = {
+  beginner:     { bg: '#dcfce7', text: '#15803d' },
+  intermediate: { bg: '#dbeafe', text: '#1d4ed8' },
+  advanced:     { bg: '#ede9fe', text: '#6d28d9' },
+};
+
 // ── Screen 1: Hub ──────────────────────────────────────────────────────────
 
-function HubScreen({ onEnroll }: { onEnroll: (course: Course) => void }) {
+function HubScreen({
+  onEnroll,
+  completed,
+}: {
+  onEnroll: (course: Course) => void;
+  completed: Set<string>;
+}) {
   return (
     <div>
       <div className="mb-8">
         <p className="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-1">INFINDER</p>
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Learning Hub</h1>
-        <p className="text-gray-500 mt-1 text-sm">Master investment strategies with expert-led courses.</p>
+        <p className="text-gray-500 mt-1 text-sm">Master investment strategies with expert-led courses. Three skill levels per course.</p>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {COURSES.map((course, i) => (
-          <motion.div
-            key={course.id}
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.07, duration: 0.22, ease: 'easeOut' }}
-            className="bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col"
-          >
-            {/* Coloured banner */}
-            <div className="relative h-40 overflow-hidden" style={{ backgroundColor: course.color }}>
-              <div
-                className="absolute inset-0"
-                style={{ background: 'radial-gradient(ellipse at 75% 15%, rgba(255,255,255,0.18) 0%, transparent 65%)' }}
-              />
-              <span className="absolute bottom-3 left-3 bg-gray-900/75 text-white text-[11px] font-semibold px-3 py-1 rounded-full backdrop-blur-sm">
-                {course.category}
-              </span>
-            </div>
+        {COURSES.map((course, i) => {
+          const pct = courseProgress(course, completed);
+          const totalLessons = course.levels.reduce((s, l) => s + l.lessons.length, 0);
 
-            {/* Content */}
-            <div className="p-5 flex flex-col flex-1">
-              <p className="text-[11px] font-bold text-[#22c55e] tracking-widest uppercase">
-                {course.category}
-              </p>
-              <h3 className="text-[15px] font-bold text-gray-900 mt-0.5 leading-snug flex-1">
-                {course.title}
-              </h3>
-
-              <div className="mt-3 flex items-center gap-4 text-xs text-gray-400">
-                <span className="flex items-center gap-1"><IcBook />{course.curriculum.length} lessons</span>
-                <span className="flex items-center gap-1"><IcClock />{course.totalTime}</span>
+          return (
+            <motion.div
+              key={course.id}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.07, duration: 0.22, ease: 'easeOut' }}
+              className="bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col"
+            >
+              {/* Coloured banner */}
+              <div className="relative h-40 overflow-hidden" style={{ backgroundColor: course.color }}>
+                <div
+                  className="absolute inset-0"
+                  style={{ background: 'radial-gradient(ellipse at 75% 15%, rgba(255,255,255,0.18) 0%, transparent 65%)' }}
+                />
+                <span className="absolute bottom-3 left-3 bg-gray-900/75 text-white text-[11px] font-semibold px-3 py-1 rounded-full backdrop-blur-sm">
+                  {course.category}
+                </span>
+                {/* Level badges */}
+                <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
+                  {course.levels.map(l => (
+                    <span
+                      key={l.id}
+                      className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: LEVEL_COLORS[l.id].bg, color: LEVEL_COLORS[l.id].text }}
+                    >
+                      {l.label}
+                    </span>
+                  ))}
+                </div>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                <span className="text-2xl font-bold text-gray-900">${course.price}</span>
-                <button
-                  type="button"
-                  onClick={() => onEnroll(course)}
-                  className="rounded-xl bg-[#22c55e] text-white text-sm font-bold px-4 py-2.5 hover:opacity-90 active:opacity-80 transition-opacity"
-                >
-                  Enroll Now
-                </button>
+              {/* Content */}
+              <div className="p-5 flex flex-col flex-1">
+                <p className="text-[11px] font-bold text-[#22c55e] tracking-widest uppercase">
+                  {course.category}
+                </p>
+                <h3 className="text-[15px] font-bold text-gray-900 mt-0.5 leading-snug flex-1">
+                  {course.title}
+                </h3>
+
+                <div className="mt-3 flex items-center gap-4 text-xs text-gray-400">
+                  <span className="flex items-center gap-1"><IcBook />{totalLessons} lessons</span>
+                  <span className="flex items-center gap-1"><IcClock />{course.totalTime}</span>
+                </div>
+
+                {/* Progress bar if started */}
+                {pct > 0 && (
+                  <div className="mt-3">
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-gray-400">Progress</span>
+                      <span className="font-semibold text-[#22c55e]">{pct}%</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bg-[#22c55e] transition-all duration-500" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                  <span className="text-2xl font-bold text-gray-900">${course.price}</span>
+                  <button
+                    type="button"
+                    onClick={() => onEnroll(course)}
+                    className="rounded-xl text-sm font-bold px-4 py-2.5 transition-opacity"
+                    style={{ backgroundColor: course.color, color: 'white' }}
+                  >
+                    {pct > 0 ? 'Continue' : 'Enroll Now'}
+                  </button>
+                </div>
               </div>
-            </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );
@@ -219,16 +390,21 @@ function HubScreen({ onEnroll }: { onEnroll: (course: Course) => void }) {
 
 function DetailScreen({
   course,
+  completed,
+  activeLevel,
+  onSetActiveLevel,
   onBack,
-  onViewCurriculum,
+  onOpenLesson,
 }: {
   course: Course;
+  completed: Set<string>;
+  activeLevel: LevelId;
+  onSetActiveLevel: (id: LevelId) => void;
   onBack: () => void;
-  onViewCurriculum: () => void;
+  onOpenLesson: (lesson: Lesson, level: Level) => void;
 }) {
-  const currentLesson = course.curriculum.find((l) => l.status === 'current');
-  const completedCount = course.curriculum.filter((l) => l.status === 'completed').length;
-  const pct = Math.round((completedCount / course.curriculum.length) * 100);
+  const pct = courseProgress(course, completed);
+  const activeLevelData = course.levels.find(l => l.id === activeLevel)!;
 
   return (
     <div>
@@ -243,60 +419,43 @@ function DetailScreen({
       </button>
 
       {/* Hero banner */}
-      <div className="rounded-2xl overflow-hidden relative mb-6" style={{ height: 260 }}>
+      <div className="rounded-2xl overflow-hidden relative mb-6" style={{ height: 220 }}>
         <div className="absolute inset-0" style={{ background: 'linear-gradient(145deg, #1e293b 0%, #0f172a 100%)' }} />
         <div
           className="absolute inset-0"
-          style={{ background: `radial-gradient(ellipse at 30% 30%, ${course.color}20 0%, transparent 70%)` }}
+          style={{ background: `radial-gradient(ellipse at 30% 30%, ${course.color}25 0%, transparent 70%)` }}
         />
-        {currentLesson && (
-          <div className="absolute top-5 left-5 z-10">
-            <span className="bg-[#22c55e] text-white text-[11px] font-bold px-3 py-1.5 rounded-full">
-              Current Lesson
-            </span>
-          </div>
-        )}
-        <div className="absolute inset-0 flex items-center justify-center z-10">
-          <button
-            type="button"
-            onClick={onViewCurriculum}
-            aria-label="Play current lesson"
-            className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-transform pl-1"
-          >
-            <IcPlay size={26} color="#1f2937" />
-          </button>
+        {/* Course title overlay */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-6 pt-12 pb-5">
+          <p className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-1">{course.category}</p>
+          <h1 className="text-white text-xl font-bold leading-snug">{course.title}</h1>
         </div>
-        {currentLesson && (
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-6 pt-8 pb-5 z-10">
-            <p className="text-white text-sm font-semibold">{currentLesson.title}</p>
-          </div>
-        )}
       </div>
 
       {/* Two-column layout */}
       <div className="grid md:grid-cols-3 gap-6 items-start">
 
-        {/* Left: info + overview */}
+        {/* Left: overview + levels + lessons */}
         <div className="md:col-span-2 space-y-5">
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <p className="text-[11px] font-bold text-[#22c55e] tracking-widest uppercase mb-1">
-              {course.category}
-            </p>
-            <h1 className="text-xl font-bold text-gray-900">{course.title}</h1>
 
-            <div className="mt-4 flex items-center gap-5 text-sm text-gray-500">
-              <span className="flex items-center gap-1.5">
-                <IcBook />{course.curriculum.length} Lessons
+          {/* Overview + overall progress */}
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className="flex items-center gap-3 mb-1">
+              <span className="flex items-center gap-1.5 text-sm text-gray-500">
+                <IcBook />{course.levels.reduce((s, l) => s + l.lessons.length, 0)} lessons
               </span>
-              <span className="flex items-center gap-1.5">
-                <IcClock />{course.totalTime} Total
+              <span className="text-gray-200">·</span>
+              <span className="flex items-center gap-1.5 text-sm text-gray-500">
+                <IcClock />{course.totalTime}
               </span>
+              <span className="text-gray-200">·</span>
+              <span className="text-sm text-gray-500">3 levels</span>
             </div>
 
-            {/* Progress */}
-            <div className="mt-5">
+            {/* Overall progress */}
+            <div className="mt-4">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs text-gray-500">Your Progress</span>
+                <span className="text-xs font-medium text-gray-500">Overall Progress</span>
                 <span className="text-xs font-bold text-[#22c55e]">{pct}%</span>
               </div>
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -305,15 +464,85 @@ function DetailScreen({
                   style={{ backgroundColor: '#22c55e' }}
                   initial={{ width: 0 }}
                   animate={{ width: `${pct}%` }}
-                  transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
                 />
               </div>
             </div>
 
-            <div className="mt-6 h-px bg-gray-100" />
+            <div className="mt-5 h-px bg-gray-100" />
+            <p className="mt-5 text-sm text-gray-600 leading-relaxed">{course.overview}</p>
+          </div>
 
-            <h2 className="mt-6 font-bold text-gray-900">Course Overview</h2>
-            <p className="mt-2 text-sm text-gray-600 leading-relaxed">{course.overview}</p>
+          {/* Level tabs + lessons */}
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            {/* Tab row */}
+            <div className="flex border-b border-gray-100">
+              {course.levels.map(level => {
+                const lPct = levelProgress(course, level.id, completed);
+                const isActive = level.id === activeLevel;
+                return (
+                  <button
+                    key={level.id}
+                    type="button"
+                    onClick={() => onSetActiveLevel(level.id)}
+                    className={`flex-1 py-3.5 px-3 text-sm font-semibold transition-colors relative ${
+                      isActive ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'
+                    }`}
+                  >
+                    <span
+                      className="inline-block text-xs font-bold px-2 py-0.5 rounded-full mr-1.5"
+                      style={{
+                        backgroundColor: isActive ? LEVEL_COLORS[level.id].bg : '#f3f4f6',
+                        color: isActive ? LEVEL_COLORS[level.id].text : '#9ca3af',
+                      }}
+                    >
+                      {level.label}
+                    </span>
+                    {lPct > 0 && (
+                      <span className="text-xs" style={{ color: LEVEL_COLORS[level.id].text }}>{lPct}%</span>
+                    )}
+                    {isActive && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: LEVEL_COLORS[level.id].text }} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Lesson list */}
+            <div>
+              {activeLevelData.lessons.map((lesson, i) => {
+                const key = lessonKey(course.id, activeLevel, lesson.id);
+                const isDone = completed.has(key);
+                return (
+                  <div key={lesson.id}>
+                    {i > 0 && <div className="h-px bg-gray-50 mx-5" />}
+                    <button
+                      type="button"
+                      onClick={() => onOpenLesson(lesson, activeLevelData)}
+                      className="w-full flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors text-left"
+                    >
+                      {isDone ? (
+                        <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                          <IcCheck size={14} />
+                        </div>
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                          <IcPlay size={13} color="#9ca3af" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium leading-snug ${isDone ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+                          {lesson.title}
+                        </p>
+                      </div>
+                      <span className="text-xs text-gray-400 shrink-0">{lesson.duration}</span>
+                      <IcChevronRight />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -324,25 +553,18 @@ function DetailScreen({
 
           <button
             type="button"
-            onClick={onViewCurriculum}
-            className="mt-5 w-full rounded-xl py-3 text-sm font-bold text-white bg-[#22c55e] hover:opacity-90 active:opacity-80 transition-opacity"
+            className="mt-5 w-full rounded-xl py-3 text-sm font-bold text-white hover:opacity-90 active:opacity-80 transition-opacity"
+            style={{ backgroundColor: course.color }}
           >
             Enroll & Start Learning
-          </button>
-          <button
-            type="button"
-            onClick={onViewCurriculum}
-            className="mt-2 w-full rounded-xl py-3 text-sm font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors"
-          >
-            View Curriculum
           </button>
 
           <ul className="mt-5 space-y-2.5 text-sm text-gray-600">
             {[
-              { icon: <IcBook />,         text: `${course.curriculum.length} lessons` },
-              { icon: <IcClock />,        text: `${course.totalTime} of content` },
-              { icon: <IcInfinity />,     text: 'Lifetime access' },
-              { icon: <IcCertificate />,  text: 'Certificate of completion' },
+              { icon: <IcBook />,        text: `${course.levels.reduce((s, l) => s + l.lessons.length, 0)} lessons across 3 levels` },
+              { icon: <IcClock />,       text: `${course.totalTime} of content` },
+              { icon: <IcInfinity />,    text: 'Lifetime access' },
+              { icon: <IcCertificate />, text: 'Certificate of completion' },
             ].map(({ icon, text }) => (
               <li key={text} className="flex items-center gap-2.5">
                 <span className="text-[#22c55e]">{icon}</span>
@@ -356,14 +578,32 @@ function DetailScreen({
   );
 }
 
-// ── Screen 3: Curriculum ───────────────────────────────────────────────────
+// ── Screen 3: Lesson View ──────────────────────────────────────────────────
 
-function CurriculumScreen({ course, onBack }: { course: Course; onBack: () => void }) {
-  const completedCount = course.curriculum.filter((l) => l.status === 'completed').length;
-  const pct = Math.round((completedCount / course.curriculum.length) * 100);
+function LessonView({
+  course,
+  level,
+  lesson,
+  completed,
+  onMarkComplete,
+  onBack,
+}: {
+  course: Course;
+  level: Level;
+  lesson: Lesson;
+  completed: Set<string>;
+  onMarkComplete: () => void;
+  onBack: () => void;
+}) {
+  const isDone = completed.has(lessonKey(course.id, level.id, lesson.id));
+
+  // index within level
+  const lessonIndex = level.lessons.findIndex(l => l.id === lesson.id);
+  const levelPct = levelProgress(course, level.id, completed);
+  const { bg, text: textColor } = LEVEL_COLORS[level.id];
 
   return (
-    <div>
+    <div className="max-w-3xl">
       {/* Back */}
       <button
         type="button"
@@ -374,63 +614,74 @@ function CurriculumScreen({ course, onBack }: { course: Course; onBack: () => vo
         Back to course
       </button>
 
-      {/* Progress card */}
-      <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-bold text-gray-900">{course.title}</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Your Progress: {pct}%</p>
-          </div>
-          <span className="text-lg font-bold text-[#22c55e]">{pct}%</span>
-        </div>
-        <div className="mt-4 h-2 bg-gray-100 rounded-full overflow-hidden">
-          <motion.div
-            className="h-full rounded-full"
-            style={{ backgroundColor: '#22c55e' }}
-            initial={{ width: 0 }}
-            animate={{ width: `${pct}%` }}
-            transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
-          />
-        </div>
+      {/* Level + position badge */}
+      <div className="flex items-center gap-2 mb-3">
+        <span
+          className="text-xs font-bold px-2.5 py-1 rounded-full"
+          style={{ backgroundColor: bg, color: textColor }}
+        >
+          {level.label}
+        </span>
+        <span className="text-xs text-gray-400">
+          Lesson {lessonIndex + 1} of {level.lessons.length}
+        </span>
       </div>
 
-      {/* Lesson list */}
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-        {course.curriculum.map((lesson, i) => (
-          <div key={lesson.id}>
-            {i > 0 && <div className="h-px bg-gray-100 mx-5" />}
-            <div
-              className={`flex items-center gap-4 px-5 py-4 transition-colors ${
-                lesson.status === 'current'
-                  ? 'border-l-[3px] border-[#22c55e] bg-green-50/60 pl-[17px]'
-                  : lesson.status === 'completed'
-                  ? 'hover:bg-gray-50'
-                  : 'opacity-60'
-              }`}
-            >
-              {lesson.status === 'completed' ? (
-                <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                  <IcCheck size={14} />
-                </div>
-              ) : (
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: lesson.status === 'current' ? '#22c55e' : '#f3f4f6' }}
-                >
-                  <IcPlay size={14} color={lesson.status === 'current' ? 'white' : '#9ca3af'} />
-                </div>
-              )}
+      {/* Video placeholder */}
+      <div
+        className="w-full rounded-2xl flex flex-col items-center justify-center gap-3 mb-5"
+        style={{ height: 340, background: 'linear-gradient(145deg, #1e293b 0%, #0f172a 100%)' }}
+      >
+        <div
+          className="w-16 h-16 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
+        >
+          <IcPlay size={28} color="rgba(255,255,255,0.6)" />
+        </div>
+        <p className="text-white/40 text-sm">Video coming soon</p>
+      </div>
 
-              <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium leading-snug ${lesson.status === 'locked' ? 'text-gray-400' : 'text-gray-900'}`}>
-                  {lesson.title}
-                </p>
-              </div>
+      {/* Lesson card */}
+      <div className="bg-white rounded-2xl shadow-sm p-6">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">
+          {course.title} · {level.label}
+        </p>
+        <h2 className="text-xl font-bold text-gray-900">{lesson.title}</h2>
+        <p className="text-sm text-gray-400 mt-1 flex items-center gap-1.5">
+          <IcClock /> {lesson.duration}
+        </p>
 
-              <span className="text-xs text-gray-400 shrink-0 tabular-nums">{lesson.duration}</span>
-            </div>
+        {/* Level progress mini bar */}
+        <div className="mt-5">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs text-gray-400">{level.label} progress</span>
+            <span className="text-xs font-bold" style={{ color: textColor }}>{levelPct}%</span>
           </div>
-        ))}
+          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${levelPct}%`, backgroundColor: textColor }}
+            />
+          </div>
+        </div>
+
+        <div className="mt-5">
+          {isDone ? (
+            <div className="flex items-center gap-2 text-sm font-semibold text-[#22c55e]">
+              <IcCheck size={16} />
+              Lesson completed
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={onMarkComplete}
+              className="w-full rounded-xl py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 active:opacity-80"
+              style={{ backgroundColor: course.color }}
+            >
+              Mark as Complete
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -441,10 +692,18 @@ function CurriculumScreen({ course, onBack }: { course: Course; onBack: () => vo
 export default function LearningHub() {
   const [currentView, setCurrentView] = useState<CurrentView>('hub');
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [selectedLesson, setSelectedLesson] = useState<CurriculumItem | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<{ lesson: Lesson; level: Level } | null>(null);
+  const [activeLevel, setActiveLevel] = useState<LevelId>('beginner');
+  const [completed, setCompleted] = useState<Set<string>>(loadCompleted);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- state contract for future lesson-player
-  void setSelectedLesson;
+  function markComplete(courseId: number, levelId: LevelId, lessonId: number) {
+    setCompleted(prev => {
+      const next = new Set(prev);
+      next.add(lessonKey(courseId, levelId, lessonId));
+      saveCompleted(next);
+      return next;
+    });
+  }
 
   return (
     <SubpageShell>
@@ -452,8 +711,10 @@ export default function LearningHub() {
         {currentView === 'hub' && (
           <motion.div key="hub" variants={fade} initial="enter" animate="center" exit="exit">
             <HubScreen
+              completed={completed}
               onEnroll={(course) => {
                 setSelectedCourse(course);
+                setActiveLevel('beginner');
                 setCurrentView('courseDetail');
               }}
             />
@@ -464,19 +725,31 @@ export default function LearningHub() {
           <motion.div key="courseDetail" variants={fade} initial="enter" animate="center" exit="exit">
             <DetailScreen
               course={selectedCourse}
+              completed={completed}
+              activeLevel={activeLevel}
+              onSetActiveLevel={setActiveLevel}
               onBack={() => {
                 setSelectedCourse(null);
                 setCurrentView('hub');
               }}
-              onViewCurriculum={() => setCurrentView('curriculum')}
+              onOpenLesson={(lesson, level) => {
+                setSelectedLesson({ lesson, level });
+                setCurrentView('lessonView');
+              }}
             />
           </motion.div>
         )}
 
-        {currentView === 'curriculum' && selectedCourse && (
-          <motion.div key="curriculum" variants={fade} initial="enter" animate="center" exit="exit">
-            <CurriculumScreen
+        {currentView === 'lessonView' && selectedCourse && selectedLesson && (
+          <motion.div key="lessonView" variants={fade} initial="enter" animate="center" exit="exit">
+            <LessonView
               course={selectedCourse}
+              level={selectedLesson.level}
+              lesson={selectedLesson.lesson}
+              completed={completed}
+              onMarkComplete={() =>
+                markComplete(selectedCourse.id, selectedLesson.level.id, selectedLesson.lesson.id)
+              }
               onBack={() => setCurrentView('courseDetail')}
             />
           </motion.div>
