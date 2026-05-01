@@ -11,6 +11,7 @@ interface Lesson {
   id: number;
   title: string;
   duration: string;
+  videoId: string;
 }
 
 interface Level {
@@ -85,30 +86,30 @@ const COURSES: Course[] = [
         id: 'beginner',
         label: 'Beginner',
         lessons: [
-          { id: 1, title: 'What is Venture Capital?', duration: '15m' },
-          { id: 2, title: 'What is a Startup?', duration: '20m' },
-          { id: 3, title: 'Equity 101', duration: '25m' },
-          { id: 4, title: 'Cap Tables Explained', duration: '20m' },
+          { id: 1, title: 'What is Venture Capital?', duration: '15m', videoId: '1qy1GX6gugw' },
+          { id: 2, title: 'What is a Startup?', duration: '20m', videoId: 'gA2lb0W7Qi8' },
+          { id: 3, title: 'Equity 101', duration: '25m', videoId: 'ji3H1t9ZqvQ' },
+          { id: 4, title: 'Cap Tables Explained', duration: '20m', videoId: 'W_r4Uq4E8GE' },
         ],
       },
       {
         id: 'intermediate',
         label: 'Intermediate',
         lessons: [
-          { id: 1, title: 'Deal Flow & Sourcing', duration: '35m' },
-          { id: 2, title: 'Due Diligence Process', duration: '45m' },
-          { id: 3, title: 'Term Sheets & Valuations', duration: '50m' },
-          { id: 4, title: 'Portfolio Construction', duration: '40m' },
+          { id: 1, title: 'Deal Flow & Sourcing', duration: '35m', videoId: 'I6uxOktTRE0' },
+          { id: 2, title: 'Due Diligence Process', duration: '45m', videoId: 'O69c82yhSr0' },
+          { id: 3, title: 'Term Sheets & Valuations', duration: '50m', videoId: 'YV-ddY5AN50' },
+          { id: 4, title: 'Portfolio Construction', duration: '40m', videoId: 'JUr6xa7-a4I' },
         ],
       },
       {
         id: 'advanced',
         label: 'Advanced',
         lessons: [
-          { id: 1, title: 'Exit Strategies & M&A', duration: '45m' },
-          { id: 2, title: 'LP/GP Dynamics', duration: '40m' },
-          { id: 3, title: 'Carry & Fund Economics', duration: '35m' },
-          { id: 4, title: 'Secondary Markets', duration: '35m' },
+          { id: 1, title: 'Exit Strategies & M&A', duration: '45m', videoId: 'Xt6nrONHVbQ' },
+          { id: 2, title: 'LP/GP Dynamics', duration: '40m', videoId: 'kFtqLRfWXt0' },
+          { id: 3, title: 'Carry & Fund Economics', duration: '35m', videoId: 'n1bwGuW7Nqk' },
+          { id: 4, title: 'Secondary Markets', duration: '35m', videoId: 'rHOo2Utr4Xc' },
         ],
       },
     ],
@@ -127,30 +128,30 @@ const COURSES: Course[] = [
         id: 'beginner',
         label: 'Beginner',
         lessons: [
-          { id: 1, title: 'Types of Properties', duration: '20m' },
-          { id: 2, title: 'Understanding Markets', duration: '25m' },
-          { id: 3, title: 'Basic Financing Concepts', duration: '30m' },
-          { id: 4, title: 'ROI Basics', duration: '20m' },
+          { id: 1, title: 'Types of Properties', duration: '20m', videoId: 'OKuSNm3apCs' },
+          { id: 2, title: 'Understanding Markets', duration: '25m', videoId: 'shJd65HpqDg' },
+          { id: 3, title: 'Basic Financing Concepts', duration: '30m', videoId: 'gagJf0XIkKw' },
+          { id: 4, title: 'ROI Basics', duration: '20m', videoId: 'nhLhEwYSvsg' },
         ],
       },
       {
         id: 'intermediate',
         label: 'Intermediate',
         lessons: [
-          { id: 1, title: 'Rental Yield Analysis', duration: '40m' },
-          { id: 2, title: 'Leveraged Purchases', duration: '45m' },
-          { id: 3, title: 'Commercial vs Residential', duration: '35m' },
-          { id: 4, title: 'Market Deep Dive', duration: '50m' },
+          { id: 1, title: 'Rental Yield Analysis', duration: '40m', videoId: '4EyeoYQlxeA' },
+          { id: 2, title: 'Leveraged Purchases', duration: '45m', videoId: 'HLQvI3SNwvk' },
+          { id: 3, title: 'Commercial vs Residential', duration: '35m', videoId: 'ZbtIGBtRxxQ' },
+          { id: 4, title: 'Market Deep Dive', duration: '50m', videoId: 'x8D7raX1O5w' },
         ],
       },
       {
         id: 'advanced',
         label: 'Advanced',
         lessons: [
-          { id: 1, title: 'REITs & Property Funds', duration: '45m' },
-          { id: 2, title: 'Tax Optimization Strategies', duration: '40m' },
-          { id: 3, title: 'Portfolio Diversification', duration: '35m' },
-          { id: 4, title: 'Risk Mitigation', duration: '45m' },
+          { id: 1, title: 'REITs & Property Funds', duration: '45m', videoId: 'KwhfiIzx96g' },
+          { id: 2, title: 'Tax Optimization Strategies', duration: '40m', videoId: '0yNYqWLmo5I' },
+          { id: 3, title: 'Portfolio Diversification', duration: '35m', videoId: 'fcC6m-0dguE' },
+          { id: 4, title: 'Risk Mitigation', duration: '45m', videoId: '-2vJgt2lLD8' },
         ],
       },
     ],
@@ -169,30 +170,30 @@ const COURSES: Course[] = [
         id: 'beginner',
         label: 'Beginner',
         lessons: [
-          { id: 1, title: 'Stock Market Basics', duration: '20m' },
-          { id: 2, title: 'Bonds & Fixed Income', duration: '25m' },
-          { id: 3, title: 'ETFs & Index Funds', duration: '20m' },
-          { id: 4, title: 'Risk vs Return', duration: '20m' },
+          { id: 1, title: 'Stock Market Basics', duration: '20m', videoId: 'bb6_M_srMBk' },
+          { id: 2, title: 'Bonds & Fixed Income', duration: '25m', videoId: 'BgEZn-HJNb4' },
+          { id: 3, title: 'ETFs & Index Funds', duration: '20m', videoId: 'hE2NsJGpEq4' },
+          { id: 4, title: 'Risk vs Return', duration: '20m', videoId: 'ktpeNzqEVCs' },
         ],
       },
       {
         id: 'intermediate',
         label: 'Intermediate',
         lessons: [
-          { id: 1, title: 'Portfolio Theory', duration: '40m' },
-          { id: 2, title: 'Asset Allocation', duration: '45m' },
-          { id: 3, title: 'Technical Analysis Basics', duration: '50m' },
-          { id: 4, title: 'Understanding Market Cycles', duration: '40m' },
+          { id: 1, title: 'Portfolio Theory', duration: '40m', videoId: 'YtrMGKLRtwA' },
+          { id: 2, title: 'Asset Allocation', duration: '45m', videoId: 'QTgvWPAihIc' },
+          { id: 3, title: 'Technical Analysis Basics', duration: '50m', videoId: 'W8OjEjASfBo' },
+          { id: 4, title: 'Understanding Market Cycles', duration: '40m', videoId: '9YdPQizV0xQ' },
         ],
       },
       {
         id: 'advanced',
         label: 'Advanced',
         lessons: [
-          { id: 1, title: 'Options & Derivatives', duration: '55m' },
-          { id: 2, title: 'Factor Investing', duration: '45m' },
-          { id: 3, title: 'Macro Economics & Markets', duration: '40m' },
-          { id: 4, title: 'Alternative Investments', duration: '45m' },
+          { id: 1, title: 'Options & Derivatives', duration: '55m', videoId: 'N4m-2Ng__Eg' },
+          { id: 2, title: 'Factor Investing', duration: '45m', videoId: 'balyUmSLq8g' },
+          { id: 3, title: 'Macro Economics & Markets', duration: '40m', videoId: 'PlZNbY45iPk' },
+          { id: 4, title: 'Alternative Investments', duration: '45m', videoId: 'nrkLMCWnnYU' },
         ],
       },
     ],
@@ -627,18 +628,15 @@ function LessonView({
         </span>
       </div>
 
-      {/* Video placeholder */}
-      <div
-        className="w-full rounded-2xl flex flex-col items-center justify-center gap-3 mb-5"
-        style={{ height: 340, background: 'linear-gradient(145deg, #1e293b 0%, #0f172a 100%)' }}
-      >
-        <div
-          className="w-16 h-16 rounded-full flex items-center justify-center"
-          style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
-        >
-          <IcPlay size={28} color="rgba(255,255,255,0.6)" />
-        </div>
-        <p className="text-white/40 text-sm">Video coming soon</p>
+      {/* YouTube embed */}
+      <div className="w-full rounded-2xl overflow-hidden mb-5" style={{ aspectRatio: '16/9' }}>
+        <iframe
+          src={`https://www.youtube.com/embed/${lesson.videoId}?rel=0&modestbranding=1`}
+          title={lesson.title}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="w-full h-full border-0"
+        />
       </div>
 
       {/* Lesson card */}
