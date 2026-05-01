@@ -349,7 +349,7 @@ function DetailScreen({
         <div className="mt-3 flex items-center gap-5 text-sm text-gray-500">
           <span className="flex items-center gap-1.5">
             <IcBook />
-            {course.lessons} Lessons
+            {course.curriculum.length} Lessons
           </span>
           <span className="flex items-center gap-1.5">
             <IcClock />
@@ -524,8 +524,8 @@ export default function LearningHub() {
     goTo('hub', false);
   }
 
-  // selectedLesson is part of the state contract for future lesson-player integration
-  void selectedLesson;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- required by state contract, wired in future lesson-player task
+  void setSelectedLesson;
 
   return (
     <div
