@@ -75,15 +75,15 @@ export default function SmartAssistant() {
     const amt = Number(investAmount);
     if (!a || !amt || amt <= 0) return [];
     const labels: Record<string, string> = {
-      stocks: 'Stocks',
-      baskets: 'Baskets',
-      bonds: 'Bonds',
-      gold: 'Gold',
+      stocks: t('reports_bucket_stocks'),
+      baskets: t('reports_bucket_baskets'),
+      bonds: t('reports_bucket_bonds'),
+      gold: t('reports_bucket_gold'),
     };
     return (['stocks', 'baskets', 'bonds', 'gold'] as const)
       .filter((k) => a[k] > 0)
       .map((k) => ({ key: k, label: labels[k], egp: (a[k] / 100) * amt }));
-  }, [alloc, wizardAlloc, investAmount, mode]);
+  }, [alloc, wizardAlloc, investAmount, mode, t]);
 
   const overBalance = !!user && Number(investAmount) > 0 && Number(investAmount) > user.wallet_balance;
 
