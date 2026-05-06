@@ -291,7 +291,7 @@ export default function Dashboard() {
                       <div className="text-right shrink-0">
                         <p
                           className={`text-sm font-semibold ${
-                            isDeposit ? 'text-green-600' : 'text-red-500'
+                            isDeposit ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'
                           }`}
                         >
                           {isDeposit ? '+' : '-'}
