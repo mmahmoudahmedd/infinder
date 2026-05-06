@@ -109,6 +109,7 @@ const en = {
   invest_learn_more: 'Learn more',
   invest_invest_btn: 'Invest',
   invest_insufficient: 'Insufficient balance',
+  invest_all_btn: 'Invest all',
   invest_risk_title: 'Understanding risk & return',
   invest_risk_low_text: 'Low risk — stable returns with minimal chance of losing money. Good for short horizons.',
   invest_risk_medium_text: 'Medium risk — balanced approach with moderate ups and downs.',
@@ -128,6 +129,7 @@ const en = {
   common_invest_confirm: 'Confirm & invest',
   common_invest_error: 'Enter a valid amount.',
   common_invest_failed: 'Could not invest.',
+  invest_breakdown_title: 'Allocation breakdown',
 
   // Chat mode
   chat_title: 'INFINDER Smart Assistant',
@@ -341,6 +343,25 @@ const en = {
   kyc_progress_label: 'Verification progress',
   kyc_processing: 'Processing…',
   kyc_go_dashboard: 'Go to dashboard',
+
+  // Transactions
+  tx_title: 'Recent Transactions',
+  tx_show_all: 'Show all',
+  tx_show_less: 'Show less',
+  tx_empty: 'No transactions yet — fund your wallet to get started.',
+  tx_deposit: 'Deposit',
+  tx_withdrawal: 'Withdrawal',
+  tx_investment: 'Investment',
+  tx_status_completed: 'Completed',
+  tx_status_pending: 'Pending',
+
+  // Performance
+  perf_title: 'Your Performance',
+  perf_total_invested: 'Total invested',
+  perf_current_value: 'Current value',
+  perf_return: 'Return',
+  perf_category: 'Category',
+  perf_invested: 'Invested',
 } as const;
 
 export type TranslationKey = keyof typeof en;

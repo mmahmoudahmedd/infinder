@@ -111,6 +111,7 @@ const ar: Record<TranslationKey, string> = {
   invest_learn_more: 'معرفة المزيد',
   invest_invest_btn: 'استثمر',
   invest_insufficient: 'رصيد غير كافٍ',
+  invest_all_btn: 'استثمر الكل',
   invest_risk_title: 'فهم المخاطر والعوائد',
   invest_risk_low_text: 'مخاطر منخفضة — عوائد مستقرة مع احتمال ضئيل لخسارة الأموال. مناسب للآفاق القصيرة.',
   invest_risk_medium_text: 'مخاطر متوسطة — نهج متوازن مع تذبذب معتدل.',
@@ -130,6 +131,7 @@ const ar: Record<TranslationKey, string> = {
   common_invest_confirm: 'تأكيد والاستثمار',
   common_invest_error: 'أدخل مبلغًا صالحًا.',
   common_invest_failed: 'تعذر الاستثمار.',
+  invest_breakdown_title: 'توزيع الاستثمار',
 
   // Chat mode
   chat_title: 'المساعد الذكي لـ INFINDER',
@@ -343,6 +345,25 @@ const ar: Record<TranslationKey, string> = {
   kyc_progress_label: 'تقدم التحقق',
   kyc_processing: 'جارٍ المعالجة…',
   kyc_go_dashboard: 'الذهاب إلى لوحة التحكم',
+
+  // Transactions
+  tx_title: 'المعاملات الأخيرة',
+  tx_show_all: 'عرض الكل',
+  tx_show_less: 'عرض أقل',
+  tx_empty: 'لا توجد معاملات بعد — أضف أموالاً إلى محفظتك للبدء.',
+  tx_deposit: 'إيداع',
+  tx_withdrawal: 'سحب',
+  tx_investment: 'استثمار',
+  tx_status_completed: 'مكتمل',
+  tx_status_pending: 'معلق',
+
+  // Performance
+  perf_title: 'أداء محفظتك',
+  perf_total_invested: 'إجمالي الاستثمار',
+  perf_current_value: 'القيمة الحالية',
+  perf_return: 'العائد',
+  perf_category: 'الفئة',
+  perf_invested: 'المستثمر',
 };
 
 export default ar;
