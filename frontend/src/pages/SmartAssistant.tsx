@@ -70,6 +70,23 @@ export default function SmartAssistant() {
     ].filter((d) => d.value > 0);
   }, [alloc, wizardAlloc, mode]);
 
+  const breakdownRows = useMemo(() => {
+    const a = mode === 'chat' ? alloc : wizardAlloc;
+    const amt = Number(investAmount);
+    if (!a || !amt || amt <= 0) return [];
+    const labels: Record<string, string> = {
+      stocks: 'Stocks',
+      baskets: 'Baskets',
+      bonds: 'Bonds',
+      gold: 'Gold',
+    };
+    return (['stocks', 'baskets', 'bonds', 'gold'] as const)
+      .filter((k) => a[k] > 0)
+      .map((k) => ({ key: k, label: labels[k], egp: (a[k] / 100) * amt }));
+  }, [alloc, wizardAlloc, investAmount, mode]);
+
+  const overBalance = !!user && Number(investAmount) > 0 && Number(investAmount) > user.wallet_balance;
+
   async function sendChat() {
     const text = input.trim();
     if (!text) return;
@@ -276,9 +293,35 @@ export default function SmartAssistant() {
                     onChange={(e) => setInvestAmount(e.target.value)}
                     inputMode="decimal"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setInvestAmount(String(user.wallet_balance))}
+                    className="px-3 text-xs font-semibold text-infinder-black bg-infinder-lime/80 hover:bg-infinder-lime transition shrink-0"
+                  >
+                    {t('invest_all_btn')}
+                  </button>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Available: EGP {user.wallet_balance.toFixed(2)}</p>
-                <button type="button" onClick={confirmInvest} className="mt-4 w-full rounded-xl bg-infinder-lime text-infinder-black font-semibold py-3">
+                {overBalance && (
+                  <p className="text-xs text-red-500 mt-1">{t('invest_insufficient')}</p>
+                )}
+                {breakdownRows.length > 0 && (
+                  <div className="mt-3 rounded-xl bg-gray-50 px-3 py-2 space-y-1">
+                    <p className="text-xs font-medium text-gray-500 mb-1">{t('invest_breakdown_title')}</p>
+                    {breakdownRows.map((r) => (
+                      <div key={r.key} className="flex justify-between text-xs text-gray-700">
+                        <span>{r.label}</span>
+                        <span className="font-medium">EGP {r.egp.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={confirmInvest}
+                  disabled={overBalance || !investAmount || Number(investAmount) <= 0}
+                  className="mt-4 w-full rounded-xl bg-infinder-lime text-infinder-black font-semibold py-3 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
                   {t('common_invest_confirm')}
                 </button>
                 <button type="button" onClick={resetChat} className="mt-3 w-full rounded-xl border border-gray-300 py-2 text-sm">
@@ -434,10 +477,20 @@ export default function SmartAssistant() {
                     inputMode="decimal"
                     autoFocus
                   />
+                  <button
+                    type="button"
+                    onClick={() => setInvestAmount(String(user.wallet_balance))}
+                    className="px-3 text-xs font-semibold text-infinder-black bg-infinder-lime/80 hover:bg-infinder-lime transition shrink-0"
+                  >
+                    {t('invest_all_btn')}
+                  </button>
                 </div>
+                {overBalance && (
+                  <p className="text-xs text-red-500 mt-1">{t('invest_insufficient')}</p>
+                )}
                 <button
                   type="button"
-                  disabled={!investAmount || Number(investAmount) <= 0}
+                  disabled={!investAmount || Number(investAmount) <= 0 || overBalance}
                   onClick={() => setWizardStep(5)}
                   className="mt-4 w-full rounded-xl bg-infinder-lime text-infinder-black font-semibold py-3 disabled:opacity-40 transition-opacity"
                 >
