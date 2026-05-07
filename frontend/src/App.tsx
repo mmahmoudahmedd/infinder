@@ -14,6 +14,7 @@ import LearningModules from './pages/LearningModules';
 import RewardsDashboard from './pages/RewardsDashboard';
 import AdminPanel from './pages/AdminPanel';
 import ReportsPage from './pages/ReportsPage';
+import LearningHub from './pages/LearningHub';
 
 function HomeGate() {
   const { token, loading } = useAuth();
@@ -88,7 +89,7 @@ export default function App() {
         path="/learn"
         element={
           <ProtectedRoute>
-            <LearningModules />
+            <LearningHub />
           </ProtectedRoute>
         }
       />
@@ -113,6 +114,14 @@ export default function App() {
         element={
           <ProtectedRoute admin>
             <AdminPanel />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/learn-hub"
+        element={
+          <ProtectedRoute>
+            <LearningHub />
           </ProtectedRoute>
         }
       />

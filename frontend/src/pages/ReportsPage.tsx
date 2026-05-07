@@ -64,25 +64,25 @@ export default function ReportsPage() {
     <SubpageShell>
       <div className="max-w-6xl mx-auto">
         <div className="mb-6">
-          <p className="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-1">INFINDER</p>
-          <h1 className="text-2xl md:text-3xl font-bold text-infinder-black">{t('reports_title')}</h1>
-          <p className="text-gray-600 text-sm mt-1">{t('reports_sub')}</p>
+          <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 tracking-widest uppercase mb-1">INFINDER</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-infinder-black dark:text-white">{t('reports_title')}</h1>
+          <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">{t('reports_sub')}</p>
         </div>
 
         {loading ? (
           <div className="mt-10 flex justify-center">
-            <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-infinder-green animate-spin" />
+            <div className="w-8 h-8 rounded-full border-2 border-gray-200 dark:border-gray-700 border-t-infinder-green animate-spin" />
           </div>
         ) : (
           <>
             <section className="mt-10">
               <div>
-                <p className="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-1">INFINDER</p>
-                <h2 className="text-lg font-semibold">{t('reports_allocation_title')}</h2>
-                <p className="text-sm text-gray-600 mt-1">{t('reports_allocation_sub')}</p>
+                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 tracking-widest uppercase mb-1">INFINDER</p>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('reports_allocation_title')}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('reports_allocation_sub')}</p>
               </div>
               {holdings && holdings.total_invested_egp > 0 ? (
-                <div className="mt-4 h-64 rounded-2xl border border-gray-200 bg-white p-4">
+                <div className="mt-4 h-64 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-4">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={holdings.bucket_breakdown.map((b) => ({
@@ -90,16 +90,19 @@ export default function ReportsPage() {
                         amount: b.amount_egp,
                       }))}
                     >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip formatter={(v: number) => [`EGP ${v.toFixed(2)}`, t('reports_amount')]} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#9ca3af' }} />
+                      <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} />
+                      <Tooltip
+                        contentStyle={{ background: '#1a1a1a', border: '1px solid #374151', borderRadius: 8 }}
+                        formatter={(v: number) => [`EGP ${v.toFixed(2)}`, t('reports_amount')]}
+                      />
                       <Bar dataKey="amount" fill="#76D74F" radius={[6, 6, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <p className="mt-4 text-sm text-gray-500 rounded-xl border border-dashed border-gray-300 p-6">
+                <p className="mt-4 text-sm text-gray-500 dark:text-gray-400 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 p-6">
                   {t('reports_no_investments')}
                 </p>
               )}
@@ -107,34 +110,35 @@ export default function ReportsPage() {
 
             <section className="mt-12 space-y-10">
               <div>
-                <p className="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-1">INFINDER</p>
-                <h2 className="text-lg font-semibold">{t('reports_benchmarks_title')}</h2>
-                <p className="text-sm text-gray-600">{t('reports_benchmarks_sub')}</p>
+                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 tracking-widest uppercase mb-1">INFINDER</p>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('reports_benchmarks_title')}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('reports_benchmarks_sub')}</p>
               </div>
               {catalog.map((row) => (
-                <div key={row.id} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div key={row.id} className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-5 shadow-sm dark:shadow-none">
                   <div className="flex flex-wrap justify-between gap-2 items-start">
                     <div>
-                      <h3 className="font-semibold text-lg">{row.title}</h3>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mt-1">{row.category}</p>
+                      <h3 className="font-semibold text-lg text-gray-900 dark:text-white">{row.title}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-1">{row.category}</p>
                     </div>
                     <div className="text-right text-sm">
                       <p>
-                        <span className="text-gray-500">{t('reports_mtd')}</span>{' '}
-                        <span className={`font-semibold ${row.mtd_pct >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                        <span className="text-gray-500 dark:text-gray-400">{t('reports_mtd')}</span>{' '}
+                        <span className={`font-semibold ${row.mtd_pct >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
                           {row.mtd_pct >= 0 ? '+' : ''}{row.mtd_pct}%
                         </span>
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">{t('reports_volatility')} {row.volatility_label}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('reports_volatility')} {row.volatility_label}</p>
                     </div>
                   </div>
                   <div className="h-56 mt-4">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={row.series_30d}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" tick={{ fontSize: 9 }} tickFormatter={(d) => d.slice(5)} />
-                        <YAxis domain={['auto', 'auto']} tick={{ fontSize: 10 }} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                        <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#9ca3af' }} tickFormatter={(d) => d.slice(5)} />
+                        <YAxis domain={['auto', 'auto']} tick={{ fontSize: 10, fill: '#9ca3af' }} />
                         <Tooltip
+                          contentStyle={{ background: '#1a1a1a', border: '1px solid #374151', borderRadius: 8 }}
                           labelFormatter={(l) => `${t('reports_date_label')} ${l}`}
                           formatter={(v: number) => [v.toFixed(2), 'Index']}
                         />

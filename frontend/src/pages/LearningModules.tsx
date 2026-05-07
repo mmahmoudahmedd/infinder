@@ -87,10 +87,10 @@ export default function LearningModules() {
   if (!moduleId) {
     return (
       <SubpageShell>
-        <h1 className="text-3xl font-bold">{t('learn_title')}</h1>
-        <p className="text-gray-600 text-sm mt-1">{t('learn_sub')}</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('learn_title')}</h1>
+        <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">{t('learn_sub')}</p>
         {loading ? (
-          <p className="mt-8 text-gray-500 text-sm">{t('common_loading')}</p>
+          <p className="mt-8 text-gray-500 dark:text-gray-400 text-sm">{t('common_loading')}</p>
         ) : (
           <div className="mt-8 grid md:grid-cols-2 gap-4">
             {modules.map((mod, i) => (
@@ -102,24 +102,24 @@ export default function LearningModules() {
               >
                 <Link
                   to={`/learn/${mod.slug}`}
-                  className="block rounded-2xl border border-gray-200 bg-white p-5 hover:shadow-md hover:border-infinder-lime/50 transition hover:-translate-y-0.5"
+                  className="block rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-5 hover:shadow-md hover:border-infinder-lime/50 transition hover:-translate-y-0.5"
                 >
                   <div className="flex justify-between items-start gap-2">
                     <div>
                       <span className={`text-xs rounded-full px-2 py-0.5 font-medium ${
-                        mod.difficulty === 'beginner' ? 'bg-blue-100 text-blue-800' :
-                        mod.difficulty === 'intermediate' ? 'bg-amber-100 text-amber-800' :
-                        'bg-red-100 text-red-800'
+                        mod.difficulty === 'beginner' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
+                        mod.difficulty === 'intermediate' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
+                        'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                       }`}>{mod.difficulty}</span>
-                      <h2 className="text-lg font-semibold mt-2">{mod.title}</h2>
-                      <p className="text-sm text-gray-600 mt-2 line-clamp-2">{mod.description}</p>
+                      <h2 className="text-lg font-semibold mt-2 text-gray-900 dark:text-white">{mod.title}</h2>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 line-clamp-2">{mod.description}</p>
                     </div>
                     <span className="text-2xl shrink-0">📘</span>
                   </div>
-                  <div className="mt-4 h-2 rounded-full bg-gray-100 overflow-hidden">
+                  <div className="mt-4 h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
                     <div className="h-full bg-infinder-green rounded-full transition-all" style={{ width: `${mod.progress_pct}%` }} />
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                     {t('learn_lessons_count', { done: mod.completed_lessons, total: mod.lesson_count, pct: mod.progress_pct })}
                   </p>
                 </Link>
@@ -134,7 +134,7 @@ export default function LearningModules() {
   if (loading || !detail) {
     return (
       <SubpageShell>
-        <p className="text-gray-500 text-sm">{t('learn_loading_module')}</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">{t('learn_loading_module')}</p>
       </SubpageShell>
     );
   }
@@ -143,19 +143,19 @@ export default function LearningModules() {
 
   return (
     <SubpageShell>
-      <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-        <Link to="/learn" className="underline">
+      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <Link to="/learn" className="underline hover:text-gray-900 dark:hover:text-white transition-colors">
           {t('learn_all_modules')}
         </Link>
         <span>/</span>
-        <span>{module.title}</span>
+        <span className="text-gray-900 dark:text-white">{module.title}</span>
       </div>
-      <h1 className="text-2xl font-bold">{module.title}</h1>
-      <p className="text-gray-600 text-sm mt-1">{module.description}</p>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{module.title}</h1>
+      <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">{module.description}</p>
 
       <div className="mt-8 grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-2">
-          <h2 className="font-semibold text-sm text-gray-500 uppercase tracking-wide">{t('learn_lessons_label')}</h2>
+          <h2 className="font-semibold text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('learn_lessons_label')}</h2>
           {lessons.map((l, li) => (
             <button
               key={l.id}
@@ -168,27 +168,27 @@ export default function LearningModules() {
               className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl transition ${
                 activeLesson?.id === l.id
                   ? 'bg-infinder-lime/10 border border-infinder-lime/30'
-                  : 'hover:bg-gray-100'
+                  : 'hover:bg-gray-100 dark:hover:bg-white/[0.05]'
               }`}
             >
               {l.completed ? (
                 <span className="w-6 h-6 rounded-full bg-infinder-green/20 flex items-center justify-center text-infinder-green text-xs shrink-0">✓</span>
               ) : (
-                <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-600 shrink-0">{li + 1}</span>
+                <span className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs text-gray-600 dark:text-gray-400 shrink-0">{li + 1}</span>
               )}
-              <span className="flex-1 text-sm font-medium text-left">{l.title}</span>
-              <span className="text-xs text-gray-400 shrink-0">{l.duration_minutes}m</span>
+              <span className="flex-1 text-sm font-medium text-left text-gray-900 dark:text-white">{l.title}</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">{l.duration_minutes}m</span>
             </button>
           ))}
         </div>
 
-        <div className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white p-6 min-h-[320px]">
-          {!activeLesson && <p className="text-gray-500 text-sm">{t('learn_select_lesson')}</p>}
+        <div className="lg:col-span-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-6 min-h-[320px]">
+          {!activeLesson && <p className="text-gray-500 dark:text-gray-400 text-sm">{t('learn_select_lesson')}</p>}
           {activeLesson && (
             <div>
-              <p className="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-1">{module.title}</p>
-              <h3 className="text-2xl font-bold">{activeLesson.title}</h3>
-              <p className="text-gray-700 text-sm mt-4 leading-relaxed whitespace-pre-wrap">{activeLesson.content}</p>
+              <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 tracking-widest uppercase mb-1">{module.title}</p>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{activeLesson.title}</h3>
+              <p className="text-gray-700 dark:text-gray-300 text-sm mt-4 leading-relaxed whitespace-pre-wrap">{activeLesson.content}</p>
               <div className="mt-6 flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -200,19 +200,21 @@ export default function LearningModules() {
               </div>
 
               {activeLesson.quiz?.questions && activeLesson.quiz.questions.length > 0 && (
-                <div className="mt-10 border-t border-gray-100 pt-8">
-                  <h4 className="font-semibold">{t('learn_quick_check')}</h4>
-                  <p className="text-xs text-gray-500 mt-1">{t('learn_pass_msg')}</p>
+                <div className="mt-10 border-t border-gray-100 dark:border-gray-800 pt-8">
+                  <h4 className="font-semibold text-gray-900 dark:text-white">{t('learn_quick_check')}</h4>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('learn_pass_msg')}</p>
                   <div className="mt-4 space-y-6">
                     {activeLesson.quiz.questions.map((q, qi) => (
                       <div key={q.id}>
-                        <p className="text-sm font-medium">{q.prompt}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{q.prompt}</p>
                         <div className="mt-2 space-y-2">
                           {q.options.map((opt, oi) => (
                             <label
                               key={oi}
                               className={`flex items-center gap-3 rounded-xl border p-3 cursor-pointer hover:border-infinder-lime/50 transition ${
-                                answers[qi] === oi ? 'border-infinder-lime bg-infinder-lime/5' : 'border-gray-200'
+                                answers[qi] === oi
+                                  ? 'border-infinder-lime bg-infinder-lime/5'
+                                  : 'border-gray-200 dark:border-gray-700'
                               }`}
                             >
                               <input
@@ -226,7 +228,7 @@ export default function LearningModules() {
                                 }}
                                 className="accent-infinder-lime"
                               />
-                              {opt}
+                              <span className="text-sm text-gray-900 dark:text-gray-200">{opt}</span>
                             </label>
                           ))}
                         </div>
@@ -237,13 +239,15 @@ export default function LearningModules() {
                     type="button"
                     disabled={answers.length < (activeLesson.quiz.questions?.length || 0)}
                     onClick={() => submitQuiz(activeLesson.id)}
-                    className="mt-6 rounded-full bg-infinder-black text-white font-medium px-5 py-2 text-sm disabled:opacity-40"
+                    className="mt-6 rounded-full bg-infinder-black dark:bg-white text-white dark:text-infinder-black font-medium px-5 py-2 text-sm disabled:opacity-40"
                   >
                     {t('learn_submit_quiz')}
                   </button>
                   {quizResult && (
                     <div className={`mt-4 rounded-xl p-4 text-sm font-medium flex items-start gap-2 ${
-                      quizResult.passed ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-amber-50 text-amber-800 border border-amber-200'
+                      quizResult.passed
+                        ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800'
+                        : 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
                     }`}>
                       {quizResult.passed ? (
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

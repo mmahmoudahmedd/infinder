@@ -16,11 +16,11 @@ type Row = {
 function StatusBadge({ status }: { status: string }) {
   const normalized = status.toLowerCase();
   const colorMap: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    approved: 'bg-green-100 text-green-800',
-    rejected: 'bg-red-100 text-red-800',
+    pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+    approved: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+    rejected: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
   };
-  const color = colorMap[normalized] ?? 'bg-gray-100 text-gray-700';
+  const color = colorMap[normalized] ?? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${color}`}>
       {status}
@@ -61,14 +61,14 @@ export default function AdminPanel() {
   return (
     <AppShell>
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <p className="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-1">INFINDER</p>
-        <h1 className="text-2xl font-bold">{t('admin_title')}</h1>
-        <p className="text-gray-600 text-sm mt-1">{t('admin_sub')}</p>
-        {msg && <p className="text-sm text-gray-700 mt-3">{msg}</p>}
+        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 tracking-widest uppercase mb-1">INFINDER</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('admin_title')}</h1>
+        <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">{t('admin_sub')}</p>
+        {msg && <p className="text-sm text-gray-700 dark:text-gray-300 mt-3">{msg}</p>}
 
-        <div className="mt-6 space-y-0">
+        <div className="mt-6 space-y-3">
           {rows.length === 0 ? (
-            <p className="text-gray-500 text-sm">{t('admin_none')}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">{t('admin_none')}</p>
           ) : (
             rows.map((u, i) => (
               <motion.div
@@ -76,12 +76,12 @@ export default function AdminPanel() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06 }}
-                className="rounded-2xl border border-gray-200 bg-white px-5 py-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-gray-100 mb-3"
+                className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] px-5 py-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
               >
                 <div>
-                  <p className="font-semibold">{u.full_name || '—'}</p>
-                  <p className="text-sm text-gray-600">{u.email}</p>
-                  <p className="text-xs text-gray-500 mt-1">{u.phone || t('admin_no_phone')}</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">{u.full_name || '—'}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{u.email}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{u.phone || t('admin_no_phone')}</p>
                   <div className="mt-2">
                     <StatusBadge status={u.kyc_status} />
                   </div>
@@ -98,15 +98,15 @@ export default function AdminPanel() {
                     <button
                       type="button"
                       onClick={() => reject(u.id)}
-                      className="rounded-full bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors text-sm font-medium px-4 py-2"
+                      className="rounded-full bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm font-medium px-4 py-2"
                     >
                       {t('admin_reject')}
                     </button>
                   </div>
                   <div className="w-full">
-                    <label className="block text-xs text-gray-500 mb-1">{t('admin_reason_placeholder')}</label>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('admin_reason_placeholder')}</label>
                     <input
-                      className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-full"
+                      className="text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 text-gray-900 dark:text-white rounded-lg px-3 py-1.5 w-full focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 placeholder:text-gray-400 dark:placeholder:text-gray-600"
                       placeholder={t('admin_reason_placeholder')}
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}

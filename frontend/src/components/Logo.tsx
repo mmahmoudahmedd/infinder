@@ -7,7 +7,7 @@ export function Logo({ className }: { className?: string }) {
       <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-infinder-black text-infinder-lime font-bold text-sm border border-gray-800">
         i
       </span>
-      <span className="font-bold tracking-tight text-infinder-black">INFINDER</span>
+      <span className="font-bold tracking-tight text-infinder-black dark:text-white">INFINDER</span>
     </Link>
   );
 }

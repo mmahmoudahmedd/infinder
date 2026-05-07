@@ -24,7 +24,6 @@ export default function SmartAssistant() {
   const { user, refreshMe } = useAuth();
   const [mode, setMode] = useState<'chat' | 'wizard'>('chat');
 
-  // Label maps (inside component so t() is available)
   const GOAL_LABELS: Record<string, string> = {
     preserve: t('wizard_goal_preserve_label'),
     grow: t('wizard_goal_grow_label'),
@@ -200,34 +199,42 @@ export default function SmartAssistant() {
         <button
           type="button"
           onClick={() => { setMode('chat'); resetWizard(); }}
-          className={`rounded-full px-4 py-2 text-sm font-medium ${mode === 'chat' ? 'bg-infinder-black text-white' : 'border border-gray-300'}`}
+          className={`rounded-full px-4 py-2 text-sm font-medium ${
+            mode === 'chat'
+              ? 'bg-infinder-black dark:bg-white text-white dark:text-infinder-black'
+              : 'border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300'
+          }`}
         >
           {t('chat_mode_btn')}
         </button>
         <button
           type="button"
           onClick={() => { setMode('wizard'); resetChat(); resetWizard(); }}
-          className={`rounded-full px-4 py-2 text-sm font-medium ${mode === 'wizard' ? 'bg-infinder-black text-white' : 'border border-gray-300'}`}
+          className={`rounded-full px-4 py-2 text-sm font-medium ${
+            mode === 'wizard'
+              ? 'bg-infinder-black dark:bg-white text-white dark:text-infinder-black'
+              : 'border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300'
+          }`}
         >
           {t('wizard_mode_btn')}
         </button>
       </div>
 
-      <p className="text-xs text-gray-500 mb-6">
+      <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">
         {t('chat_disclaimer')}
       </p>
 
       {/* CHAT MODE */}
       {mode === 'chat' && (
         <div className="grid lg:grid-cols-2 gap-6 items-start">
-          <div className="rounded-2xl border border-gray-200 bg-white flex flex-col h-[480px]">
-            <div className="px-4 py-3 border-b font-semibold flex items-center gap-2">
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] flex flex-col h-[480px]">
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
               <span className="h-2 w-2 rounded-full bg-infinder-green" />
               {t('chat_title')}
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3 text-sm">
               {messages.length === 0 && (
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-400">
                   {t('chat_greeting')}
                 </p>
               )}
@@ -237,18 +244,18 @@ export default function SmartAssistant() {
                     className={`inline-block rounded-2xl px-3 py-2 max-w-[95%] ${
                       m.role === 'user'
                         ? 'bg-infinder-lime text-infinder-black'
-                        : 'bg-gray-100 text-gray-900'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
                     }`}
                   >
                     {m.content}
                   </span>
                 </div>
               ))}
-              {loading && <p className="text-gray-500 text-sm">{t('chat_thinking')}</p>}
+              {loading && <p className="text-gray-500 dark:text-gray-400 text-sm">{t('chat_thinking')}</p>}
             </div>
-            <div className="p-3 border-t flex gap-2">
+            <div className="p-3 border-t border-gray-200 dark:border-gray-700 flex gap-2">
               <input
-                className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 px-3 py-2 text-sm outline-none"
                 placeholder={t('chat_placeholder')}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -267,28 +274,28 @@ export default function SmartAssistant() {
 
           <div className="space-y-4">
             {alloc ? (
-              <div className="rounded-2xl border border-gray-200 bg-white p-5">
-                <h2 className="font-semibold text-lg">{t('chat_alloc_title')}</h2>
+              <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-5">
+                <h2 className="font-semibold text-lg text-gray-900 dark:text-white">{t('chat_alloc_title')}</h2>
                 <div className="h-56 mt-4">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie data={chartData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={2}>
                         {chartData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                       </Pie>
-                      <Tooltip />
+                      <Tooltip contentStyle={{ background: '#1a1a1a', border: '1px solid #374151', borderRadius: 8 }} />
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                {reasoning && <p className="text-sm text-gray-700 mt-2">{reasoning}</p>}
+                {reasoning && <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">{reasoning}</p>}
                 {isSharia !== null && (
-                  <p className="text-xs text-gray-500 mt-2">{t('chat_sharia_pref')} {isSharia ? t('chat_sharia_yes') : t('chat_sharia_no')}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{t('chat_sharia_pref')} {isSharia ? t('chat_sharia_yes') : t('chat_sharia_no')}</p>
                 )}
-                <label className="block mt-4 text-sm font-medium">{t('common_invest_amount_label')}</label>
-                <div className="mt-1 flex rounded-xl border border-gray-200 overflow-hidden">
-                  <span className="px-3 flex items-center bg-gray-50 text-sm text-gray-600">EGP</span>
+                <label className="block mt-4 text-sm font-medium text-gray-900 dark:text-white">{t('common_invest_amount_label')}</label>
+                <div className="mt-1 flex rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <span className="px-3 flex items-center bg-gray-50 dark:bg-white/5 text-sm text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">EGP</span>
                   <input
-                    className="flex-1 px-3 py-2 outline-none text-sm"
+                    className="flex-1 px-3 py-2 outline-none text-sm bg-white dark:bg-transparent text-gray-900 dark:text-white"
                     value={investAmount}
                     onChange={(e) => setInvestAmount(e.target.value)}
                     inputMode="decimal"
@@ -301,15 +308,15 @@ export default function SmartAssistant() {
                     {t('invest_all_btn')}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Available: EGP {user.wallet_balance.toFixed(2)}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Available: EGP {user.wallet_balance.toFixed(2)}</p>
                 {overBalance && (
                   <p className="text-xs text-red-500 mt-1">{t('invest_insufficient')}</p>
                 )}
                 {breakdownRows.length > 0 && (
-                  <div className="mt-3 rounded-xl bg-gray-50 px-3 py-2 space-y-1">
-                    <p className="text-xs font-medium text-gray-500 mb-1">{t('invest_breakdown_title')}</p>
+                  <div className="mt-3 rounded-xl bg-gray-50 dark:bg-white/[0.04] px-3 py-2 space-y-1">
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{t('invest_breakdown_title')}</p>
                     {breakdownRows.map((r) => (
-                      <div key={r.key} className="flex justify-between text-xs text-gray-700">
+                      <div key={r.key} className="flex justify-between text-xs text-gray-700 dark:text-gray-300">
                         <span>{r.label}</span>
                         <span className="font-medium">EGP {r.egp.toFixed(2)}</span>
                       </div>
@@ -324,12 +331,16 @@ export default function SmartAssistant() {
                 >
                   {t('common_invest_confirm')}
                 </button>
-                <button type="button" onClick={resetChat} className="mt-3 w-full rounded-xl border border-gray-300 py-2 text-sm">
+                <button
+                  type="button"
+                  onClick={resetChat}
+                  className="mt-3 w-full rounded-xl border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 py-2 text-sm hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+                >
                   {t('common_start_over')}
                 </button>
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-gray-300 p-6 text-sm text-gray-600">
+              <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-6 text-sm text-gray-600 dark:text-gray-400">
                 {t('chat_alloc_placeholder')}
               </div>
             )}
@@ -346,7 +357,7 @@ export default function SmartAssistant() {
                 <button
                   type="button"
                   onClick={() => setWizardStep((s) => s - 1)}
-                  className="text-sm text-gray-500 hover:text-infinder-black flex items-center gap-1 shrink-0"
+                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-infinder-black dark:hover:text-white flex items-center gap-1 shrink-0 transition-colors"
                 >
                   {t('common_back')}
                 </button>
@@ -360,7 +371,7 @@ export default function SmartAssistant() {
                         ? 'bg-infinder-green'
                         : wizardStep === s
                         ? 'bg-infinder-lime'
-                        : 'bg-gray-200'
+                        : 'bg-gray-200 dark:bg-gray-700'
                     }`}
                   />
                 ))}
@@ -370,9 +381,9 @@ export default function SmartAssistant() {
 
           <AnimatePresence mode="wait">
             {wizardStep === 0 && (
-              <motion.div key="s0" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 bg-white p-6">
-                <h2 className="text-xl font-semibold text-center">{t('wizard_goal_title')}</h2>
-                <p className="text-center text-sm text-gray-600 mt-1">{t('wizard_goal_sub')}</p>
+              <motion.div key="s0" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-6">
+                <h2 className="text-xl font-semibold text-center text-gray-900 dark:text-white">{t('wizard_goal_title')}</h2>
+                <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-1">{t('wizard_goal_sub')}</p>
                 <div className="mt-6 grid sm:grid-cols-2 gap-3">
                   {[
                     { id: 'preserve', title: t('wizard_goal_preserve'), desc: t('wizard_goal_preserve_desc') },
@@ -382,10 +393,10 @@ export default function SmartAssistant() {
                       key={opt.id}
                       type="button"
                       onClick={() => { setGoal(opt.id); setWizardStep(1); }}
-                      className="rounded-2xl border border-gray-200 p-4 text-left hover:border-infinder-green transition-colors"
+                      className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 text-left hover:border-infinder-green dark:hover:border-infinder-green transition-colors"
                     >
-                      <p className="font-semibold">{opt.title}</p>
-                      <p className="text-sm text-gray-600 mt-1">{opt.desc}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">{opt.title}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{opt.desc}</p>
                     </button>
                   ))}
                 </div>
@@ -393,8 +404,8 @@ export default function SmartAssistant() {
             )}
 
             {wizardStep === 1 && (
-              <motion.div key="s1" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 bg-white p-6">
-                <h2 className="text-xl font-semibold text-center">{t('wizard_horizon_title')}</h2>
+              <motion.div key="s1" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-6">
+                <h2 className="text-xl font-semibold text-center text-gray-900 dark:text-white">{t('wizard_horizon_title')}</h2>
                 <div className="mt-6 grid sm:grid-cols-3 gap-3">
                   {[
                     { id: 'short', t: t('wizard_horizon_short'), d: t('wizard_horizon_short_desc') },
@@ -405,10 +416,10 @@ export default function SmartAssistant() {
                       key={h.id}
                       type="button"
                       onClick={() => { setHorizon(h.id); setWizardStep(2); }}
-                      className="rounded-2xl border border-gray-200 p-4 text-left hover:border-infinder-green transition-colors text-sm"
+                      className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 text-left hover:border-infinder-green dark:hover:border-infinder-green transition-colors text-sm"
                     >
-                      <p className="font-semibold">{h.t}</p>
-                      <p className="text-gray-600 mt-1">{h.d}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">{h.t}</p>
+                      <p className="text-gray-600 dark:text-gray-400 mt-1">{h.d}</p>
                     </button>
                   ))}
                 </div>
@@ -416,8 +427,8 @@ export default function SmartAssistant() {
             )}
 
             {wizardStep === 2 && (
-              <motion.div key="s2" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 bg-white p-6">
-                <h2 className="text-xl font-semibold text-center">{t('wizard_risk_title')}</h2>
+              <motion.div key="s2" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-6">
+                <h2 className="text-xl font-semibold text-center text-gray-900 dark:text-white">{t('wizard_risk_title')}</h2>
                 <div className="mt-6 grid sm:grid-cols-3 gap-3">
                   {[
                     { id: 'low', t: t('wizard_risk_low'), d: t('wizard_risk_low_desc') },
@@ -428,10 +439,10 @@ export default function SmartAssistant() {
                       key={r.id}
                       type="button"
                       onClick={() => { setRisk(r.id); setWizardStep(3); }}
-                      className="rounded-2xl border border-gray-200 p-4 text-left hover:border-infinder-green transition-colors"
+                      className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 text-left hover:border-infinder-green dark:hover:border-infinder-green transition-colors"
                     >
-                      <p className="font-semibold text-sm">{r.t}</p>
-                      <p className="text-gray-500 mt-1 text-xs">{r.d}</p>
+                      <p className="font-semibold text-sm text-gray-900 dark:text-white">{r.t}</p>
+                      <p className="text-gray-500 dark:text-gray-400 mt-1 text-xs">{r.d}</p>
                     </button>
                   ))}
                 </div>
@@ -439,9 +450,9 @@ export default function SmartAssistant() {
             )}
 
             {wizardStep === 3 && (
-              <motion.div key="s3" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 bg-white p-6">
-                <h2 className="text-xl font-semibold text-center">{t('wizard_sharia_title')}</h2>
-                <p className="text-center text-sm text-gray-600 mt-1">{t('wizard_sharia_sub')}</p>
+              <motion.div key="s3" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-6">
+                <h2 className="text-xl font-semibold text-center text-gray-900 dark:text-white">{t('wizard_sharia_title')}</h2>
+                <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-1">{t('wizard_sharia_sub')}</p>
                 <div className="mt-6 grid sm:grid-cols-2 gap-3">
                   {[
                     { id: true, title: t('wizard_sharia_yes'), desc: t('wizard_sharia_yes_desc') },
@@ -451,10 +462,10 @@ export default function SmartAssistant() {
                       key={String(opt.id)}
                       type="button"
                       onClick={() => { setSharia(opt.id); setWizardStep(4); }}
-                      className="rounded-2xl border border-gray-200 p-4 text-left hover:border-infinder-green transition-colors"
+                      className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 text-left hover:border-infinder-green dark:hover:border-infinder-green transition-colors"
                     >
-                      <p className="font-semibold">{opt.title}</p>
-                      <p className="text-sm text-gray-600 mt-1">{opt.desc}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">{opt.title}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{opt.desc}</p>
                     </button>
                   ))}
                 </div>
@@ -462,15 +473,15 @@ export default function SmartAssistant() {
             )}
 
             {wizardStep === 4 && (
-              <motion.div key="s4" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 bg-white p-6">
-                <h2 className="text-xl font-semibold text-center">{t('wizard_amount_title')}</h2>
-                <p className="text-center text-sm text-gray-600 mt-1">
+              <motion.div key="s4" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-6">
+                <h2 className="text-xl font-semibold text-center text-gray-900 dark:text-white">{t('wizard_amount_title')}</h2>
+                <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-1">
                   {t('wizard_amount_available')} EGP {user.wallet_balance.toFixed(2)}
                 </p>
-                <div className="mt-6 flex rounded-xl border border-gray-200 overflow-hidden">
-                  <span className="px-4 flex items-center bg-gray-50 text-sm text-gray-600">EGP</span>
+                <div className="mt-6 flex rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <span className="px-4 flex items-center bg-gray-50 dark:bg-white/5 text-sm text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">EGP</span>
                   <input
-                    className="flex-1 px-3 py-3 outline-none text-sm"
+                    className="flex-1 px-3 py-3 outline-none text-sm bg-white dark:bg-transparent text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600"
                     placeholder={t('wizard_amount_placeholder')}
                     value={investAmount}
                     onChange={(e) => setInvestAmount(e.target.value)}
@@ -500,28 +511,28 @@ export default function SmartAssistant() {
             )}
 
             {wizardStep === 5 && (
-              <motion.div key="s5" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 bg-white p-6">
-                <h2 className="text-xl font-semibold text-center">{t('wizard_confirm_title')}</h2>
-                <div className="mt-6 rounded-xl bg-gray-50 p-4 space-y-3 text-sm">
+              <motion.div key="s5" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-6">
+                <h2 className="text-xl font-semibold text-center text-gray-900 dark:text-white">{t('wizard_confirm_title')}</h2>
+                <div className="mt-6 rounded-xl bg-gray-50 dark:bg-white/[0.04] p-4 space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-500">{t('wizard_goal_label')}</span>
-                    <span className="font-medium">{goal ? GOAL_LABELS[goal] : ''}</span>
+                    <span className="text-gray-500 dark:text-gray-400">{t('wizard_goal_label')}</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{goal ? GOAL_LABELS[goal] : ''}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">{t('wizard_horizon_label')}</span>
-                    <span className="font-medium">{horizon ? HORIZON_LABELS[horizon] : ''}</span>
+                    <span className="text-gray-500 dark:text-gray-400">{t('wizard_horizon_label')}</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{horizon ? HORIZON_LABELS[horizon] : ''}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">{t('wizard_risk_label')}</span>
-                    <span className="font-medium">{risk ? RISK_LABELS[risk] : ''}</span>
+                    <span className="text-gray-500 dark:text-gray-400">{t('wizard_risk_label')}</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{risk ? RISK_LABELS[risk] : ''}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">{t('wizard_sharia_label')}</span>
-                    <span className="font-medium">{sharia ? t('wizard_sharia_yes') : t('wizard_sharia_no')}</span>
+                    <span className="text-gray-500 dark:text-gray-400">{t('wizard_sharia_label')}</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{sharia ? t('wizard_sharia_yes') : t('wizard_sharia_no')}</span>
                   </div>
-                  <div className="flex justify-between border-t pt-3">
-                    <span className="text-gray-500">{t('wizard_amount_label')}</span>
-                    <span className="font-semibold">EGP {Number(investAmount).toLocaleString()}</span>
+                  <div className="flex justify-between border-t border-gray-200 dark:border-gray-700 pt-3">
+                    <span className="text-gray-500 dark:text-gray-400">{t('wizard_amount_label')}</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">EGP {Number(investAmount).toLocaleString()}</span>
                   </div>
                 </div>
                 <button
@@ -536,10 +547,10 @@ export default function SmartAssistant() {
             )}
 
             {wizardStep === 6 && wizardAlloc && (
-              <motion.div key="s6" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 bg-white p-6">
-                <h2 className="text-xl font-semibold">{wizardLabel}</h2>
+              <motion.div key="s6" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-6">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{wizardLabel}</h2>
                 {wizardExplanation && (
-                  <p className="text-sm text-gray-600 mt-2">{wizardExplanation}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{wizardExplanation}</p>
                 )}
                 <div className="h-56 mt-6">
                   <ResponsiveContainer width="100%" height="100%">
@@ -547,13 +558,13 @@ export default function SmartAssistant() {
                       <Pie data={chartData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={2}>
                         {chartData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                       </Pie>
-                      <Tooltip />
+                      <Tooltip contentStyle={{ background: '#1a1a1a', border: '1px solid #374151', borderRadius: 8 }} />
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                <p className="text-sm text-gray-500 mt-4">
-                  {t('wizard_investing_label')} <span className="font-semibold text-infinder-black">EGP {Number(investAmount).toLocaleString()}</span>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+                  {t('wizard_investing_label')} <span className="font-semibold text-infinder-black dark:text-white">EGP {Number(investAmount).toLocaleString()}</span>
                 </p>
                 <button
                   type="button"
@@ -562,7 +573,11 @@ export default function SmartAssistant() {
                 >
                   {t('wizard_invest_now')}
                 </button>
-                <button type="button" onClick={resetWizard} className="mt-3 w-full rounded-xl border border-gray-300 py-2 text-sm">
+                <button
+                  type="button"
+                  onClick={resetWizard}
+                  className="mt-3 w-full rounded-xl border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 py-2 text-sm hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+                >
                   {t('common_start_over')}
                 </button>
               </motion.div>
@@ -571,8 +586,8 @@ export default function SmartAssistant() {
         </div>
       )}
 
-      <p className="mt-8 text-sm">
-        <Link to="/dashboard" className="underline">
+      <p className="mt-8 text-sm text-gray-600 dark:text-gray-400">
+        <Link to="/dashboard" className="underline hover:text-gray-900 dark:hover:text-white transition-colors">
           {t('chat_back_dashboard')}
         </Link>
       </p>

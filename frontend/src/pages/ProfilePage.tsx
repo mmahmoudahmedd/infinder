@@ -136,23 +136,23 @@ export default function ProfilePage() {
 
       <div className="mt-8 grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <div className="rounded-2xl border border-gray-200 bg-white p-5">
-            <h2 className="font-semibold text-lg">{t('profile_account_details')}</h2>
-            <p className="text-sm text-gray-600 mt-1">{t('profile_account_sub')}</p>
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-5">
+            <h2 className="font-semibold text-lg text-gray-900 dark:text-white">{t('profile_account_details')}</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('profile_account_sub')}</p>
             <div className="mt-4 grid sm:grid-cols-2 gap-4">
               <label className="block text-sm">
-                <span className="text-gray-600">{t('profile_full_name')}</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('profile_full_name')}</span>
                 <input
-                  className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 text-gray-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 placeholder:text-gray-400 dark:placeholder:text-gray-600"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Your name"
                 />
               </label>
               <label className="block text-sm">
-                <span className="text-gray-600">{t('profile_phone')}</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('profile_phone')}</span>
                 <input
-                  className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 text-gray-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 placeholder:text-gray-400 dark:placeholder:text-gray-600"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+20 …"
@@ -169,15 +169,15 @@ export default function ProfilePage() {
             </button>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-5">
-            <h2 className="font-semibold text-lg">{t('profile_deposit_ref')}</h2>
-            <p className="text-sm text-gray-600 mt-1">{t('profile_deposit_ref_sub')}</p>
-            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-gray-100 px-4 py-3">
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-5">
+            <h2 className="font-semibold text-lg text-gray-900 dark:text-white">{t('profile_deposit_ref')}</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('profile_deposit_ref_sub')}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-gray-100 dark:bg-white/[0.06] px-4 py-3">
               <code className="text-lg font-bold text-infinder-green tracking-tight">{user.deposit_ref_code || '—'}</code>
               <button
                 type="button"
                 onClick={copyRef}
-                className="text-sm underline text-gray-700"
+                className="text-sm underline text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
                 disabled={!user.deposit_ref_code}
               >
                 {t('profile_copy')}
@@ -185,83 +185,83 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-5">
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-5">
             <div className="flex flex-wrap justify-between gap-2 items-center">
-              <h2 className="font-semibold text-lg">{t('profile_wallet')}</h2>
+              <h2 className="font-semibold text-lg text-gray-900 dark:text-white">{t('profile_wallet')}</h2>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => downloadCsv(txs)}
-                  className="text-sm font-medium text-infinder-black underline"
+                  className="text-sm font-medium text-infinder-black dark:text-white underline"
                   disabled={txs.length === 0}
                 >
                   {t('profile_export_csv')}
                 </button>
               </div>
             </div>
-            <div className="mt-4 rounded-xl bg-gray-50 px-4 py-3 flex justify-between text-sm">
-              <span className="text-gray-600">{t('profile_available')}</span>
-              <span className="font-semibold">EGP {user.wallet_balance.toFixed(2)}</span>
+            <div className="mt-4 rounded-xl bg-gray-50 dark:bg-white/[0.04] px-4 py-3 flex justify-between text-sm">
+              <span className="text-gray-600 dark:text-gray-400">{t('profile_available')}</span>
+              <span className="font-semibold text-gray-900 dark:text-white">EGP {user.wallet_balance.toFixed(2)}</span>
             </div>
             <div className="mt-4 flex gap-3 flex-wrap">
               <Link
                 to="/funding"
-                className="flex-1 min-w-[120px] rounded-xl border border-gray-200 py-3 text-center font-medium hover:border-infinder-black"
+                className="flex-1 min-w-[120px] rounded-xl border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white py-3 text-center font-medium hover:border-infinder-black dark:hover:border-gray-500 transition-colors"
               >
                 {t('profile_add_funds')}
               </Link>
               <Link
                 to="/funding"
-                className="flex-1 min-w-[120px] rounded-xl border border-gray-200 py-3 text-center text-gray-700 hover:border-infinder-black"
+                className="flex-1 min-w-[120px] rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 py-3 text-center hover:border-infinder-black dark:hover:border-gray-500 transition-colors"
               >
                 {t('profile_withdraw')}
               </Link>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-5">
-            <h2 className="font-semibold">{t('profile_investments')}</h2>
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-5">
+            <h2 className="font-semibold text-gray-900 dark:text-white">{t('profile_investments')}</h2>
             {investmentRows.length === 0 ? (
-              <div className="py-12 text-center text-gray-500 text-sm">
+              <div className="py-12 text-center text-gray-500 dark:text-gray-400 text-sm">
                 <div className="text-3xl mb-2">📅</div>
                 {t('profile_no_investments')}
               </div>
             ) : (
               <ul className="mt-4 space-y-2 text-sm max-h-64 overflow-y-auto">
                 {investmentRows.map((tx) => (
-                  <li key={tx.id} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
+                  <li key={tx.id} className="flex justify-between items-center py-3 border-b border-gray-100 dark:border-gray-800 last:border-0">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm shrink-0">📈</div>
-                      <span className="text-xs text-gray-500">{new Date(tx.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                      <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-sm shrink-0">📈</div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{new Date(tx.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                     </div>
-                    <span className="font-semibold text-blue-700">EGP {tx.amount.toFixed(2)}</span>
+                    <span className="font-semibold text-blue-700 dark:text-blue-400">EGP {tx.amount.toFixed(2)}</span>
                   </li>
                 ))}
               </ul>
             )}
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-5">
-            <h2 className="font-semibold">{t('profile_transactions')}</h2>
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-5">
+            <h2 className="font-semibold text-gray-900 dark:text-white">{t('profile_transactions')}</h2>
             {txs.length === 0 ? (
-              <p className="mt-4 text-sm text-gray-500">{t('profile_no_transactions')}</p>
+              <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">{t('profile_no_transactions')}</p>
             ) : (
               <ul className="mt-4 space-y-2 text-sm max-h-72 overflow-y-auto">
                 {txs.map((tx) => (
-                  <li key={tx.id} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
+                  <li key={tx.id} className="flex justify-between items-center py-3 border-b border-gray-100 dark:border-gray-800 last:border-0">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 ${
-                        tx.type === 'deposit' ? 'bg-green-100' : tx.type === 'withdrawal' ? 'bg-red-100' : 'bg-blue-100'
+                        tx.type === 'deposit' ? 'bg-green-100 dark:bg-green-900/30' : tx.type === 'withdrawal' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-blue-100 dark:bg-blue-900/30'
                       }`}>
                         {tx.type === 'deposit' ? '💵' : tx.type === 'withdrawal' ? '↩️' : '📈'}
                       </div>
                       <div>
-                        <span className="text-sm font-medium capitalize text-gray-700">{tx.type}</span>
-                        <p className="text-xs text-gray-400">{new Date(tx.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                        <span className="text-sm font-medium capitalize text-gray-700 dark:text-gray-300">{tx.type}</span>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">{new Date(tx.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                       </div>
                     </div>
                     <span className={`font-semibold text-sm ${
-                      tx.type === 'deposit' ? 'text-green-600' : tx.type === 'withdrawal' ? 'text-red-600' : 'text-blue-700'
+                      tx.type === 'deposit' ? 'text-green-600 dark:text-green-400' : tx.type === 'withdrawal' ? 'text-red-600 dark:text-red-400' : 'text-blue-700 dark:text-blue-400'
                     }`}>
                       {tx.type === 'withdrawal' ? '−' : '+'}EGP {tx.amount.toFixed(2)}
                     </span>
@@ -271,26 +271,26 @@ export default function ProfilePage() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-5">
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-5">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-lg shrink-0">☪️</div>
+              <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-lg shrink-0">☪️</div>
               <div className="flex-1">
-                <p className="font-medium">{t('profile_sharia_mode')}</p>
-                <p className="text-sm text-gray-600">{t('profile_sharia_desc')}</p>
+                <p className="font-medium text-gray-900 dark:text-white">{t('profile_sharia_mode')}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('profile_sharia_desc')}</p>
               </div>
               <button
                 type="button"
                 role="switch"
                 aria-checked={user.sharia_mode}
                 onClick={() => updateProfile({ sharia_mode: !user.sharia_mode })}
-                className={`relative h-7 w-12 shrink-0 rounded-full transition ${user.sharia_mode ? 'bg-infinder-green' : 'bg-gray-300'}`}
+                className={`relative h-7 w-12 shrink-0 rounded-full transition ${user.sharia_mode ? 'bg-infinder-green' : 'bg-gray-300 dark:bg-gray-700'}`}
               >
                 <span className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition ${user.sharia_mode ? 'translate-x-5' : ''}`} />
               </button>
             </div>
             <button
               type="button"
-              className="mt-6 text-red-600 text-sm font-medium flex items-center gap-2"
+              className="mt-6 text-red-600 dark:text-red-400 text-sm font-medium flex items-center gap-2"
               onClick={() => { logout(); window.location.href = '/'; }}
             >
               {t('profile_sign_out')}
@@ -299,10 +299,10 @@ export default function ProfilePage() {
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 text-sm text-gray-600">
-            <h2 className="font-semibold text-infinder-black mb-3">{t('profile_achievements')}</h2>
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-5 text-sm text-gray-600 dark:text-gray-400">
+            <h2 className="font-semibold text-infinder-black dark:text-white mb-3">{t('profile_achievements')}</h2>
             <p>{t('profile_achievements_sub')}</p>
-            <Link to="/rewards" className="inline-block mt-3 text-infinder-black font-medium underline text-sm">
+            <Link to="/rewards" className="inline-block mt-3 text-infinder-black dark:text-white font-medium underline text-sm">
               {t('profile_open_rewards')}
             </Link>
           </div>

@@ -31,10 +31,10 @@ const categoryIcon: Record<string, string> = {
 const CATEGORIES = ['all', 'stocks', 'baskets', 'bonds', 'gold'] as const;
 
 const riskBadgeClass: Record<string, string> = {
-  low: 'bg-blue-100 text-blue-800',
-  low_medium: 'bg-teal-100 text-teal-800',
-  medium: 'bg-amber-100 text-amber-800',
-  high: 'bg-red-100 text-red-800',
+  low: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  low_medium: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
+  medium: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+  high: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
 };
 
 export default function InvestmentOptions() {
@@ -65,10 +65,10 @@ export default function InvestmentOptions() {
 
   return (
     <SubpageShell>
-      {/* 2a-1: Page header */}
+      {/* Page header */}
       <div className="mb-6">
-        <p className="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-1">INFINDER</p>
-        <h1 className="text-2xl md:text-3xl font-bold text-infinder-black">{t('nav_invest')}</h1>
+        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 tracking-widest uppercase mb-1">INFINDER</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-infinder-black dark:text-white">{t('nav_invest')}</h1>
       </div>
 
       <div className="rounded-2xl bg-infinder-lime text-infinder-black p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -79,13 +79,13 @@ export default function InvestmentOptions() {
       </div>
 
       {user.sharia_mode && (
-        <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 text-sm px-4 py-3 flex gap-2">
+        <div className="mt-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/[0.03] text-sm px-4 py-3 flex gap-2 text-gray-700 dark:text-gray-300">
           <span>ℹ️</span>
           <span>{t('invest_sharia_notice')}</span>
         </div>
       )}
 
-      {/* 2a-2: Category filter pills */}
+      {/* Category filter pills */}
       <div className="mt-6 flex gap-2 overflow-x-auto pb-1">
         {CATEGORIES.map((cat) => (
           <button
@@ -94,8 +94,8 @@ export default function InvestmentOptions() {
             onClick={() => setFilter(cat)}
             className={`rounded-full px-4 py-1.5 text-sm font-medium transition shrink-0 ${
               filter === cat
-                ? 'bg-infinder-black text-white'
-                : 'border border-gray-200 text-gray-600 hover:border-gray-400'
+                ? 'bg-infinder-black dark:bg-white text-white dark:text-infinder-black'
+                : 'border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500'
             }`}
           >
             {cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1)}
@@ -103,7 +103,7 @@ export default function InvestmentOptions() {
         ))}
       </div>
 
-      {/* 2a-3: Cards grid with Framer Motion stagger */}
+      {/* Cards grid */}
       <div className="mt-8 grid md:grid-cols-2 gap-4">
         {filtered.map((inv, i) => {
           const can = user.wallet_balance >= inv.min_investment;
@@ -115,29 +115,29 @@ export default function InvestmentOptions() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.07 }}
-              className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:border-infinder-lime/50 hover:shadow-md hover:-translate-y-1 transition-all duration-200"
+              className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-5 shadow-sm dark:shadow-none hover:border-infinder-lime/50 hover:shadow-md hover:-translate-y-1 transition-all duration-200"
             >
               <div className="flex justify-between items-start gap-2">
-                <h3 className="font-semibold text-lg">{inv.title}</h3>
+                <h3 className="font-semibold text-lg text-gray-900 dark:text-white">{inv.title}</h3>
                 <span className="text-xl">{categoryIcon[inv.category] ?? '📊'}</span>
               </div>
-              {/* 2a-4: Risk badge colors */}
+              {/* Risk badge */}
               <div className="flex flex-wrap gap-2 mt-2">
-                <span className={`text-xs rounded-full px-2 py-0.5 ${riskBadgeClass[inv.risk_level] ?? 'bg-gray-100 text-gray-700'}`}>
+                <span className={`text-xs rounded-full px-2 py-0.5 ${riskBadgeClass[inv.risk_level] ?? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}`}>
                   {riskLabel[inv.risk_level] || inv.risk_level}
                 </span>
                 {inv.is_halal && (
-                  <span className="text-xs rounded-full border border-gray-300 px-2 py-0.5">{t('invest_halal')}</span>
+                  <span className="text-xs rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 px-2 py-0.5">{t('invest_halal')}</span>
                 )}
               </div>
-              <p className="text-sm text-gray-600 mt-3">{inv.description}</p>
-              <div className="mt-4 rounded-xl bg-gray-50 border-l-4 border-infinder-lime pl-4 p-3 text-sm space-y-1">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mt-3">{inv.description}</p>
+              <div className="mt-4 rounded-xl bg-gray-50 dark:bg-white/[0.04] border-l-4 border-infinder-lime pl-4 p-3 text-sm space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('invest_min_investment')}</span>
-                  <span className="font-medium">EGP {inv.min_investment}</span>
+                  <span className="text-gray-600 dark:text-gray-400">{t('invest_min_investment')}</span>
+                  <span className="font-medium text-gray-900 dark:text-white">EGP {inv.min_investment}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('invest_expected_returns')}</span>
+                  <span className="text-gray-600 dark:text-gray-400">{t('invest_expected_returns')}</span>
                   <span className="font-medium text-infinder-green">
                     {inv.expected_return_low ?? '—'}–{inv.expected_return_high ?? '—'}% {t('invest_annually')}
                   </span>
@@ -145,7 +145,7 @@ export default function InvestmentOptions() {
               </div>
               <button
                 type="button"
-                className="mt-3 text-sm text-gray-600 flex items-center gap-1 hover:text-infinder-black transition p-2 -ml-2"
+                className="mt-3 text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1 hover:text-infinder-black dark:hover:text-white transition p-2 -ml-2"
                 onClick={() => setOpen((o) => ({ ...o, [inv.id]: !isOpen }))}
               >
                 {t('invest_learn_more')}
@@ -162,13 +162,13 @@ export default function InvestmentOptions() {
                 </svg>
               </button>
               {isOpen && bullets.length > 0 && (
-                <ul className="mt-2 text-sm text-gray-700 list-disc pl-5 space-y-1">
+                <ul className="mt-2 text-sm text-gray-700 dark:text-gray-300 list-disc pl-5 space-y-1">
                   {bullets.map((b) => (
                     <li key={b}>{b}</li>
                   ))}
                 </ul>
               )}
-              {/* 2a-6: Invest button wired to modal */}
+              {/* Invest button */}
               <button
                 type="button"
                 disabled={!can}
@@ -180,7 +180,7 @@ export default function InvestmentOptions() {
                   }
                 }}
                 className={`mt-4 w-full rounded-xl py-2.5 text-sm font-semibold ${
-                  can ? 'bg-infinder-lime text-infinder-black' : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  can ? 'bg-infinder-lime text-infinder-black' : 'bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-600 cursor-not-allowed'
                 }`}
               >
                 {can ? t('invest_invest_btn') : t('invest_insufficient')}
@@ -190,7 +190,7 @@ export default function InvestmentOptions() {
         })}
       </div>
 
-      {/* 2a-5: Polished risk section */}
+      {/* Risk section */}
       <section className="mt-12 rounded-2xl bg-infinder-black text-white p-6 relative overflow-hidden">
         <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-infinder-lime/5 blur-3xl pointer-events-none" />
         <h2 className="text-lg font-bold">{t('invest_risk_title')}</h2>
@@ -210,16 +210,16 @@ export default function InvestmentOptions() {
         </div>
       </section>
 
-      {/* 2a-6: Invest modal */}
+      {/* Invest modal */}
       {investModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
-            <h3 className="text-lg font-bold">{investModal.title}</h3>
-            <p className="text-sm text-gray-600 mt-1">Enter amount to invest</p>
-            <div className="mt-3 flex rounded-xl border border-gray-200 overflow-hidden">
-              <span className="px-3 flex items-center bg-gray-50 text-sm text-gray-600">EGP</span>
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-transparent dark:border-gray-800 p-6 max-w-sm w-full shadow-xl">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">{investModal.title}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Enter amount to invest</p>
+            <div className="mt-3 flex rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <span className="px-3 flex items-center bg-gray-50 dark:bg-white/5 text-sm text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">EGP</span>
               <input
-                className="flex-1 px-3 py-2 outline-none text-sm"
+                className="flex-1 px-3 py-2 outline-none text-sm bg-white dark:bg-transparent text-gray-900 dark:text-white"
                 value={investAmt}
                 onChange={(e) => setInvestAmt(e.target.value)}
                 inputMode="decimal"
@@ -227,13 +227,13 @@ export default function InvestmentOptions() {
                 autoFocus
               />
             </div>
-            <p className="text-xs text-gray-500 mt-1">Available: EGP {user.wallet_balance.toFixed(2)}</p>
-            {investMsg && <p className="mt-2 text-sm text-green-600">{investMsg}</p>}
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Available: EGP {user.wallet_balance.toFixed(2)}</p>
+            {investMsg && <p className="mt-2 text-sm text-green-600 dark:text-green-400">{investMsg}</p>}
             <div className="mt-4 flex gap-3">
               <button
                 type="button"
                 onClick={() => setInvestModal(null)}
-                className="flex-1 rounded-full border border-gray-300 py-2 text-sm"
+                className="flex-1 rounded-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-2 text-sm hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
               >
                 Cancel
               </button>

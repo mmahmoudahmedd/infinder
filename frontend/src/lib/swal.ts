@@ -30,3 +30,7 @@ export function showAlert(
 ) {
   return base.fire({ title, text, icon });
 }
+
+export function showSuccess(title: string, text?: string) {
+  return base.fire({ title, text, icon: 'success', iconColor: '#BEF35E' });
+}
