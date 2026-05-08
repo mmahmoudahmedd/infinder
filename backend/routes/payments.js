@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { supabase } from '../supabase/client.js';
 import { verifyToken } from '../middleware/verifyToken.js';
 import { evaluateRewards } from '../services/rewardsEngine.js';
+import { calculateFee, PLATFORM_FEE_RATE } from '../config/fees.js';
 
 const router = Router();
 
@@ -33,6 +34,10 @@ router.post('/fund', verifyToken, async (req, res) => {
         user_id: req.user.id,
         type: 'deposit',
         amount,
+        gross_amount: amount,
+        fee_amount: 0,
+        net_amount: amount,
+        fee_rate: 0,
         status: 'completed',
         meta,
       });
@@ -62,9 +67,13 @@ router.post('/withdraw', verifyToken, async (req, res) => {
     const amount = Number(req.body.amount);
     if (!amount || amount <= 0) return res.status(400).json({ error: 'Invalid amount' });
 
+    const feeAmount = calculateFee(amount);
+
     const { data: rpcData, error: rpcErr } = await supabase.rpc('withdraw_wallet', {
       p_user_id: req.user.id,
       p_amount: amount,
+      p_fee_amount: feeAmount,
+      p_fee_rate: PLATFORM_FEE_RATE,
     });
 
     const rpcMissing =
@@ -79,15 +88,28 @@ router.post('/withdraw', verifyToken, async (req, res) => {
       const bal = Number(user.wallet_balance);
       if (bal < amount) return res.status(400).json({ error: 'Insufficient balance' });
       const newBal = bal - amount;
+      const netAmount = amount - feeAmount;
       const { error: werr } = await supabase.from('users').update({ wallet_balance: newBal }).eq('id', req.user.id);
       if (werr) throw werr;
-      await supabase.from('transactions').insert({
+      const { data: tx } = await supabase.from('transactions').insert({
         user_id: req.user.id,
         type: 'withdrawal',
         amount,
+        gross_amount: amount,
+        fee_amount: feeAmount,
+        net_amount: netAmount,
+        fee_rate: PLATFORM_FEE_RATE,
         status: 'completed',
-      });
-      return res.json({ wallet_balance: newBal });
+      }).select('id').single();
+      if (feeAmount > 0 && tx) {
+        await supabase.from('platform_fees').insert({
+          transaction_id: tx.id,
+          user_id: req.user.id,
+          amount: feeAmount,
+          type: 'withdrawal',
+        });
+      }
+      return res.json({ wallet_balance: newBal, fee_amount: feeAmount, net_amount: netAmount });
     }
 
     if (rpcErr) {
@@ -99,7 +121,11 @@ router.post('/withdraw', verifyToken, async (req, res) => {
       return res.status(400).json({ error: rpcData.error || 'Withdrawal failed' });
     }
 
-    return res.json({ wallet_balance: Number(rpcData.wallet_balance) });
+    return res.json({
+      wallet_balance: Number(rpcData.wallet_balance),
+      fee_amount: Number(rpcData.fee_amount || feeAmount),
+      net_amount: Number(rpcData.net_amount || (amount - feeAmount)),
+    });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ error: 'Withdrawal failed' });
@@ -117,12 +143,57 @@ router.get('/history', verifyToken, async (req, res) => {
     if (error) throw error;
     const list = (data || []).map((t) => ({
       ...t,
-      amount: Number(t.amount),
+      amount:       Number(t.amount),
+      gross_amount: t.gross_amount != null ? Number(t.gross_amount) : Number(t.amount),
+      fee_amount:   Number(t.fee_amount || 0),
+      net_amount:   t.net_amount != null ? Number(t.net_amount) : Number(t.amount),
+      fee_rate:     Number(t.fee_rate || 0),
     }));
     return res.json({ transactions: list });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ error: 'Failed to load history' });
+  }
+});
+
+// Admin: platform fee revenue summary
+router.get('/admin/fees', verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
+
+    const period = req.query.period || 'all'; // 'day' | 'month' | 'all'
+
+    // All-time total
+    const { data: totals } = await supabase
+      .from('platform_fees')
+      .select('amount, type, created_at');
+
+    if (!totals) return res.json({ total: 0, by_type: {}, breakdown: [] });
+
+    const total = totals.reduce((s, r) => s + Number(r.amount), 0);
+
+    const by_type = totals.reduce((acc, r) => {
+      acc[r.type] = (acc[r.type] || 0) + Number(r.amount);
+      return acc;
+    }, {});
+
+    // Grouped breakdown
+    const { data: summary } = await supabase
+      .from('platform_fee_summary')
+      .select('*')
+      .order('day', { ascending: false })
+      .limit(period === 'day' ? 30 : period === 'month' ? 12 : 100);
+
+    return res.json({
+      total: parseFloat(total.toFixed(2)),
+      by_type: Object.fromEntries(
+        Object.entries(by_type).map(([k, v]) => [k, parseFloat(v.toFixed(2))])
+      ),
+      breakdown: summary || [],
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Failed to load fee data' });
   }
 });
 

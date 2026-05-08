@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import api from '../lib/api';
 import { SubpageShell } from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
+import { showLoading, closeLoading, showSuccess, showError } from '../lib/swal';
 
 type Inv = {
   id: string;
@@ -19,6 +20,12 @@ type Inv = {
   is_halal: boolean;
   learn_more: string[] | null;
 };
+
+const FEE_RATE = 0.0025;
+const MIN_FEE = 1;
+function calcFee(amount: number): number {
+  return Math.max(parseFloat((amount * FEE_RATE).toFixed(2)), MIN_FEE);
+}
 
 const categoryIcon: Record<string, string> = {
   stocks: '📈',
@@ -39,13 +46,12 @@ const riskBadgeClass: Record<string, string> = {
 
 export default function InvestmentOptions() {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, refreshMe } = useAuth();
   const [items, setItems] = useState<Inv[]>([]);
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<string>('all');
   const [investModal, setInvestModal] = useState<Inv | null>(null);
   const [investAmt, setInvestAmt] = useState('');
-  const [investMsg, setInvestMsg] = useState('');
 
   const riskLabel: Record<string, string> = {
     low: t('invest_risk_low_label'),
@@ -176,7 +182,6 @@ export default function InvestmentOptions() {
                   if (can) {
                     setInvestModal(inv);
                     setInvestAmt('');
-                    setInvestMsg('');
                   }
                 }}
                 className={`mt-4 w-full rounded-xl py-2.5 text-sm font-semibold ${
@@ -211,58 +216,102 @@ export default function InvestmentOptions() {
       </section>
 
       {/* Invest modal */}
-      {investModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-transparent dark:border-gray-800 p-6 max-w-sm w-full shadow-xl">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">{investModal.title}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Enter amount to invest</p>
-            <div className="mt-3 flex rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <span className="px-3 flex items-center bg-gray-50 dark:bg-white/5 text-sm text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">EGP</span>
-              <input
-                className="flex-1 px-3 py-2 outline-none text-sm bg-white dark:bg-transparent text-gray-900 dark:text-white"
-                value={investAmt}
-                onChange={(e) => setInvestAmt(e.target.value)}
-                inputMode="decimal"
-                placeholder="0"
-                autoFocus
-              />
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Available: EGP {user.wallet_balance.toFixed(2)}</p>
-            {investMsg && <p className="mt-2 text-sm text-green-600 dark:text-green-400">{investMsg}</p>}
-            <div className="mt-4 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setInvestModal(null)}
-                className="flex-1 rounded-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-2 text-sm hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  const amount = Number(investAmt);
-                  if (!amount || amount <= 0) return;
-                  try {
-                    await api.post('/api/investments/apply', {
-                      amount,
-                      allocation: { [investModal.category]: 100 },
-                      is_sharia: user.sharia_mode,
-                      name: investModal.title,
-                    });
-                    setInvestMsg('Investment placed successfully!');
-                    setTimeout(() => setInvestModal(null), 1500);
-                  } catch {
-                    setInvestMsg('Something went wrong. Please try again.');
-                  }
-                }}
-                className="flex-1 rounded-full bg-infinder-lime text-infinder-black font-semibold py-2 text-sm"
-              >
-                Confirm &amp; invest
-              </button>
+      {investModal && (() => {
+        const amount = Number(investAmt);
+        const fee = amount > 0 ? calcFee(amount) : 0;
+        const totalCost = amount + fee;
+        const hasEnough = amount > 0 && user.wallet_balance >= totalCost;
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-transparent dark:border-gray-800 p-6 max-w-sm w-full shadow-xl">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">{investModal.title}</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Enter amount to invest</p>
+              <div className="mt-3 flex rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <span className="px-3 flex items-center bg-gray-50 dark:bg-white/5 text-sm text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">EGP</span>
+                <input
+                  className="flex-1 px-3 py-2 outline-none text-sm bg-white dark:bg-transparent text-gray-900 dark:text-white"
+                  value={investAmt}
+                  onChange={(e) => setInvestAmt(e.target.value)}
+                  inputMode="decimal"
+                  placeholder="0"
+                  autoFocus
+                />
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Available: EGP {user.wallet_balance.toFixed(2)}</p>
+
+              {amount > 0 && (
+                <div className="mt-3 rounded-xl bg-gray-50 dark:bg-white/[0.04] border border-gray-100 dark:border-gray-800 px-3 py-2.5 space-y-1.5 text-xs">
+                  <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                    <span>Investment amount</span>
+                    <span>EGP {amount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                    <span>Platform fee (0.25%)</span>
+                    <span>EGP {fee.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold text-gray-900 dark:text-white border-t border-gray-200 dark:border-gray-700 pt-1.5">
+                    <span>Total deducted</span>
+                    <span>EGP {totalCost.toFixed(2)}</span>
+                  </div>
+                  {!hasEnough && (
+                    <p className="text-red-500 pt-0.5">Insufficient balance for amount + fee</p>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setInvestModal(null)}
+                  className="flex-1 rounded-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-2 text-sm hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={!hasEnough}
+                  onClick={async () => {
+                    if (!hasEnough) return;
+                    showLoading('Processing your investment...');
+                    try {
+                      await api.post('/api/investments/apply', {
+                        amount,
+                        allocation: { [investModal.category]: 100 },
+                        is_sharia: user.sharia_mode,
+                        name: investModal.title,
+                      });
+                      closeLoading();
+                      await showSuccess(
+                        'Investment Successful!',
+                        `EGP ${amount.toFixed(2)} invested in ${investModal.title}. Platform fee: EGP ${fee.toFixed(2)}. Total deducted: EGP ${totalCost.toFixed(2)}.`,
+                      );
+                      await refreshMe();
+                      setInvestModal(null);
+                      setInvestAmt('');
+                    } catch (e: unknown) {
+                      closeLoading();
+                      const ax = e as { response?: { data?: { error?: string } }; message?: string };
+                      const raw = ax.response?.data?.error || ax.message || '';
+                      let msg = 'Something went wrong. Please try again.';
+                      if (/insufficient|balance/i.test(raw)) {
+                        msg = 'Your available balance is not enough for this investment.';
+                      } else if (!ax.response) {
+                        msg = 'Connection lost. Please try again.';
+                      } else if (raw) {
+                        msg = raw;
+                      }
+                      showError('Investment Failed', msg);
+                    }
+                  }}
+                  className="flex-1 rounded-full bg-infinder-lime text-infinder-black font-semibold py-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Confirm &amp; invest
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </SubpageShell>
   );
 }

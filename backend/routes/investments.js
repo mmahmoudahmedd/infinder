@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { supabase } from '../supabase/client.js';
 import { verifyToken } from '../middleware/verifyToken.js';
 import { evaluateRewards } from '../services/rewardsEngine.js';
+import { calculateFee, PLATFORM_FEE_RATE } from '../config/fees.js';
 
 const router = Router();
 
@@ -90,14 +91,15 @@ function normalizeAllocation(a) {
   return out;
 }
 
-async function applyInvestmentLegacy(req, res, amt, norm, reasoning, is_sharia, name) {
+async function applyInvestmentLegacy(req, res, amt, feeAmount, norm, reasoning, is_sharia, name) {
   const { data: user, error: uerr } = await supabase.from('users').select('wallet_balance, kyc_status').eq('id', req.user.id).single();
   if (uerr || !user) return res.status(404).json({ error: 'User not found' });
   if (user.kyc_status === 'rejected') return res.status(403).json({ error: 'KYC rejected — contact support' });
   const bal = Number(user.wallet_balance);
-  if (bal < amt) return res.status(400).json({ error: 'Insufficient balance' });
+  const totalCost = amt + feeAmount;
+  if (bal < totalCost) return res.status(400).json({ error: 'Insufficient balance' });
 
-  const newBal = bal - amt;
+  const newBal = bal - totalCost;
   const { error: werr } = await supabase.from('users').update({ wallet_balance: newBal }).eq('id', req.user.id);
   if (werr) throw werr;
 
@@ -114,18 +116,31 @@ async function applyInvestmentLegacy(req, res, amt, norm, reasoning, is_sharia, 
     .single();
   if (perr) throw perr;
 
-  await supabase.from('transactions').insert({
+  const { data: tx } = await supabase.from('transactions').insert({
     user_id: req.user.id,
     type: 'investment',
     amount: amt,
+    gross_amount: amt,
+    fee_amount: feeAmount,
+    net_amount: amt,
+    fee_rate: PLATFORM_FEE_RATE,
     status: 'completed',
     reference: portfolio.id,
     meta: { allocation: norm },
-  });
+  }).select('id').single();
+
+  if (feeAmount > 0 && tx) {
+    await supabase.from('platform_fees').insert({
+      transaction_id: tx.id,
+      user_id: req.user.id,
+      amount: feeAmount,
+      type: 'investment',
+    });
+  }
 
   await evaluateRewards(req.user.id);
 
-  return res.status(201).json({ portfolio, wallet_balance: newBal });
+  return res.status(201).json({ portfolio, wallet_balance: newBal, fee_amount: feeAmount });
 }
 
 router.post('/apply', verifyToken, async (req, res) => {
@@ -136,6 +151,8 @@ router.post('/apply', verifyToken, async (req, res) => {
     const norm = normalizeAllocation(allocation || {});
     if (!norm) return res.status(400).json({ error: 'Invalid allocation' });
 
+    const feeAmount = calculateFee(amt);
+
     const { data: rpcData, error: rpcErr } = await supabase.rpc('apply_investment', {
       p_user_id: req.user.id,
       p_amount: amt,
@@ -143,6 +160,8 @@ router.post('/apply', verifyToken, async (req, res) => {
       p_reasoning: reasoning || null,
       p_is_sharia: !!is_sharia,
       p_portfolio_name: name || 'My Portfolio',
+      p_fee_amount: feeAmount,
+      p_fee_rate: PLATFORM_FEE_RATE,
     });
 
     const rpcMissing =
@@ -152,7 +171,7 @@ router.post('/apply', verifyToken, async (req, res) => {
         rpcErr.code === 'PGRST202');
 
     if (rpcMissing) {
-      return applyInvestmentLegacy(req, res, amt, norm, reasoning, is_sharia, name);
+      return applyInvestmentLegacy(req, res, amt, feeAmount, norm, reasoning, is_sharia, name);
     }
 
     if (rpcErr) {
@@ -173,7 +192,11 @@ router.post('/apply', verifyToken, async (req, res) => {
 
     await evaluateRewards(req.user.id);
 
-    return res.status(201).json({ portfolio, wallet_balance: Number(result.wallet_balance) });
+    return res.status(201).json({
+      portfolio,
+      wallet_balance: Number(result.wallet_balance),
+      fee_amount: Number(result.fee_amount || feeAmount),
+    });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ error: 'Investment failed' });

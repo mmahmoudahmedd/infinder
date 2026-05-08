@@ -12,6 +12,8 @@ type Tx = {
   id: string;
   type: 'deposit' | 'withdrawal' | 'investment';
   amount: number;
+  fee_amount: number;
+  net_amount: number;
   status: string;
   meta?: { allocation?: Record<string, number>; method?: string };
   created_at: string;
@@ -297,6 +299,11 @@ export default function Dashboard() {
                           {isDeposit ? '+' : '-'}
                           {tx.amount.toLocaleString('en-EG', { minimumFractionDigits: 2 })} EGP
                         </p>
+                        {tx.fee_amount > 0 && (
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                            fee: {tx.fee_amount.toFixed(2)} EGP
+                          </p>
+                        )}
                         <span
                           className={`text-xs px-2 py-0.5 rounded-full ${
                             tx.status === 'completed'

@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 type Props = {
   onClose: () => void;
   onSuccess?: (amount: number) => void;
+  initialAmount?: number;
 };
 
 function formatCardNumber(raw: string) {
@@ -27,12 +28,14 @@ const CHIP_SVG = (
   </svg>
 );
 
-export default function DepositModal({ onClose, onSuccess }: Props) {
+const CARD_FEE_RATE = 0.02;
+
+export default function DepositModal({ onClose, onSuccess, initialAmount }: Props) {
   const [cardNumber, setCardNumber] = useState('');
   const [cardName, setCardName] = useState('');
   const [expiry, setExpiry] = useState('');
   const [cvc, setCvc] = useState('');
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState(initialAmount ? String(initialAmount) : '');
   const [loading, setLoading] = useState(false);
 
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -203,7 +206,7 @@ export default function DepositModal({ onClose, onSuccess }: Props) {
               Deposit Amount
             </label>
             <div className="flex rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden focus-within:border-gray-400 dark:focus-within:border-gray-500 focus-within:ring-2 focus-within:ring-gray-200 dark:focus-within:ring-gray-700 transition-colors">
-              <span className="flex items-center px-3.5 text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-white/5 border-r border-gray-200 dark:border-gray-700">$</span>
+              <span className="flex items-center px-3.5 text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-white/5 border-r border-gray-200 dark:border-gray-700">EGP</span>
               <input
                 id="dep-amount"
                 type="text"
@@ -214,6 +217,21 @@ export default function DepositModal({ onClose, onSuccess }: Props) {
                 className="flex-1 px-3.5 py-2.5 text-sm outline-none bg-white dark:bg-transparent text-gray-900 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-600"
               />
             </div>
+            {parseFloat(amount) > 0 && (() => {
+              const amt = parseFloat(amount);
+              const fee = parseFloat((amt * CARD_FEE_RATE).toFixed(2));
+              const net = parseFloat((amt - fee).toFixed(2));
+              return (
+                <div className="mt-2 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-gray-800 px-3 py-2 text-xs space-y-1">
+                  <div className="flex justify-between text-gray-500 dark:text-gray-400">
+                    <span>Card fee (2%)</span><span>EGP {fee.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold text-gray-900 dark:text-white">
+                    <span>You receive</span><span>EGP {net.toFixed(2)}</span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Submit */}

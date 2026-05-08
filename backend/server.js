@@ -11,6 +11,7 @@ import rewardsRoutes from './routes/rewards.js';
 import adminRoutes from './routes/admin.js';
 import assistantRoutes from './routes/assistant.js';
 import analyticsRoutes from './routes/analytics.js';
+import depositsRoutes from './routes/deposits.js';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -36,6 +37,7 @@ app.use('/api/rewards', rewardsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/assistant', assistantRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/deposits', depositsRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

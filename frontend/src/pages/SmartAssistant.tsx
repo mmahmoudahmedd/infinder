@@ -13,6 +13,12 @@ type Alloc = { stocks: number; baskets: number; bonds: number; gold: number };
 
 const COLORS = ['#BEF35E', '#76D74F', '#9CA3AF', '#FBBF24'];
 
+const FEE_RATE = 0.0025;
+const MIN_FEE = 1;
+function calcFee(amount: number): number {
+  return Math.max(parseFloat((amount * FEE_RATE).toFixed(2)), MIN_FEE);
+}
+
 const slide = {
   initial: { opacity: 0, x: 40 },
   animate: { opacity: 1, x: 0 },
@@ -84,7 +90,10 @@ export default function SmartAssistant() {
       .map((k) => ({ key: k, label: labels[k], egp: (a[k] / 100) * amt }));
   }, [alloc, wizardAlloc, investAmount, mode, t]);
 
-  const overBalance = !!user && Number(investAmount) > 0 && Number(investAmount) > user.wallet_balance;
+  const investAmt = Number(investAmount);
+  const feeAmount = investAmt > 0 ? calcFee(investAmt) : 0;
+  const totalCost = investAmt + feeAmount;
+  const overBalance = !!user && investAmt > 0 && totalCost > user.wallet_balance;
 
   async function sendChat() {
     const text = input.trim();
@@ -323,10 +332,22 @@ export default function SmartAssistant() {
                     ))}
                   </div>
                 )}
+                {investAmt > 0 && (
+                  <div className="mt-3 rounded-xl border border-gray-100 dark:border-gray-800 px-3 py-2.5 space-y-1.5 text-xs">
+                    <div className="flex justify-between text-gray-500 dark:text-gray-400">
+                      <span>Platform fee (0.25%)</span>
+                      <span>EGP {feeAmount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-semibold text-gray-900 dark:text-white border-t border-gray-100 dark:border-gray-800 pt-1.5">
+                      <span>Total deducted</span>
+                      <span>EGP {totalCost.toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={confirmInvest}
-                  disabled={overBalance || !investAmount || Number(investAmount) <= 0}
+                  disabled={overBalance || !investAmount || investAmt <= 0}
                   className="mt-4 w-full rounded-xl bg-infinder-lime text-infinder-black font-semibold py-3 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {t('common_invest_confirm')}
@@ -563,9 +584,20 @@ export default function SmartAssistant() {
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
-                  {t('wizard_investing_label')} <span className="font-semibold text-infinder-black dark:text-white">EGP {Number(investAmount).toLocaleString()}</span>
-                </p>
+                <div className="mt-4 rounded-xl border border-gray-100 dark:border-gray-800 px-3 py-2.5 space-y-1.5 text-xs">
+                  <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                    <span>{t('wizard_investing_label')}</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">EGP {Number(investAmount).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-500 dark:text-gray-400">
+                    <span>Platform fee (0.25%)</span>
+                    <span>EGP {feeAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold text-gray-900 dark:text-white border-t border-gray-100 dark:border-gray-800 pt-1.5">
+                    <span>Total deducted</span>
+                    <span>EGP {totalCost.toFixed(2)}</span>
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={confirmInvest}
