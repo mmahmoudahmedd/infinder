@@ -25,6 +25,9 @@
     "recharts": "^2.13.3",
     "sweetalert2": "^11.26.24"
   },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.60.0"
+  },
   "devDependencies": {
     "@types/canvas-confetti": "^1.6.4",
     "@types/react": "^18.3.12",
