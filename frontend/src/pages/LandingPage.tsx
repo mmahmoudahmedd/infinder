@@ -7,6 +7,7 @@ import i18n from '../i18n';
 import { useTheme } from '../hooks/useTheme';
 import ParticleNetwork from '../components/canvas/ParticleNetwork';
 import GlobeWireframe from '../components/canvas/GlobeWireframe';
+import LandingFooter from '../components/LandingFooter';
 
 export default function LandingPage() {
   const { t } = useTranslation();
@@ -269,6 +270,8 @@ export default function LandingPage() {
           </Link>
         </motion.div>
       </section>
+
+      <LandingFooter />
     </div>
   );
 }

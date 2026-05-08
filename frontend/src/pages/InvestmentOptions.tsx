@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
@@ -19,6 +19,17 @@ type Inv = {
   risk_level: string;
   is_halal: boolean;
   learn_more: string[] | null;
+};
+
+type Position = {
+  id: string;
+  name: string;
+  allocation: Record<string, number>;
+  is_sharia: boolean;
+  status: string;
+  created_at: string;
+  amount: number | null;
+  fee_amount: number;
 };
 
 const FEE_RATE = 0.0025;
@@ -52,6 +63,9 @@ export default function InvestmentOptions() {
   const [filter, setFilter] = useState<string>('all');
   const [investModal, setInvestModal] = useState<Inv | null>(null);
   const [investAmt, setInvestAmt] = useState('');
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [exitTarget, setExitTarget] = useState<Position | null>(null);
+  const [exiting, setExiting] = useState(false);
 
   const riskLabel: Record<string, string> = {
     low: t('invest_risk_low_label'),
@@ -60,10 +74,20 @@ export default function InvestmentOptions() {
     high: t('invest_risk_high_label'),
   };
 
+  const fetchPositions = useCallback(() => {
+    api.get('/api/investments/positions')
+      .then((r) => setPositions(r.data.positions || []))
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     const q = user?.sharia_mode ? '?sharia=1' : '';
     api.get(`/api/investments${q}`).then((r) => setItems(r.data.investments));
   }, [user?.sharia_mode]);
+
+  useEffect(() => {
+    fetchPositions();
+  }, [fetchPositions]);
 
   if (!user) return null;
 
@@ -76,6 +100,45 @@ export default function InvestmentOptions() {
         <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 tracking-widest uppercase mb-1">INFINDER</p>
         <h1 className="text-2xl md:text-3xl font-bold text-infinder-black dark:text-white">{t('nav_invest')}</h1>
       </div>
+
+      {/* ── My Active Positions ── */}
+      {positions.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-3">My Active Positions</h2>
+          <div className="grid md:grid-cols-2 gap-3">
+            {positions.map((pos) => {
+              const allocEntries = Object.entries(pos.allocation || {}).filter(([, v]) => v > 0);
+              const allocSummary = allocEntries
+                .map(([k, v]) => `${k.charAt(0).toUpperCase() + k.slice(1)} ${v}%`)
+                .join(' · ');
+              return (
+                <div
+                  key={pos.id}
+                  className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-4 flex items-center justify-between gap-3"
+                >
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">{pos.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{allocSummary}</p>
+                    <p className="text-xs font-medium text-infinder-green mt-1">
+                      EGP {pos.amount != null ? Number(pos.amount).toFixed(2) : '—'}
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                      {new Date(pos.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setExitTarget(pos)}
+                    className="shrink-0 rounded-full border border-red-300 dark:border-red-800 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 text-xs font-semibold transition-colors"
+                  >
+                    Exit
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="rounded-2xl bg-infinder-lime text-infinder-black p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <p className="text-sm font-medium">{t('invest_assistant_banner')}</p>
@@ -215,6 +278,71 @@ export default function InvestmentOptions() {
         </div>
       </section>
 
+      {/* Exit confirmation modal */}
+      {exitTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-transparent dark:border-gray-800 p-6 max-w-sm w-full shadow-xl">
+            <div className="w-10 h-10 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-lg mb-4">⚠️</div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Exit Position</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{exitTarget.name}</p>
+
+            <div className="mt-4 rounded-xl bg-gray-50 dark:bg-white/[0.04] border border-gray-100 dark:border-gray-800 px-4 py-3 space-y-1.5 text-sm">
+              <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                <span>Invested amount</span>
+                <span>EGP {exitTarget.amount != null ? Number(exitTarget.amount).toFixed(2) : '—'}</span>
+              </div>
+              <div className="flex justify-between font-semibold text-gray-900 dark:text-white border-t border-gray-200 dark:border-gray-700 pt-1.5">
+                <span>You will receive</span>
+                <span className="text-infinder-green">EGP {exitTarget.amount != null ? Number(exitTarget.amount).toFixed(2) : '—'}</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-amber-600 dark:text-amber-500 mt-3">
+              ⚠ This action is irreversible. The position will be permanently closed.
+            </p>
+
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setExitTarget(null)}
+                className="flex-1 rounded-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-2 text-sm hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={exiting}
+                onClick={async () => {
+                  if (!exitTarget) return;
+                  setExiting(true);
+                  showLoading('Closing position...');
+                  try {
+                    const res = await api.post(`/api/investments/${exitTarget.id}/exit`);
+                    closeLoading();
+                    await refreshMe();
+                    fetchPositions();
+                    setExitTarget(null);
+                    await showSuccess(
+                      'Position Closed',
+                      `EGP ${Number(res.data.amount).toFixed(2)} has been returned to your wallet.`,
+                    );
+                  } catch (e: unknown) {
+                    closeLoading();
+                    const ax = e as { response?: { data?: { error?: string } }; message?: string };
+                    showError('Exit Failed', ax.response?.data?.error || ax.message || 'Please try again.');
+                  } finally {
+                    setExiting(false);
+                  }
+                }}
+                className="flex-1 rounded-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {exiting ? 'Closing…' : 'Confirm Exit'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Invest modal */}
       {investModal && (() => {
         const amount = Number(investAmt);
@@ -286,6 +414,7 @@ export default function InvestmentOptions() {
                         `EGP ${amount.toFixed(2)} invested in ${investModal.title}. Platform fee: EGP ${fee.toFixed(2)}. Total deducted: EGP ${totalCost.toFixed(2)}.`,
                       );
                       await refreshMe();
+                      fetchPositions();
                       setInvestModal(null);
                       setInvestAmt('');
                     } catch (e: unknown) {

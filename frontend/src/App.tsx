@@ -15,6 +15,11 @@ import RewardsDashboard from './pages/RewardsDashboard';
 import AdminPanel from './pages/AdminPanel';
 import ReportsPage from './pages/ReportsPage';
 import LearningHub from './pages/LearningHub';
+import TermsPage from './pages/legal/TermsPage';
+import PrivacyPage from './pages/legal/PrivacyPage';
+import RiskPage from './pages/legal/RiskPage';
+import SupportPage from './pages/SupportPage';
+import HelpPage from './pages/HelpPage';
 
 function HomeGate() {
   const { token, loading } = useAuth();
@@ -125,6 +130,11 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="/legal/terms"   element={<TermsPage />} />
+      <Route path="/legal/privacy" element={<PrivacyPage />} />
+      <Route path="/legal/risk"    element={<RiskPage />} />
+      <Route path="/support"       element={<SupportPage />} />
+      <Route path="/help"          element={<HelpPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

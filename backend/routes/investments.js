@@ -94,7 +94,7 @@ function normalizeAllocation(a) {
 async function applyInvestmentLegacy(req, res, amt, feeAmount, norm, reasoning, is_sharia, name) {
   const { data: user, error: uerr } = await supabase.from('users').select('wallet_balance, kyc_status').eq('id', req.user.id).single();
   if (uerr || !user) return res.status(404).json({ error: 'User not found' });
-  if (user.kyc_status === 'rejected') return res.status(403).json({ error: 'KYC rejected — contact support' });
+  if (user.kyc_status !== 'approved') return res.status(403).json({ error: 'KYC verification required before investing' });
   const bal = Number(user.wallet_balance);
   const totalCost = amt + feeAmount;
   if (bal < totalCost) return res.status(400).json({ error: 'Insufficient balance' });
@@ -145,6 +145,10 @@ async function applyInvestmentLegacy(req, res, amt, feeAmount, norm, reasoning, 
 
 router.post('/apply', verifyToken, async (req, res) => {
   try {
+    const { data: kycUser, error: kycErr } = await supabase.from('users').select('kyc_status').eq('id', req.user.id).single();
+    if (kycErr || !kycUser) return res.status(404).json({ error: 'User not found' });
+    if (kycUser.kyc_status !== 'approved') return res.status(403).json({ error: 'KYC verification required before investing' });
+
     const { amount, allocation, reasoning, is_sharia, name } = req.body;
     const amt = Number(amount);
     if (!amt || amt <= 0) return res.status(400).json({ error: 'Invalid amount' });
@@ -200,6 +204,87 @@ router.post('/apply', verifyToken, async (req, res) => {
   } catch (e) {
     console.error(e);
     return res.status(500).json({ error: 'Investment failed' });
+  }
+});
+
+// GET /api/investments/positions — active portfolios with invested amounts
+router.get('/positions', verifyToken, async (req, res) => {
+  try {
+    const { data: portfolios, error: perr } = await supabase
+      .from('portfolios')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false });
+
+    if (perr) throw perr;
+
+    if (!portfolios || portfolios.length === 0) {
+      return res.json({ positions: [] });
+    }
+
+    // Fetch the investment transaction for each portfolio to get the amount
+    const ids = portfolios.map((p) => p.id);
+    const { data: txs, error: terr } = await supabase
+      .from('transactions')
+      .select('reference, amount, fee_amount, created_at')
+      .in('reference', ids.map(String))
+      .eq('type', 'investment');
+
+    if (terr) throw terr;
+
+    const amountByPortfolio = {};
+    const feeByPortfolio = {};
+    for (const tx of txs || []) {
+      amountByPortfolio[tx.reference] = Number(tx.amount);
+      feeByPortfolio[tx.reference] = Number(tx.fee_amount || 0);
+    }
+
+    const positions = portfolios.map((p) => ({
+      id: p.id,
+      name: p.name,
+      allocation: p.allocation,
+      is_sharia: p.is_sharia,
+      status: p.status,
+      created_at: p.created_at,
+      amount: amountByPortfolio[p.id] ?? null,
+      fee_amount: feeByPortfolio[p.id] ?? 0,
+    }));
+
+    return res.json({ positions });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Failed to load positions' });
+  }
+});
+
+// POST /api/investments/:id/exit — close a position and return funds
+router.post('/:id/exit', verifyToken, async (req, res) => {
+  try {
+    const { data, error } = await supabase.rpc('exit_investment', {
+      p_portfolio_id: req.params.id,
+      p_user_id: req.user.id,
+    });
+
+    if (error) {
+      console.error('exit_investment rpc', error);
+      return res.status(500).json({ error: error.message || 'Exit failed' });
+    }
+
+    if (data && data.ok === false) {
+      return res.status(400).json({ error: data.error || 'Exit failed' });
+    }
+
+    await evaluateRewards(req.user.id);
+
+    return res.json({
+      wallet_balance: Number(data.wallet_balance),
+      amount: Number(data.amount),
+      transaction_id: data.transaction_id,
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Exit failed' });
   }
 });
 

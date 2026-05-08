@@ -23,13 +23,11 @@ router.post('/register', authLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Email and password required' });
     }
 
-    const { data: existing, error: existingError } = await supabase
+    const { data: existing } = await supabase
       .from('users')
       .select('id')
       .eq('email', email)
       .maybeSingle();
-
-    console.log('🔍 EXISTING CHECK:', { existing, existingError });
 
     if (existing) return res.status(409).json({ error: 'Email already registered' });
 
@@ -45,13 +43,6 @@ router.post('/register', authLimiter, async (req, res) => {
       deposit_ref_code = generateDepositRef();
     }
 
-    console.log('🟡 ATTEMPTING INSERT with:', {
-      email: email.toLowerCase().trim(),
-      full_name,
-      deposit_ref_code,
-      kyc_status: 'under_review',
-    });
-
     const { data: user, error } = await supabase
       .from('users')
       .insert({
@@ -61,13 +52,10 @@ router.post('/register', authLimiter, async (req, res) => {
         phone: phone || null,
         sharia_mode: !!sharia_mode,
         deposit_ref_code,
-        kyc_status: 'under_review',
+        kyc_status: 'not_started',
       })
       .select('id, email, full_name, phone, kyc_status, sharia_mode, wallet_balance, role, deposit_ref_code, created_at')
       .single();
-
-    console.log('🟡 INSERT RESULT - data:', user);
-    console.log('🟡 INSERT RESULT - error:', JSON.stringify(error, null, 2));
 
     if (error) throw error;
 
@@ -76,17 +64,8 @@ router.post('/register', authLimiter, async (req, res) => {
     return res.status(201).json({ token, user });
 
   } catch (e) {
-    console.error('🔴 REGISTER ERROR MESSAGE:', e?.message);
-    console.error('🔴 REGISTER ERROR CODE:', e?.code);
-    console.error('🔴 REGISTER ERROR DETAILS:', e?.details);
-    console.error('🔴 REGISTER ERROR HINT:', e?.hint);
-    console.error('🔴 REGISTER FULL ERROR:', JSON.stringify(e, null, 2));
-    return res.status(500).json({
-      error: e?.message || 'Registration failed',
-      code: e?.code,
-      details: e?.details,
-      hint: e?.hint,
-    });
+    console.error('register error:', e?.message, e?.code);
+    return res.status(500).json({ error: 'Registration failed' });
   }
 });
 
@@ -101,14 +80,10 @@ router.post('/login', authLimiter, async (req, res) => {
       .eq('email', email.toLowerCase().trim())
       .maybeSingle();
 
-    console.log('🔍 LOGIN USER FOUND:', user ? `yes — id: ${user.id}` : 'null');
-    console.log('🔍 LOGIN DB ERROR:', JSON.stringify(error, null, 2));
-
     if (error || !user) return res.status(401).json({ error: 'Invalid credentials' });
+    if (user.deleted_at) return res.status(401).json({ error: 'Invalid credentials' });
 
     const ok = await bcrypt.compare(password, user.password_hash);
-    console.log('🔍 PASSWORD MATCH:', ok);
-
     if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
 
     await supabase
@@ -132,15 +107,8 @@ router.post('/login', authLimiter, async (req, res) => {
     return res.json({ token, user: safe });
 
   } catch (e) {
-    console.error('🔴 LOGIN ERROR MESSAGE:', e?.message);
-    console.error('🔴 LOGIN ERROR CODE:', e?.code);
-    console.error('🔴 LOGIN ERROR DETAILS:', e?.details);
-    console.error('🔴 LOGIN FULL ERROR:', JSON.stringify(e, null, 2));
-    return res.status(500).json({
-      error: e?.message || 'Login failed',
-      code: e?.code,
-      details: e?.details,
-    });
+    console.error('login error:', e?.message);
+    return res.status(500).json({ error: 'Login failed' });
   }
 });
 
@@ -165,7 +133,7 @@ router.patch('/me', verifyToken, async (req, res) => {
     return res.json({ user });
 
   } catch (e) {
-    console.error('🔴 UPDATE ME ERROR:', e?.message);
+    console.error('update me error:', e?.message);
     return res.status(500).json({ error: 'Update failed' });
   }
 });
@@ -183,8 +151,64 @@ router.get('/me', verifyToken, async (req, res) => {
     return res.json({ user });
 
   } catch (e) {
-    console.error('🔴 GET ME ERROR:', e?.message);
+    console.error('get me error:', e?.message);
     return res.status(500).json({ error: 'Failed to load profile' });
+  }
+});
+
+router.delete('/account', verifyToken, async (req, res) => {
+  try {
+    const { data: user, error: uErr } = await supabase
+      .from('users')
+      .select('wallet_balance, deleted_at')
+      .eq('id', req.user.id)
+      .single();
+
+    if (uErr || !user) return res.status(404).json({ error: 'User not found' });
+    if (user.deleted_at) return res.status(410).json({ error: 'Account already deleted' });
+
+    if (Number(user.wallet_balance) > 0) {
+      return res.status(400).json({ error: 'Withdraw your funds before deleting your account' });
+    }
+
+    const { data: activePortfolios } = await supabase
+      .from('portfolios')
+      .select('id')
+      .eq('user_id', req.user.id)
+      .eq('status', 'active')
+      .limit(1);
+    if (activePortfolios?.length > 0) {
+      return res.status(400).json({ error: 'Exit all investments before deleting your account' });
+    }
+
+    const { data: pendingDeposits } = await supabase
+      .from('deposits')
+      .select('id')
+      .eq('user_id', req.user.id)
+      .eq('status', 'pending')
+      .limit(1);
+    if (pendingDeposits?.length > 0) {
+      return res.status(400).json({ error: 'You have pending deposits. Wait for them to clear or contact support' });
+    }
+
+    const { error: delErr } = await supabase
+      .from('users')
+      .update({
+        deleted_at:       new Date().toISOString(),
+        email:            `deleted_${req.user.id}@deleted.invalid`,
+        full_name:        null,
+        phone:            null,
+        password_hash:    '',
+        deposit_ref_code: null,
+      })
+      .eq('id', req.user.id);
+
+    if (delErr) throw delErr;
+
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('delete account error:', e?.message);
+    return res.status(500).json({ error: 'Account deletion failed' });
   }
 });
 

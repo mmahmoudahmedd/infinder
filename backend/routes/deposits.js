@@ -18,6 +18,10 @@ function generateRefCode(method) {
 // POST /api/deposits
 router.post('/', verifyToken, async (req, res) => {
   try {
+    const { data: kycUser, error: kycErr } = await supabase.from('users').select('kyc_status').eq('id', req.user.id).single();
+    if (kycErr || !kycUser) return res.status(404).json({ error: 'User not found' });
+    if (kycUser.kyc_status !== 'approved') return res.status(403).json({ error: 'KYC verification required before depositing' });
+
     const { method, amount } = req.body;
     const n = Number(amount);
 
