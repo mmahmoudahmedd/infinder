@@ -2,7 +2,8 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import { supabase } from '../supabase/client.js';
-import { verifyToken } from '../middleware/verifyToken.js';
+import { verifyToken, requireAdmin } from '../middleware/verifyToken.js';
+import { evaluateRewards } from '../services/rewardsEngine.js';
 
 const router = Router();
 
@@ -34,6 +35,41 @@ async function uploadToStorage(userId, fieldName, file) {
   if (error) throw new Error(`Storage upload failed for ${fieldName}: ${error.message}`);
   return storagePath;
 }
+
+// GET /api/kyc/admin/pending — admin: list submissions awaiting review
+// Defined before /:id routes to prevent Express treating 'admin' as a submission ID param.
+router.get('/admin/pending', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('kyc_submissions')
+      .select(`
+        id, status, submitted_at, rejection_reason,
+        national_id_front_url, national_id_back_url, selfie_url, address_proof_url,
+        users!inner(id, email, full_name, phone, kyc_status, created_at)
+      `)
+      .eq('status', 'pending')
+      .order('submitted_at', { ascending: true });
+
+    if (error) throw error;
+
+    const submissions = (data || []).map((s) => ({
+      id: s.id,
+      status: s.status,
+      submitted_at: s.submitted_at,
+      rejection_reason: s.rejection_reason,
+      national_id_front_url: s.national_id_front_url,
+      national_id_back_url: s.national_id_back_url,
+      selfie_url: s.selfie_url,
+      address_proof_url: s.address_proof_url,
+      user: s.users,
+    }));
+
+    return res.json({ submissions });
+  } catch (e) {
+    console.error('kyc admin/pending', e);
+    return res.status(500).json({ error: 'Failed to load KYC queue' });
+  }
+});
 
 // POST /api/kyc/submit
 router.post('/submit', verifyToken, (req, res) => {
@@ -118,28 +154,25 @@ router.get('/status', verifyToken, async (req, res) => {
 });
 
 // POST /api/kyc/:id/approve — admin only
-router.post('/:id/approve', verifyToken, async (req, res) => {
+router.post('/:id/approve', verifyToken, requireAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+    const { data, error } = await supabase.rpc('review_kyc_submission', {
+      p_submission_id: req.params.id,
+      p_admin_id:      req.user.id,
+      p_action:        'approve',
+    });
 
-    const { data: sub, error: sErr } = await supabase
-      .from('kyc_submissions')
-      .update({
-        status:      'approved',
-        reviewed_at: new Date().toISOString(),
-        reviewed_by: req.user.id,
-      })
-      .eq('id', req.params.id)
-      .select('user_id')
-      .single();
-    if (sErr || !sub) return res.status(404).json({ error: 'Submission not found' });
+    if (error) {
+      console.error('review_kyc_submission rpc', error);
+      return res.status(500).json({ error: error.message || 'Approval failed' });
+    }
+    if (data && data.ok === false) {
+      return res.status(400).json({ error: data.error || 'Approval failed' });
+    }
 
-    await supabase
-      .from('users')
-      .update({ kyc_status: 'approved', kyc_rejection_reason: null })
-      .eq('id', sub.user_id);
+    await evaluateRewards(data.user_id);
 
-    return res.json({ ok: true });
+    return res.json({ ok: true, user_id: data.user_id, kyc_status: data.kyc_status });
   } catch (e) {
     console.error('kyc approve', e);
     return res.status(500).json({ error: 'Approval failed' });
@@ -147,32 +180,27 @@ router.post('/:id/approve', verifyToken, async (req, res) => {
 });
 
 // POST /api/kyc/:id/reject — admin only
-router.post('/:id/reject', verifyToken, async (req, res) => {
+router.post('/:id/reject', verifyToken, requireAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
-
     const { reason } = req.body;
     if (!reason?.trim()) return res.status(400).json({ error: 'Rejection reason required' });
 
-    const { data: sub, error: sErr } = await supabase
-      .from('kyc_submissions')
-      .update({
-        status:           'rejected',
-        reviewed_at:      new Date().toISOString(),
-        reviewed_by:      req.user.id,
-        rejection_reason: reason,
-      })
-      .eq('id', req.params.id)
-      .select('user_id')
-      .single();
-    if (sErr || !sub) return res.status(404).json({ error: 'Submission not found' });
+    const { data, error } = await supabase.rpc('review_kyc_submission', {
+      p_submission_id: req.params.id,
+      p_admin_id:      req.user.id,
+      p_action:        'reject',
+      p_reason:        reason,
+    });
 
-    await supabase
-      .from('users')
-      .update({ kyc_status: 'rejected', kyc_rejection_reason: reason })
-      .eq('id', sub.user_id);
+    if (error) {
+      console.error('review_kyc_submission rpc', error);
+      return res.status(500).json({ error: error.message || 'Rejection failed' });
+    }
+    if (data && data.ok === false) {
+      return res.status(400).json({ error: data.error || 'Rejection failed' });
+    }
 
-    return res.json({ ok: true });
+    return res.json({ ok: true, user_id: data.user_id, kyc_status: data.kyc_status });
   } catch (e) {
     console.error('kyc reject', e);
     return res.status(500).json({ error: 'Rejection failed' });
