@@ -22,8 +22,7 @@ gradweb/
 │   │   ├── learning.js
 │   │   ├── rewards.js
 │   │   ├── analytics.js
-│   │   ├── assistant.js
-│   │   └── admin.js
+│   │   └── assistant.js
 │   ├── services/
 │   │   └── rewardsEngine.js  # Badge evaluation logic
 │   ├── supabase/client.js    # Supabase service-role client singleton
@@ -45,7 +44,7 @@ gradweb/
 │       └── App.tsx           # React Router v6 route definitions
 │
 ├── supabase/
-│   └── migrations/           # Ordered SQL migration files (001–008)
+│   └── migrations/           # Ordered SQL migration files (001–009)
 │
 └── docs/                     # Architecture docs and plans
 ```
