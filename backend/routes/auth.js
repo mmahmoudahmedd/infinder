@@ -54,7 +54,7 @@ router.post('/register', authLimiter, async (req, res) => {
         deposit_ref_code,
         kyc_status: 'not_started',
       })
-      .select('id, email, full_name, phone, kyc_status, sharia_mode, wallet_balance, role, deposit_ref_code, created_at')
+      .select('id, email, full_name, phone, kyc_status, sharia_mode, wallet_balance, role, deposit_ref_code, created_at, risk_tolerance, investment_horizon, investment_goal, profile_completed_at')
       .single();
 
     if (error) throw error;
@@ -103,6 +103,10 @@ router.post('/login', authLimiter, async (req, res) => {
       role: user.role,
       deposit_ref_code: user.deposit_ref_code,
       created_at: user.created_at,
+      risk_tolerance: user.risk_tolerance ?? null,
+      investment_horizon: user.investment_horizon ?? null,
+      investment_goal: user.investment_goal ?? null,
+      profile_completed_at: user.profile_completed_at ?? null,
     };
     return res.json({ token, user: safe });
 
@@ -125,7 +129,7 @@ router.patch('/me', verifyToken, async (req, res) => {
       .from('users')
       .update(patch)
       .eq('id', req.user.id)
-      .select('id, email, full_name, phone, kyc_status, kyc_rejection_reason, sharia_mode, wallet_balance, role, deposit_ref_code, created_at')
+      .select('id, email, full_name, phone, kyc_status, kyc_rejection_reason, sharia_mode, wallet_balance, role, deposit_ref_code, created_at, risk_tolerance, investment_horizon, investment_goal, profile_completed_at')
       .single();
 
     if (error || !user) return res.status(404).json({ error: 'User not found' });
@@ -142,7 +146,7 @@ router.get('/me', verifyToken, async (req, res) => {
   try {
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, email, full_name, phone, kyc_status, kyc_rejection_reason, sharia_mode, wallet_balance, role, deposit_ref_code, created_at')
+      .select('id, email, full_name, phone, kyc_status, kyc_rejection_reason, sharia_mode, wallet_balance, role, deposit_ref_code, created_at, risk_tolerance, investment_horizon, investment_goal, profile_completed_at')
       .eq('id', req.user.id)
       .single();
 
