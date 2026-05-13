@@ -4,13 +4,18 @@ import { motion } from 'framer-motion';
 import api from '../lib/api';
 import { AppShell } from '../components/AppShell';
 
-type Row = {
+type Submission = {
   id: string;
-  email: string;
-  full_name: string | null;
-  phone: string | null;
-  kyc_status: string;
-  created_at: string;
+  status: string;
+  submitted_at: string;
+  user: {
+    id: string;
+    email: string;
+    full_name: string | null;
+    phone: string | null;
+    kyc_status: string;
+    created_at: string;
+  };
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -30,12 +35,12 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function AdminPanel() {
   const { t } = useTranslation();
-  const [rows, setRows] = useState<Row[]>([]);
+  const [rows, setRows] = useState<Submission[]>([]);
   const [reason, setReason] = useState('');
   const [msg, setMsg] = useState('');
 
   async function load() {
-    const r = await api.get('/api/admin/kyc');
+    const r = await api.get('/api/kyc/admin/pending');
     setRows(r.data.submissions);
   }
 
@@ -43,16 +48,18 @@ export default function AdminPanel() {
     load().catch(() => setMsg(t('admin_load_error')));
   }, []);
 
-  async function approve(id: string) {
+  async function approve(submissionId: string) {
     setMsg('');
-    await api.post('/api/admin/kyc/approve', { userId: id });
+    await api.post(`/api/kyc/${submissionId}/approve`);
     setMsg(t('admin_approved_msg'));
     await load();
   }
 
-  async function reject(id: string) {
+  async function reject(submissionId: string) {
     setMsg('');
-    await api.post('/api/admin/kyc/reject', { userId: id, reason: reason || 'Please resubmit documents.' });
+    await api.post(`/api/kyc/${submissionId}/reject`, {
+      reason: reason || 'Please resubmit documents.',
+    });
     setMsg(t('admin_rejected_msg'));
     setReason('');
     await load();
@@ -70,34 +77,34 @@ export default function AdminPanel() {
           {rows.length === 0 ? (
             <p className="text-gray-500 dark:text-gray-400 text-sm">{t('admin_none')}</p>
           ) : (
-            rows.map((u, i) => (
+            rows.map((s, i) => (
               <motion.div
-                key={u.id}
+                key={s.id}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06 }}
                 className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] px-5 py-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
               >
                 <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">{u.full_name || '—'}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{u.email}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{u.phone || t('admin_no_phone')}</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">{s.user.full_name || '—'}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{s.user.email}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{s.user.phone || t('admin_no_phone')}</p>
                   <div className="mt-2">
-                    <StatusBadge status={u.kyc_status} />
+                    <StatusBadge status={s.status} />
                   </div>
                 </div>
                 <div className="flex flex-col sm:items-end gap-2 sm:min-w-[200px]">
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => approve(u.id)}
+                      onClick={() => approve(s.id)}
                       className="rounded-full bg-infinder-lime text-infinder-black text-sm font-semibold px-4 py-2"
                     >
                       {t('admin_approve')}
                     </button>
                     <button
                       type="button"
-                      onClick={() => reject(u.id)}
+                      onClick={() => reject(s.id)}
                       className="rounded-full bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm font-medium px-4 py-2"
                     >
                       {t('admin_reject')}
