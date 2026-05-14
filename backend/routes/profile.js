@@ -50,13 +50,17 @@ router.patch('/investment', verifyToken, async (req, res) => {
       return res.status(400).json({ error: 'No valid fields to update' });
 
     // Fetch current values to decide whether to set profile_completed_at
-    const { data: current } = await supabase
+    const { data: current, error: fetchErr } = await supabase
       .from('users')
       .select('risk_tolerance, investment_horizon, investment_goal, profile_completed_at')
       .eq('id', req.user.id)
       .single();
 
+    if (fetchErr || !current)
+      return res.status(500).json({ error: 'Failed to load current profile' });
+
     const merged = { ...current, ...patch };
+    // Two-query approach; race condition is accepted for this low-frequency operation
     if (merged.risk_tolerance && merged.investment_horizon && merged.investment_goal && !merged.profile_completed_at) {
       patch.profile_completed_at = new Date().toISOString();
     }
