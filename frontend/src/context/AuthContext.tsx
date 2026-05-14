@@ -13,6 +13,10 @@ export type User = {
   role: string;
   deposit_ref_code?: string | null;
   created_at?: string;
+  risk_tolerance?: 'low' | 'medium' | 'high' | null;
+  investment_horizon?: 'short' | 'medium' | 'long' | null;
+  investment_goal?: 'preserve' | 'grow' | null;
+  profile_completed_at?: string | null;
 };
 
 type AuthState = {
