@@ -338,7 +338,7 @@ export default function ProfilePage() {
       await refreshMe();
       showToast(t('profile_saved'));
     } catch {
-      showAlert('Save failed', t('profile_save_error'));
+      showAlert(t('profile_save_error'), t('profile_save_error'));
     } finally {
       setSaving(false);
     }
@@ -355,9 +355,9 @@ export default function ProfilePage() {
         payment_method_data: { holder_name: pmHolder.trim().toUpperCase(), last4: pmLast4.replace(/\D/g, '').slice(-4), expiry: pmExpiry },
       });
       setEditingCard(false);
-      showToast('Payment method saved');
+      showToast(t('pm_saved'));
     } catch {
-      showAlert('Error', 'Could not save payment method');
+      showAlert(t('pm_save_error'), t('pm_save_error'));
     } finally {
       setPmSaving(false);
     }
@@ -366,16 +366,16 @@ export default function ProfilePage() {
   async function removePaymentMethod() {
     try {
       await updateProfile({ payment_method_type: null, payment_method_data: null });
-      showToast('Payment method removed');
+      showToast(t('pm_removed'));
     } catch {
-      showAlert('Error', 'Could not remove payment method');
+      showAlert(t('pm_remove_error'), t('pm_remove_error'));
     }
   }
 
   function copyRef() {
     if (user?.deposit_ref_code) {
       navigator.clipboard.writeText(user.deposit_ref_code);
-      showToast('Copied!');
+      showToast(t('profile_ref_copied'));
     }
   }
 

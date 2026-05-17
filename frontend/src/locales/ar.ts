@@ -264,6 +264,10 @@ const ar: Record<TranslationKey, string> = {
   pm_edit: 'تعديل',
   pm_remove: 'إزالة',
   pm_save: 'حفظ البطاقة',
+  pm_saved: 'تم حفظ طريقة الدفع.',
+  pm_removed: 'تم إزالة طريقة الدفع.',
+  pm_save_error: 'تعذر حفظ طريقة الدفع.',
+  pm_remove_error: 'تعذر إزالة طريقة الدفع.',
   profile_deposit_ref: 'مرجع الإيداع',
   profile_deposit_ref_sub: 'أدرج هذا الرمز في ملاحظات التحويل البنكي أو Instapay حتى تُضاف المدفوعات إلى حسابك.',
   profile_copy: 'نسخ',
@@ -311,6 +315,7 @@ const ar: Record<TranslationKey, string> = {
   reports_amount: 'المبلغ',
 
   // Learning
+  learn_enrolled: 'تم التسجيل بنجاح!',
   learn_title: 'وحدات التعلم',
   learn_sub: 'دروس قصيرة مع اختبارات سريعة — تعلم بالسرعة التي تناسبك.',
   learn_lessons_label: 'الدروس',

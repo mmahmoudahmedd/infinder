@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { SubpageShell } from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
 import { showAlert, showToast } from '../lib/swal';
@@ -720,6 +721,7 @@ function LessonView({
 // ── Root ───────────────────────────────────────────────────────────────────
 
 export default function LearningHub() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [currentView, setCurrentView] = useState<CurrentView>('hub');
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
@@ -752,7 +754,7 @@ export default function LearningHub() {
         saveEnrolled(next);
         return next;
       });
-      showToast('Enrolled successfully!');
+      showToast(t('learn_enrolled'));
       setSelectedCourse(course);
       setActiveLevel('beginner');
       setCurrentView('courseDetail');

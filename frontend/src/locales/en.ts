@@ -262,6 +262,10 @@ const en = {
   pm_edit: 'Edit',
   pm_remove: 'Remove',
   pm_save: 'Save card',
+  pm_saved: 'Payment method saved.',
+  pm_removed: 'Payment method removed.',
+  pm_save_error: 'Could not save payment method.',
+  pm_remove_error: 'Could not remove payment method.',
   profile_deposit_ref: 'Deposit reference',
   profile_deposit_ref_sub: 'Include this code in bank or Instapay notes so deposits match your account.',
   profile_copy: 'Copy',
@@ -309,6 +313,7 @@ const en = {
   reports_amount: 'Amount',
 
   // Learning
+  learn_enrolled: 'Enrolled successfully!',
   learn_title: 'Learning modules',
   learn_sub: 'Short lessons with quick checks — learn at your pace.',
   learn_lessons_label: 'Lessons',
