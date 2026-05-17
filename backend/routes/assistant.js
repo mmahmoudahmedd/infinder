@@ -69,6 +69,7 @@ async function callGroq(messages) {
   });
   const json = await response.json();
   if (!response.ok) throw new Error(json.error?.message || `Groq error ${response.status}`);
+  if (!json.choices?.length) throw new Error('No response generated');
   return json.choices[0].message.content;
 }
 

@@ -86,7 +86,8 @@ function normalizeAllocation(a) {
     const f = 100 / sum;
     for (const k of keys) out[k] = Math.round(out[k] * f);
     let diff = 100 - keys.reduce((s, k) => s + out[k], 0);
-    out.stocks += diff;
+    const largest = keys.reduce((a, b) => (out[a] >= out[b] ? a : b));
+    out[largest] += diff;
   }
   return out;
 }

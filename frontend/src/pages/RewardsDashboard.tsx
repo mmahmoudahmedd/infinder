@@ -14,25 +14,30 @@ type Achievement = {
 };
 
 const badgeIcon: Record<string, LucideIcon> = {
-  first_fund:        Wallet,
-  first_invest:      TrendingUp,
-  first_lesson:      BookOpen,
-  kyc_verified:      ShieldCheck,
-  sharia_investor:   Moon,
-  portfolio_builder: Layers,
-  learning_complete: GraduationCap,
-  gold_investor:     Award,
-  default:           Trophy,
+  wallet_funded:      Wallet,
+  first_investment:   TrendingUp,
+  first_scholar:      BookOpen,
+  verified_investor:  ShieldCheck,
+  sharia_investor:    Moon,
+  portfolio_builder:  Layers,
+  learning_champion:  GraduationCap,
+  certified_investor: Award,
+  diversified:        Layers,
+  streak_7:           Trophy,
+  default:            Trophy,
 };
 
 const badgeAccent: Record<string, string> = {
-  first_fund: '#BEF35E',
-  first_invest: '#76D74F',
-  first_lesson: '#60A5FA',
-  kyc_verified: '#34D399',
-  sharia_investor: '#A78BFA',
-  learning_complete: '#FBBF24',
-  default: '#E5E7EB',
+  wallet_funded:      '#BEF35E',
+  first_investment:   '#76D74F',
+  first_scholar:      '#60A5FA',
+  verified_investor:  '#34D399',
+  sharia_investor:    '#A78BFA',
+  learning_champion:  '#FBBF24',
+  certified_investor: '#F59E0B',
+  diversified:        '#818CF8',
+  streak_7:           '#FB923C',
+  default:            '#E5E7EB',
 };
 
 export default function RewardsDashboard() {

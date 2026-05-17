@@ -59,8 +59,5 @@ export async function evaluateRewards(userId) {
     if (nz >= 2) await award(userId, 'portfolio_builder');
   }
 
-  if (user?.last_login_at && user?.created_at) {
-    const daysReg = (Date.now() - new Date(user.created_at).getTime()) / 86400000;
-    if (daysReg >= 7) await award(userId, 'streak_7');
-  }
+  // streak_7 requires login history tracking (not yet implemented)
 }
