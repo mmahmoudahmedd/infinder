@@ -2,7 +2,7 @@ import { useEffect, useReducer } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, BookOpen, Wallet, TrendingUp, Leaf, ShieldCheck, Library, Zap, type LucideIcon } from 'lucide-react';
 import i18n from '../i18n';
 import { useTheme } from '../hooks/useTheme';
 import ParticleNetwork from '../components/canvas/ParticleNetwork';
@@ -18,17 +18,17 @@ export default function LandingPage() {
     return () => i18n.off('languageChanged', forceUpdate);
   }, []);
 
-  const steps = [
-    { title: t('landing_step_learn_title'), desc: t('landing_step_learn_desc'), icon: '📘', num: '01' },
-    { title: t('landing_step_fund_title'),  desc: t('landing_step_fund_desc'),  icon: '👛', num: '02' },
-    { title: t('landing_step_invest_title'),desc: t('landing_step_invest_desc'),icon: '📈', num: '03' },
-    { title: t('landing_step_grow_title'),  desc: t('landing_step_grow_desc'),  icon: '🌱', num: '04' },
+  const steps: { title: string; desc: string; icon: LucideIcon; num: string }[] = [
+    { title: t('landing_step_learn_title'), desc: t('landing_step_learn_desc'), icon: BookOpen,   num: '01' },
+    { title: t('landing_step_fund_title'),  desc: t('landing_step_fund_desc'),  icon: Wallet,     num: '02' },
+    { title: t('landing_step_invest_title'),desc: t('landing_step_invest_desc'),icon: TrendingUp, num: '03' },
+    { title: t('landing_step_grow_title'),  desc: t('landing_step_grow_desc'),  icon: Leaf,       num: '04' },
   ];
 
-  const features = [
-    { icon: '🛡️', title: t('landing_feat_safe_title'),  desc: t('landing_feat_safe_desc') },
-    { icon: '📚', title: t('landing_feat_learn_title'), desc: t('landing_feat_learn_desc') },
-    { icon: '✨', title: t('landing_feat_smart_title'), desc: t('landing_feat_smart_desc') },
+  const features: { icon: LucideIcon; title: string; desc: string }[] = [
+    { icon: ShieldCheck, title: t('landing_feat_safe_title'),  desc: t('landing_feat_safe_desc') },
+    { icon: Library,     title: t('landing_feat_learn_title'), desc: t('landing_feat_learn_desc') },
+    { icon: Zap,         title: t('landing_feat_smart_title'), desc: t('landing_feat_smart_desc') },
   ];
 
   return (
@@ -194,7 +194,7 @@ export default function LandingPage() {
                 className="group rounded-2xl bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] p-6 hover:bg-gray-50 dark:hover:bg-white/[0.07] hover:border-infinder-lime/40 dark:hover:border-infinder-lime/25 transition-all duration-300 shadow-sm dark:shadow-none"
               >
                 <div className="flex justify-between items-start mb-5">
-                  <span className="text-2xl">{s.icon}</span>
+                  <s.icon className="w-6 h-6 text-gray-600 dark:text-white/60 group-hover:text-infinder-green transition-colors" />
                   <span className="text-xs font-mono text-gray-300 dark:text-white/20 group-hover:text-infinder-lime/60 dark:group-hover:text-infinder-lime/40 transition">
                     {s.num}
                   </span>
@@ -235,8 +235,8 @@ export default function LandingPage() {
                 transition={{ delay: i * 0.07 }}
                 className="group p-7 rounded-2xl border border-gray-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] hover:border-infinder-lime/50 hover:shadow-md hover:-translate-y-1 transition-all duration-200"
               >
-                <div className="w-11 h-11 rounded-xl bg-infinder-black flex items-center justify-center text-lg mb-5">
-                  {f.icon}
+                <div className="w-11 h-11 rounded-xl bg-infinder-black flex items-center justify-center mb-5">
+                  <f.icon className="w-5 h-5 text-infinder-lime" />
                 </div>
                 <h3 className="font-semibold text-gray-900 dark:text-white text-lg">{f.title}</h3>
                 <p className="text-gray-500 dark:text-gray-400 text-sm mt-2 leading-relaxed">{f.desc}</p>

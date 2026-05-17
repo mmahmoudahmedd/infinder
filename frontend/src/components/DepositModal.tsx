@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 type Props = {
   onClose: () => void;
@@ -17,6 +18,16 @@ function formatExpiry(raw: string) {
   return digits;
 }
 
+function isExpiryValid(expiry: string): boolean {
+  const [mm, yy] = expiry.split('/');
+  if (!mm || !yy || yy.length < 2) return false;
+  const month = parseInt(mm, 10);
+  const year = 2000 + parseInt(yy, 10);
+  if (month < 1 || month > 12) return false;
+  const now = new Date();
+  return year > now.getFullYear() || (year === now.getFullYear() && month >= now.getMonth() + 1);
+}
+
 const CHIP_SVG = (
   <svg width="40" height="30" viewBox="0 0 40 30" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect width="40" height="30" rx="4" fill="#D4A843" />
@@ -31,12 +42,18 @@ const CHIP_SVG = (
 const CARD_FEE_RATE = 0.02;
 
 export default function DepositModal({ onClose, onSuccess, initialAmount }: Props) {
+  const { user, updateProfile } = useAuth();
+  const saved = user?.payment_method_type === 'card' ? user.payment_method_data : null;
+
+  const [useSaved, setUseSaved] = useState(!!saved);
   const [cardNumber, setCardNumber] = useState('');
-  const [cardName, setCardName] = useState('');
-  const [expiry, setExpiry] = useState('');
+  const [cardName, setCardName] = useState(saved?.holder_name ?? '');
+  const [expiry, setExpiry] = useState(saved?.expiry ?? '');
   const [cvc, setCvc] = useState('');
   const [amount, setAmount] = useState(initialAmount ? String(initialAmount) : '');
+  const [saveCard, setSaveCard] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [expiryErr, setExpiryErr] = useState(false);
 
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -46,7 +63,17 @@ export default function DepositModal({ onClose, onSuccess, initialAmount }: Prop
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  const displayNumber = cardNumber
+  function switchToNewCard() {
+    setUseSaved(false);
+    setCardName('');
+    setExpiry('');
+    setCardNumber('');
+    setCvc('');
+  }
+
+  const displayNumber = useSaved && saved
+    ? `•••• •••• •••• ${saved.last4}`
+    : cardNumber
     ? cardNumber.replace(/ /g, '').padEnd(16, '•').replace(/(.{4})/g, '$1 ').trim()
     : '•••• •••• •••• ••••';
 
@@ -57,8 +84,25 @@ export default function DepositModal({ onClose, onSuccess, initialAmount }: Prop
     e.preventDefault();
     const amt = parseFloat(amount);
     if (!amt || amt <= 0) return;
+    if (expiry.length === 5 && !isExpiryValid(expiry)) {
+      setExpiryErr(true);
+      return;
+    }
     setLoading(true);
     await new Promise((r) => setTimeout(r, 900));
+
+    if (saveCard && cardNumber && cardName && expiry) {
+      const digits = cardNumber.replace(/\D/g, '');
+      await updateProfile({
+        payment_method_type: 'card',
+        payment_method_data: {
+          holder_name: cardName,
+          last4: digits.slice(-4),
+          expiry,
+        },
+      }).catch(() => {});
+    }
+
     setLoading(false);
     onSuccess?.(amt);
     onClose();
@@ -86,17 +130,31 @@ export default function DepositModal({ onClose, onSuccess, initialAmount }: Prop
           </button>
         </div>
 
+        {/* Saved card banner */}
+        {saved && useSaved && (
+          <div className="mx-6 mb-2 flex items-center justify-between rounded-xl bg-infinder-lime/20 border border-infinder-lime/40 px-3.5 py-2.5 text-sm">
+            <span className="font-medium text-gray-900 dark:text-white">
+              Using saved card •••• {saved.last4}
+            </span>
+            <button
+              type="button"
+              onClick={switchToNewCard}
+              className="text-xs underline text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors ml-3 shrink-0"
+            >
+              Use different
+            </button>
+          </div>
+        )}
+
         {/* Card Preview */}
         <div className="px-6 pt-2 pb-4">
           <div
             className="relative rounded-2xl p-5 overflow-hidden select-none"
             style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', minHeight: 180 }}
           >
-            {/* Decorative circles */}
             <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/5" />
             <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-white/5" />
 
-            {/* Top row: chip + VISA */}
             <div className="relative flex justify-between items-start mb-5">
               {CHIP_SVG}
               <svg className="h-6 w-auto opacity-90" viewBox="0 0 60 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -104,15 +162,10 @@ export default function DepositModal({ onClose, onSuccess, initialAmount }: Prop
               </svg>
             </div>
 
-            {/* Card Number */}
-            <p
-              className="relative text-white font-mono tracking-[0.2em] text-base mb-5"
-              style={{ letterSpacing: '0.15em' }}
-            >
+            <p className="relative text-white font-mono tracking-[0.2em] text-base mb-5" style={{ letterSpacing: '0.15em' }}>
               {displayNumber}
             </p>
 
-            {/* Bottom row */}
             <div className="relative flex justify-between items-end">
               <div>
                 <p className="text-white/40 text-[10px] uppercase tracking-widest mb-0.5">Card Holder</p>
@@ -130,7 +183,7 @@ export default function DepositModal({ onClose, onSuccess, initialAmount }: Prop
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
-          {/* Card Number */}
+          {/* Card Number — always shown (security: never pre-filled) */}
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1.5" htmlFor="dep-card-number">
               Card Number
@@ -140,7 +193,7 @@ export default function DepositModal({ onClose, onSuccess, initialAmount }: Prop
               type="text"
               inputMode="numeric"
               autoComplete="cc-number"
-              placeholder="0000 0000 0000 0000"
+              placeholder={useSaved && saved ? `•••• •••• •••• ${saved.last4}` : '0000 0000 0000 0000'}
               value={cardNumber}
               onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
               maxLength={19}
@@ -177,10 +230,16 @@ export default function DepositModal({ onClose, onSuccess, initialAmount }: Prop
                 autoComplete="cc-exp"
                 placeholder="MM/YY"
                 value={expiry}
-                onChange={(e) => setExpiry(formatExpiry(e.target.value))}
+                onChange={(e) => {
+                  const val = formatExpiry(e.target.value);
+                  setExpiry(val);
+                  if (val.length === 5) setExpiryErr(!isExpiryValid(val));
+                  else setExpiryErr(false);
+                }}
                 maxLength={5}
-                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 text-gray-900 dark:text-white px-3.5 py-2.5 text-sm focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 transition-colors placeholder:text-gray-300 dark:placeholder:text-gray-600"
+                className={`w-full rounded-xl border px-3.5 py-2.5 text-sm bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-colors placeholder:text-gray-300 dark:placeholder:text-gray-600 ${expiryErr ? 'border-red-400 dark:border-red-500 focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30' : 'border-gray-200 dark:border-gray-700 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-gray-200 dark:focus:ring-gray-700'}`}
               />
+              {expiryErr && <p className="mt-1 text-xs text-red-500">Card has expired</p>}
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1.5" htmlFor="dep-cvc">
@@ -233,6 +292,19 @@ export default function DepositModal({ onClose, onSuccess, initialAmount }: Prop
               );
             })()}
           </div>
+
+          {/* Save card checkbox — only shown when entering a new card */}
+          {!useSaved && (
+            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={saveCard}
+                onChange={(e) => setSaveCard(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 accent-infinder-green"
+              />
+              <span className="text-sm text-gray-600 dark:text-gray-400">Save this card for future deposits</span>
+            </label>
+          )}
 
           {/* Submit */}
           <button

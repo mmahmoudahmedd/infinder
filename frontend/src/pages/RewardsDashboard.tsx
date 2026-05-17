@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { Wallet, TrendingUp, BookOpen, ShieldCheck, Moon, Layers, GraduationCap, Award, Trophy, type LucideIcon } from 'lucide-react';
 import api from '../lib/api';
 import { SubpageShell } from '../components/AppShell';
 
@@ -12,16 +13,16 @@ type Achievement = {
   earned_at: string;
 };
 
-const badgeIcon: Record<string, string> = {
-  first_fund: '💰',
-  first_invest: '📈',
-  first_lesson: '📘',
-  kyc_verified: '✅',
-  sharia_investor: '☪️',
-  portfolio_builder: '🧩',
-  learning_complete: '🎓',
-  gold_investor: '🥇',
-  default: '🏅',
+const badgeIcon: Record<string, LucideIcon> = {
+  first_fund:        Wallet,
+  first_invest:      TrendingUp,
+  first_lesson:      BookOpen,
+  kyc_verified:      ShieldCheck,
+  sharia_investor:   Moon,
+  portfolio_builder: Layers,
+  learning_complete: GraduationCap,
+  gold_investor:     Award,
+  default:           Trophy,
 };
 
 const badgeAccent: Record<string, string> = {
@@ -90,7 +91,7 @@ export default function RewardsDashboard() {
               className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-5 shadow-sm dark:shadow-none hover:shadow-[0_0_24px_rgba(190,243,94,0.35)] hover:-translate-y-1 transition-all duration-200"
               style={{ borderTop: `4px solid ${badgeAccent[a.badge_key] ?? badgeAccent.default}` }}
             >
-              <div className="text-3xl mb-2">{badgeIcon[a.badge_key] ?? badgeIcon.default}</div>
+              {(() => { const Icon = badgeIcon[a.badge_key] ?? badgeIcon.default; return <div className="mb-3"><Icon className="w-7 h-7" style={{ color: badgeAccent[a.badge_key] ?? badgeAccent.default }} /></div>; })()}
               <h2 className="font-semibold text-gray-900 dark:text-white">{a.title}</h2>
               <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{a.description}</p>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">{new Date(a.earned_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</p>

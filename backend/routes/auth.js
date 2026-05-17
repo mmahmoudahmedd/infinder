@@ -107,6 +107,8 @@ router.post('/login', authLimiter, async (req, res) => {
       investment_horizon: user.investment_horizon ?? null,
       investment_goal: user.investment_goal ?? null,
       profile_completed_at: user.profile_completed_at ?? null,
+      payment_method_type: user.payment_method_type ?? null,
+      payment_method_data: user.payment_method_data ?? null,
     };
     return res.json({ token, user: safe });
 
@@ -118,18 +120,20 @@ router.post('/login', authLimiter, async (req, res) => {
 
 router.patch('/me', verifyToken, async (req, res) => {
   try {
-    const { full_name, phone, sharia_mode } = req.body;
+    const { full_name, phone, sharia_mode, payment_method_type, payment_method_data } = req.body;
     const patch = {};
     if (full_name !== undefined) patch.full_name = full_name;
     if (phone !== undefined) patch.phone = phone;
     if (sharia_mode !== undefined) patch.sharia_mode = !!sharia_mode;
+    if (payment_method_type !== undefined) patch.payment_method_type = payment_method_type;
+    if (payment_method_data !== undefined) patch.payment_method_data = payment_method_data;
     if (Object.keys(patch).length === 0) return res.status(400).json({ error: 'No fields to update' });
 
     const { data: user, error } = await supabase
       .from('users')
       .update(patch)
       .eq('id', req.user.id)
-      .select('id, email, full_name, phone, kyc_status, kyc_rejection_reason, sharia_mode, wallet_balance, role, deposit_ref_code, created_at, risk_tolerance, investment_horizon, investment_goal, profile_completed_at')
+      .select('id, email, full_name, phone, kyc_status, kyc_rejection_reason, sharia_mode, wallet_balance, role, deposit_ref_code, created_at, risk_tolerance, investment_horizon, investment_goal, profile_completed_at, payment_method_type, payment_method_data')
       .single();
 
     if (error || !user) return res.status(404).json({ error: 'User not found' });
@@ -146,7 +150,7 @@ router.get('/me', verifyToken, async (req, res) => {
   try {
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, email, full_name, phone, kyc_status, kyc_rejection_reason, sharia_mode, wallet_balance, role, deposit_ref_code, created_at, risk_tolerance, investment_horizon, investment_goal, profile_completed_at')
+      .select('id, email, full_name, phone, kyc_status, kyc_rejection_reason, sharia_mode, wallet_balance, role, deposit_ref_code, created_at, risk_tolerance, investment_horizon, investment_goal, profile_completed_at, payment_method_type, payment_method_data')
       .eq('id', req.user.id)
       .single();
 

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
+import { TrendingUp, Landmark, Coins, ShoppingBasket, Bitcoin, Info, type LucideIcon } from 'lucide-react';
 import api from '../lib/api';
 import { SubpageShell } from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
@@ -38,12 +39,12 @@ function calcFee(amount: number): number {
   return Math.max(parseFloat((amount * FEE_RATE).toFixed(2)), MIN_FEE);
 }
 
-const categoryIcon: Record<string, string> = {
-  stocks: '📈',
-  bonds: '🏦',
-  gold: '🥇',
-  basket: '🧺',
-  crypto: '₿',
+const categoryIcon: Record<string, LucideIcon> = {
+  stocks:  TrendingUp,
+  bonds:   Landmark,
+  gold:    Coins,
+  basket:  ShoppingBasket,
+  crypto:  Bitcoin,
 };
 
 const CATEGORIES = ['all', 'stocks', 'baskets', 'bonds', 'gold'] as const;
@@ -149,7 +150,7 @@ export default function InvestmentOptions() {
 
       {user.sharia_mode && (
         <div className="mt-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/[0.03] text-sm px-4 py-3 flex gap-2 text-gray-700 dark:text-gray-300">
-          <span>ℹ️</span>
+          <Info className="w-4 h-4 shrink-0 mt-0.5" />
           <span>{t('invest_sharia_notice')}</span>
         </div>
       )}
@@ -188,7 +189,7 @@ export default function InvestmentOptions() {
             >
               <div className="flex justify-between items-start gap-2">
                 <h3 className="font-semibold text-lg text-gray-900 dark:text-white">{inv.title}</h3>
-                <span className="text-xl">{categoryIcon[inv.category] ?? '📊'}</span>
+                {(() => { const Icon = categoryIcon[inv.category]; return Icon ? <Icon className="w-5 h-5 text-gray-400 dark:text-gray-500 shrink-0" /> : null; })()}
               </div>
               {/* Risk badge */}
               <div className="flex flex-wrap gap-2 mt-2">

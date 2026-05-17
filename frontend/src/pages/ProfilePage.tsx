@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Swal from 'sweetalert2';
+import { TrendingUp, ArrowDownLeft, ArrowUpRight, RefreshCw, SlidersHorizontal, BarChart2, Moon, type LucideIcon } from 'lucide-react';
 import api from '../lib/api';
 import { SubpageShell } from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
@@ -72,12 +73,12 @@ function txSubtitle(tx: Tx): string {
   return '';
 }
 
-const TX_ICON: Record<string, string> = {
-  investment: '📈',
-  deposit:    '💵',
-  withdrawal: '↩️',
-  return:     '💰',
-  adjustment: '⚙️',
+const TX_ICON: Record<string, LucideIcon> = {
+  investment: TrendingUp,
+  deposit:    ArrowDownLeft,
+  withdrawal: ArrowUpRight,
+  return:     RefreshCw,
+  adjustment: SlidersHorizontal,
 };
 
 const TX_COLOR: Record<string, string> = {
@@ -127,7 +128,7 @@ function TransactionDetailModal({ tx, onClose }: { tx: Tx; onClose: () => void }
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-3">
             <div className={`w-9 h-9 rounded-full flex items-center justify-center text-base shrink-0 ${TX_COLOR[tx.type] ?? 'bg-gray-100 dark:bg-gray-800'}`}>
-              {TX_ICON[tx.type] ?? '•'}
+              {(() => { const Icon = TX_ICON[tx.type]; return Icon ? <Icon className="w-4 h-4" /> : <span>·</span>; })()}
             </div>
             <div>
               <p className="font-semibold text-gray-900 dark:text-white capitalize">{tx.type}</p>
@@ -267,6 +268,16 @@ function downloadCsv(rows: Tx[]) {
   URL.revokeObjectURL(a.href);
 }
 
+function isExpiryValid(expiry: string): boolean {
+  const [mm, yy] = expiry.split('/');
+  if (!mm || !yy || yy.length < 2) return false;
+  const month = parseInt(mm, 10);
+  const year = 2000 + parseInt(yy, 10);
+  if (month < 1 || month > 12) return false;
+  const now = new Date();
+  return year > now.getFullYear() || (year === now.getFullYear() && month >= now.getMonth() + 1);
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
@@ -283,6 +294,12 @@ export default function ProfilePage() {
   const [kycData, setKycData] = useState<KycData | null>(null);
   const [txFilter, setTxFilter] = useState<TxFilter>('all');
   const [selectedTx, setSelectedTx] = useState<Tx | null>(null);
+  const [editingCard, setEditingCard] = useState(false);
+  const [pmHolder, setPmHolder] = useState('');
+  const [pmLast4, setPmLast4] = useState('');
+  const [pmExpiry, setPmExpiry] = useState('');
+  const [pmSaving, setPmSaving] = useState(false);
+  const [pmExpiryErr, setPmExpiryErr] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -324,6 +341,34 @@ export default function ProfilePage() {
       showAlert('Save failed', t('profile_save_error'));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function savePaymentMethod(e: React.FormEvent) {
+    e.preventDefault();
+    if (!pmHolder.trim() || pmLast4.replace(/\D/g, '').length !== 4 || pmExpiry.length < 4) return;
+    if (!isExpiryValid(pmExpiry)) { setPmExpiryErr(true); return; }
+    setPmSaving(true);
+    try {
+      await updateProfile({
+        payment_method_type: 'card',
+        payment_method_data: { holder_name: pmHolder.trim().toUpperCase(), last4: pmLast4.replace(/\D/g, '').slice(-4), expiry: pmExpiry },
+      });
+      setEditingCard(false);
+      showToast('Payment method saved');
+    } catch {
+      showAlert('Error', 'Could not save payment method');
+    } finally {
+      setPmSaving(false);
+    }
+  }
+
+  async function removePaymentMethod() {
+    try {
+      await updateProfile({ payment_method_type: null, payment_method_data: null });
+      showToast('Payment method removed');
+    } catch {
+      showAlert('Error', 'Could not remove payment method');
     }
   }
 
@@ -455,7 +500,7 @@ export default function ProfilePage() {
 
             {positions.length === 0 ? (
               <div className="py-10 text-center text-gray-400 dark:text-gray-500 text-sm">
-                <div className="text-3xl mb-2">📊</div>
+                <div className="mb-2"><BarChart2 className="w-8 h-8 mx-auto text-gray-300 dark:text-gray-600" /></div>
                 No investments yet
               </div>
             ) : (
@@ -546,6 +591,125 @@ export default function ProfilePage() {
             </button>
           </div>
 
+          {/* ── Payment method ── */}
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-5">
+            <h2 className="font-semibold text-lg text-gray-900 dark:text-white">{t('pm_section_title')}</h2>
+
+            {user.payment_method_type === 'card' && user.payment_method_data && !editingCard ? (
+              <div className="mt-4">
+                <div className="flex items-center gap-3 rounded-xl bg-gray-50 dark:bg-white/[0.04] px-4 py-3">
+                  <svg className="w-8 h-8 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                  </svg>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white tracking-widest">
+                      •••• •••• •••• {user.payment_method_data.last4}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      {user.payment_method_data.holder_name} · Expires {user.payment_method_data.expiry}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPmHolder(user.payment_method_data?.holder_name ?? '');
+                      setPmLast4(user.payment_method_data?.last4 ?? '');
+                      setPmExpiry(user.payment_method_data?.expiry ?? '');
+                      setEditingCard(true);
+                    }}
+                    className="rounded-full border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 px-4 py-1.5 text-sm hover:border-gray-500 dark:hover:border-gray-500 transition-colors"
+                  >
+                    {t('pm_edit')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={removePaymentMethod}
+                    className="rounded-full border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 px-4 py-1.5 text-sm hover:border-red-400 dark:hover:border-red-700 transition-colors"
+                  >
+                    {t('pm_remove')}
+                  </button>
+                </div>
+              </div>
+            ) : !editingCard ? (
+              <div className="mt-3">
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('pm_none')}</p>
+                <button
+                  type="button"
+                  onClick={() => { setPmHolder(''); setPmLast4(''); setPmExpiry(''); setEditingCard(true); }}
+                  className="mt-3 rounded-full bg-infinder-lime text-infinder-black font-semibold px-5 py-2 text-sm"
+                >
+                  {t('pm_add')}
+                </button>
+              </div>
+            ) : null}
+
+            {editingCard && (
+              <form onSubmit={savePaymentMethod} className="mt-4 space-y-3">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <label className="block text-sm sm:col-span-2">
+                    <span className="text-gray-600 dark:text-gray-400 text-xs font-medium">Card Holder Name</span>
+                    <input
+                      className="mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 text-gray-900 dark:text-white px-3 py-2 text-sm uppercase focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 placeholder:text-gray-400 dark:placeholder:text-gray-600"
+                      placeholder="JOHN DOE"
+                      value={pmHolder}
+                      onChange={(e) => setPmHolder(e.target.value.toUpperCase())}
+                      required
+                    />
+                  </label>
+                  <label className="block text-sm">
+                    <span className="text-gray-600 dark:text-gray-400 text-xs font-medium">Last 4 Digits</span>
+                    <input
+                      className="mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 text-gray-900 dark:text-white px-3 py-2 text-sm font-mono focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 placeholder:text-gray-400 dark:placeholder:text-gray-600"
+                      placeholder="1234"
+                      value={pmLast4}
+                      onChange={(e) => setPmLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                      inputMode="numeric"
+                      maxLength={4}
+                      required
+                    />
+                  </label>
+                  <div className="block text-sm">
+                    <span className="text-gray-600 dark:text-gray-400 text-xs font-medium">Expiry (MM/YY)</span>
+                    <input
+                      className={`mt-1 w-full rounded-xl border px-3 py-2 text-sm font-mono bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none placeholder:text-gray-400 dark:placeholder:text-gray-600 ${pmExpiryErr ? 'border-red-400 dark:border-red-500' : 'border-gray-200 dark:border-gray-700 focus:border-gray-400 dark:focus:border-gray-500'}`}
+                      placeholder="MM/YY"
+                      value={pmExpiry}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
+                        const val = digits.length >= 3 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits;
+                        setPmExpiry(val);
+                        if (val.length === 5) setPmExpiryErr(!isExpiryValid(val));
+                        else setPmExpiryErr(false);
+                      }}
+                      inputMode="numeric"
+                      maxLength={5}
+                      required
+                    />
+                    {pmExpiryErr && <p className="mt-1 text-xs text-red-500">Card has expired</p>}
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="submit"
+                    disabled={pmSaving}
+                    className="rounded-full bg-infinder-lime text-infinder-black font-semibold px-5 py-2 text-sm disabled:opacity-50"
+                  >
+                    {pmSaving ? 'Saving…' : t('pm_save')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingCard(false)}
+                    className="rounded-full border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 text-sm hover:border-gray-500 dark:hover:border-gray-500 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+
           {/* ── Deposit reference ── */}
           <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-5">
             <h2 className="font-semibold text-lg text-gray-900 dark:text-white">{t('profile_deposit_ref')}</h2>
@@ -617,7 +781,7 @@ export default function ProfilePage() {
                         className="w-full flex items-center gap-3 py-3 px-2 rounded-xl hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors text-left border-b border-gray-100 dark:border-gray-800 last:border-0"
                       >
                         <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm shrink-0 ${TX_COLOR[tx.type] ?? 'bg-gray-100'}`}>
-                          {TX_ICON[tx.type] ?? '•'}
+                          {(() => { const Icon = TX_ICON[tx.type]; return Icon ? <Icon className="w-4 h-4" /> : <span>·</span>; })()}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
@@ -650,7 +814,7 @@ export default function ProfilePage() {
           {/* ── Sharia mode ── */}
           <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-5">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-lg shrink-0">☪️</div>
+              <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0"><Moon className="w-5 h-5 text-purple-600 dark:text-purple-400" /></div>
               <div className="flex-1">
                 <p className="font-medium text-gray-900 dark:text-white">{t('profile_sharia_mode')}</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">{t('profile_sharia_desc')}</p>

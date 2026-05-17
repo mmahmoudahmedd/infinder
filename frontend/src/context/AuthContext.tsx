@@ -17,6 +17,8 @@ export type User = {
   investment_horizon?: 'short' | 'medium' | 'long' | null;
   investment_goal?: 'preserve' | 'grow' | null;
   profile_completed_at?: string | null;
+  payment_method_type?: 'card' | null;
+  payment_method_data?: { holder_name: string; last4: string; expiry: string } | null;
 };
 
 type AuthState = {
@@ -33,7 +35,7 @@ type AuthState = {
   }) => Promise<void>;
   logout: () => void;
   refreshMe: () => Promise<void>;
-  updateProfile: (patch: Partial<Pick<User, 'full_name' | 'phone' | 'sharia_mode'>>) => Promise<void>;
+  updateProfile: (patch: Partial<Pick<User, 'full_name' | 'phone' | 'sharia_mode' | 'payment_method_type' | 'payment_method_data'>>) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -95,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updateProfile = useCallback(
-    async (patch: Partial<Pick<User, 'full_name' | 'phone' | 'sharia_mode'>>) => {
+    async (patch: Partial<Pick<User, 'full_name' | 'phone' | 'sharia_mode' | 'payment_method_type' | 'payment_method_data'>>) => {
       const { data } = await api.patch('/api/auth/me', patch);
       setUser(data.user);
     },

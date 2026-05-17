@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { BookOpen, TrendingUp, User, Trophy, BarChart2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { AppShell } from '../components/AppShell';
@@ -155,11 +156,11 @@ export default function Dashboard() {
           </div>
 
           {/* Quick nav cards */}
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
             {[
               {
                 to: '/learn',
-                emoji: '📘',
+                icon: BookOpen,
                 title: t('dashboard_learn_title'),
                 desc: t('dashboard_learn_desc'),
                 extra: (
@@ -179,17 +180,29 @@ export default function Dashboard() {
               },
               {
                 to: '/invest',
-                emoji: '📈',
+                icon: TrendingUp,
                 title: t('dashboard_invest_title'),
                 desc: t('dashboard_invest_desc'),
               },
               {
                 to: '/profile',
-                emoji: '👤',
+                icon: User,
                 title: t('dashboard_profile_title'),
                 desc: t('dashboard_profile_desc'),
               },
-            ].map(({ to, emoji, title, desc, extra }, i) => (
+              {
+                to: '/rewards',
+                icon: Trophy,
+                title: t('dashboard_rewards'),
+                desc: t('dashboard_rewards_desc'),
+              },
+              {
+                to: '/reports',
+                icon: BarChart2,
+                title: t('dashboard_reports'),
+                desc: t('dashboard_reports_desc'),
+              },
+            ].map(({ to, icon: Icon, title, desc, extra }, i) => (
               <motion.div
                 key={to}
                 initial={{ opacity: 0, y: 8 }}
@@ -200,8 +213,8 @@ export default function Dashboard() {
                   to={to}
                   className="group block rounded-2xl border border-gray-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] p-6 hover:border-infinder-lime/50 hover:shadow-md dark:hover:shadow-none dark:hover:border-[#b6f040]/40 transition-all duration-200 hover:-translate-y-1"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-[#2a2a2a] group-hover:bg-infinder-lime/10 flex items-center justify-center text-xl transition-colors mb-4">
-                    {emoji}
+                  <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-[#2a2a2a] group-hover:bg-infinder-lime/10 flex items-center justify-center transition-colors mb-4">
+                    <Icon className="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-infinder-green transition-colors" />
                   </div>
                   <h3 className="font-semibold text-base text-gray-900 dark:text-white">{title}</h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{desc}</p>
@@ -209,22 +222,6 @@ export default function Dashboard() {
                 </Link>
               </motion.div>
             ))}
-          </div>
-
-          {/* Secondary links */}
-          <div className="flex gap-3 flex-wrap items-center">
-            <Link
-              to="/rewards"
-              className="inline-flex items-center gap-2 rounded-full border border-gray-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] text-gray-800 dark:text-white px-4 py-2 text-sm font-medium hover:border-infinder-black dark:hover:border-gray-500 hover:shadow-sm transition-all"
-            >
-              {t('dashboard_rewards')}
-            </Link>
-            <Link
-              to="/reports"
-              className="inline-flex items-center gap-2 rounded-full border border-gray-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] text-gray-800 dark:text-white px-4 py-2 text-sm font-medium hover:border-infinder-black dark:hover:border-gray-500 hover:shadow-sm transition-all"
-            >
-              {t('dashboard_reports')}
-            </Link>
           </div>
 
           {/* Recent Transactions */}

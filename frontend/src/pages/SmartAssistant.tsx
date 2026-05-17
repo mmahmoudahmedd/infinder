@@ -172,7 +172,7 @@ export default function SmartAssistant() {
           { role: 'assistant', content: t('chat_invest_recorded') },
         ]);
       } else {
-        resetWizard();
+        setWizardStep(7);
       }
     } catch (e: unknown) {
       const ax = e as { response?: { data?: { error?: string } } };
@@ -614,6 +614,34 @@ export default function SmartAssistant() {
                 </button>
               </motion.div>
             )}
+            {wizardStep === 7 && (
+              <motion.div key="s7" {...slide} transition={{ duration: 0.2 }} className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-8 text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-infinder-lime">
+                  <svg className="h-8 w-8 text-infinder-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('wizard_success_title')}</h2>
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{t('wizard_success_sub')}</p>
+                <div className="mt-6 rounded-xl bg-gray-50 dark:bg-white/[0.04] px-4 py-3 text-sm">
+                  <div className="flex justify-between text-gray-500 dark:text-gray-400">
+                    <span>{t('wizard_success_portfolio')}</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{wizardLabel}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={resetWizard}
+                  className="mt-6 w-full rounded-xl bg-infinder-lime text-infinder-black font-semibold py-3"
+                >
+                  {t('wizard_success_new')}
+                </button>
+                <Link to="/dashboard" className="mt-3 block w-full rounded-xl border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 py-2 text-sm hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+                  {t('chat_back_dashboard')}
+                </Link>
+              </motion.div>
+            )}
+
           </AnimatePresence>
         </div>
       )}
