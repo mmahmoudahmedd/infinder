@@ -76,6 +76,19 @@ router.get('/modules/:id', verifyToken, async (req, res) => {
   }
 });
 
+router.get('/progress', verifyToken, async (req, res) => {
+  try {
+    const { data: progress } = await supabase
+      .from('user_progress')
+      .select('lesson_id')
+      .eq('user_id', req.user.id);
+    return res.json({ completed: (progress || []).map((p) => p.lesson_id) });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Failed to load progress' });
+  }
+});
+
 router.post('/progress', verifyToken, async (req, res) => {
   try {
     const { lesson_id } = req.body;

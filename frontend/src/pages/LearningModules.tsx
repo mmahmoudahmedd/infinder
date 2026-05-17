@@ -114,7 +114,9 @@ export default function LearningModules() {
                       <h2 className="text-lg font-semibold mt-2 text-gray-900 dark:text-white">{mod.title}</h2>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 line-clamp-2">{mod.description}</p>
                     </div>
-                    <span className="text-2xl shrink-0">📘</span>
+                    <span className="text-2xl shrink-0 text-gray-400 dark:text-gray-500">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" /><path d="M6.5 2H20v20l-7-3-7 3V2z" /></svg>
+                    </span>
                   </div>
                   <div className="mt-4 h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
                     <div className="h-full bg-infinder-green rounded-full transition-all" style={{ width: `${mod.progress_pct}%` }} />

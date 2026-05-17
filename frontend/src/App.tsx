@@ -122,14 +122,6 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/learn-hub"
-        element={
-          <ProtectedRoute>
-            <LearningHub />
-          </ProtectedRoute>
-        }
-      />
       <Route path="/legal/terms"   element={<TermsPage />} />
       <Route path="/legal/privacy" element={<PrivacyPage />} />
       <Route path="/legal/risk"    element={<RiskPage />} />

@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { SubpageShell } from '../components/AppShell';
-import { useAuth } from '../context/AuthContext';
-import { showAlert, showToast } from '../lib/swal';
+import { showToast } from '../lib/swal';
+import api from '../lib/api';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -12,6 +12,7 @@ type LevelId = 'beginner' | 'intermediate' | 'advanced';
 
 interface Lesson {
   id: number;
+  dbId: string;
   title: string;
   duration: string;
   videoId: string;
@@ -27,7 +28,6 @@ interface Course {
   id: number;
   category: string;
   title: string;
-  price: number;
   totalTime: string;
   overview: string;
   color: string;
@@ -35,27 +35,9 @@ interface Course {
   levels: Level[];
 }
 
-// ── Progress / Enrollment (localStorage-backed) ───────────────────────────
+// ── Enrollment (localStorage-backed) ─────────────────────────────────────
 
-const STORAGE_KEY = 'infinder_learning_progress';
 const ENROLLED_KEY = 'infinder_enrolled_courses';
-
-function lessonKey(courseId: number, levelId: LevelId, lessonId: number): string {
-  return `${courseId}:${levelId}:${lessonId}`;
-}
-
-function loadCompleted(): Set<string> {
-  try {
-    const s = localStorage.getItem(STORAGE_KEY);
-    return s ? new Set<string>(JSON.parse(s) as string[]) : new Set();
-  } catch {
-    return new Set();
-  }
-}
-
-function saveCompleted(set: Set<string>) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...set])); } catch { /* ignore */ }
-}
 
 function loadEnrolled(): Set<number> {
   try {
@@ -74,7 +56,7 @@ function courseProgress(course: Course, completed: Set<string>): number {
   const total = course.levels.reduce((s, l) => s + l.lessons.length, 0);
   if (!total) return 0;
   const done = course.levels.reduce(
-    (s, l) => s + l.lessons.filter(ls => completed.has(lessonKey(course.id, l.id, ls.id))).length,
+    (s, l) => s + l.lessons.filter(ls => completed.has(ls.dbId)).length,
     0,
   );
   return Math.round((done / total) * 100);
@@ -83,7 +65,7 @@ function courseProgress(course: Course, completed: Set<string>): number {
 function levelProgress(course: Course, levelId: LevelId, completed: Set<string>): number {
   const level = course.levels.find(l => l.id === levelId);
   if (!level?.lessons.length) return 0;
-  const done = level.lessons.filter(ls => completed.has(lessonKey(course.id, levelId, ls.id))).length;
+  const done = level.lessons.filter(ls => completed.has(ls.dbId)).length;
   return Math.round((done / level.lessons.length) * 100);
 }
 
@@ -94,7 +76,6 @@ const COURSES: Course[] = [
     id: 1,
     category: 'Startups',
     title: 'Startup Investing & Venture Capital',
-    price: 299,
     totalTime: '6h 45m',
     overview:
       'Discover how venture capital fuels innovation. Learn how early-stage investors evaluate startups, structure deals, and manage risk across a diversified portfolio.',
@@ -105,30 +86,30 @@ const COURSES: Course[] = [
         id: 'beginner',
         label: 'Beginner',
         lessons: [
-          { id: 1, title: 'What is Venture Capital?', duration: '15m', videoId: '1qy1GX6gugw' },
-          { id: 2, title: 'What is a Startup?', duration: '20m', videoId: 'gA2lb0W7Qi8' },
-          { id: 3, title: 'Equity 101', duration: '25m', videoId: 'ji3H1t9ZqvQ' },
-          { id: 4, title: 'Cap Tables Explained', duration: '20m', videoId: 'W_r4Uq4E8GE' },
+          { id: 1, dbId: 'b0000000-0001-0000-0000-000000000001', title: 'What is Venture Capital?', duration: '15m', videoId: '1qy1GX6gugw' },
+          { id: 2, dbId: 'b0000000-0001-0000-0000-000000000002', title: 'What is a Startup?', duration: '20m', videoId: 'gA2lb0W7Qi8' },
+          { id: 3, dbId: 'b0000000-0001-0000-0000-000000000003', title: 'Equity 101', duration: '25m', videoId: 'ji3H1t9ZqvQ' },
+          { id: 4, dbId: 'b0000000-0001-0000-0000-000000000004', title: 'Cap Tables Explained', duration: '20m', videoId: 'W_r4Uq4E8GE' },
         ],
       },
       {
         id: 'intermediate',
         label: 'Intermediate',
         lessons: [
-          { id: 1, title: 'Deal Flow & Sourcing', duration: '35m', videoId: 'I6uxOktTRE0' },
-          { id: 2, title: 'Due Diligence Process', duration: '45m', videoId: 'O69c82yhSr0' },
-          { id: 3, title: 'Term Sheets & Valuations', duration: '50m', videoId: 'YV-ddY5AN50' },
-          { id: 4, title: 'Portfolio Construction', duration: '40m', videoId: 'JUr6xa7-a4I' },
+          { id: 1, dbId: 'b0000000-0001-0000-0000-000000000005', title: 'Deal Flow & Sourcing', duration: '35m', videoId: 'I6uxOktTRE0' },
+          { id: 2, dbId: 'b0000000-0001-0000-0000-000000000006', title: 'Due Diligence Process', duration: '45m', videoId: 'O69c82yhSr0' },
+          { id: 3, dbId: 'b0000000-0001-0000-0000-000000000007', title: 'Term Sheets & Valuations', duration: '50m', videoId: 'YV-ddY5AN50' },
+          { id: 4, dbId: 'b0000000-0001-0000-0000-000000000008', title: 'Portfolio Construction', duration: '40m', videoId: 'JUr6xa7-a4I' },
         ],
       },
       {
         id: 'advanced',
         label: 'Advanced',
         lessons: [
-          { id: 1, title: 'Exit Strategies & M&A', duration: '45m', videoId: 'Xt6nrONHVbQ' },
-          { id: 2, title: 'LP/GP Dynamics', duration: '40m', videoId: 'kFtqLRfWXt0' },
-          { id: 3, title: 'Carry & Fund Economics', duration: '35m', videoId: 'n1bwGuW7Nqk' },
-          { id: 4, title: 'Secondary Markets', duration: '35m', videoId: 'rHOo2Utr4Xc' },
+          { id: 1, dbId: 'b0000000-0001-0000-0000-000000000009', title: 'Exit Strategies & M&A', duration: '45m', videoId: 'Xt6nrONHVbQ' },
+          { id: 2, dbId: 'b0000000-0001-0000-0000-000000000010', title: 'LP/GP Dynamics', duration: '40m', videoId: 'kFtqLRfWXt0' },
+          { id: 3, dbId: 'b0000000-0001-0000-0000-000000000011', title: 'Carry & Fund Economics', duration: '35m', videoId: 'n1bwGuW7Nqk' },
+          { id: 4, dbId: 'b0000000-0001-0000-0000-000000000012', title: 'Secondary Markets', duration: '35m', videoId: 'rHOo2Utr4Xc' },
         ],
       },
     ],
@@ -137,7 +118,6 @@ const COURSES: Course[] = [
     id: 2,
     category: 'Real Estate',
     title: 'Real Estate Investment Fundamentals',
-    price: 199,
     totalTime: '7h 10m',
     overview:
       'Build a foundation in property investment. Understand how to analyze markets, evaluate yields, and leverage financing to grow a real estate portfolio.',
@@ -148,30 +128,30 @@ const COURSES: Course[] = [
         id: 'beginner',
         label: 'Beginner',
         lessons: [
-          { id: 1, title: 'Types of Properties', duration: '20m', videoId: 'OKuSNm3apCs' },
-          { id: 2, title: 'Understanding Markets', duration: '25m', videoId: 'shJd65HpqDg' },
-          { id: 3, title: 'Basic Financing Concepts', duration: '30m', videoId: 'gagJf0XIkKw' },
-          { id: 4, title: 'ROI Basics', duration: '20m', videoId: 'nhLhEwYSvsg' },
+          { id: 1, dbId: 'b0000000-0002-0000-0000-000000000001', title: 'Types of Properties', duration: '20m', videoId: 'OKuSNm3apCs' },
+          { id: 2, dbId: 'b0000000-0002-0000-0000-000000000002', title: 'Understanding Markets', duration: '25m', videoId: 'shJd65HpqDg' },
+          { id: 3, dbId: 'b0000000-0002-0000-0000-000000000003', title: 'Basic Financing Concepts', duration: '30m', videoId: 'gagJf0XIkKw' },
+          { id: 4, dbId: 'b0000000-0002-0000-0000-000000000004', title: 'ROI Basics', duration: '20m', videoId: 'nhLhEwYSvsg' },
         ],
       },
       {
         id: 'intermediate',
         label: 'Intermediate',
         lessons: [
-          { id: 1, title: 'Rental Yield Analysis', duration: '40m', videoId: '4EyeoYQlxeA' },
-          { id: 2, title: 'Leveraged Purchases', duration: '45m', videoId: 'HLQvI3SNwvk' },
-          { id: 3, title: 'Commercial vs Residential', duration: '35m', videoId: 'ZbtIGBtRxxQ' },
-          { id: 4, title: 'Market Deep Dive', duration: '50m', videoId: 'x8D7raX1O5w' },
+          { id: 1, dbId: 'b0000000-0002-0000-0000-000000000005', title: 'Rental Yield Analysis', duration: '40m', videoId: '4EyeoYQlxeA' },
+          { id: 2, dbId: 'b0000000-0002-0000-0000-000000000006', title: 'Leveraged Purchases', duration: '45m', videoId: 'HLQvI3SNwvk' },
+          { id: 3, dbId: 'b0000000-0002-0000-0000-000000000007', title: 'Commercial vs Residential', duration: '35m', videoId: 'ZbtIGBtRxxQ' },
+          { id: 4, dbId: 'b0000000-0002-0000-0000-000000000008', title: 'Market Deep Dive', duration: '50m', videoId: 'x8D7raX1O5w' },
         ],
       },
       {
         id: 'advanced',
         label: 'Advanced',
         lessons: [
-          { id: 1, title: 'REITs & Property Funds', duration: '45m', videoId: 'KwhfiIzx96g' },
-          { id: 2, title: 'Tax Optimization Strategies', duration: '40m', videoId: '0yNYqWLmo5I' },
-          { id: 3, title: 'Portfolio Diversification', duration: '35m', videoId: 'fcC6m-0dguE' },
-          { id: 4, title: 'Risk Mitigation', duration: '45m', videoId: '-2vJgt2lLD8' },
+          { id: 1, dbId: 'b0000000-0002-0000-0000-000000000009', title: 'REITs & Property Funds', duration: '45m', videoId: 'KwhfiIzx96g' },
+          { id: 2, dbId: 'b0000000-0002-0000-0000-000000000010', title: 'Tax Optimization Strategies', duration: '40m', videoId: '0yNYqWLmo5I' },
+          { id: 3, dbId: 'b0000000-0002-0000-0000-000000000011', title: 'Portfolio Diversification', duration: '35m', videoId: 'fcC6m-0dguE' },
+          { id: 4, dbId: 'b0000000-0002-0000-0000-000000000012', title: 'Risk Mitigation', duration: '45m', videoId: '-2vJgt2lLD8' },
         ],
       },
     ],
@@ -180,7 +160,6 @@ const COURSES: Course[] = [
     id: 3,
     category: 'Investment',
     title: 'Introduction to Investing',
-    price: 149,
     totalTime: '7h 25m',
     overview:
       'Explore financial markets mechanics including derivative instruments, risk assessment frameworks, and strategic portfolio construction for navigating complex investment landscapes.',
@@ -191,30 +170,30 @@ const COURSES: Course[] = [
         id: 'beginner',
         label: 'Beginner',
         lessons: [
-          { id: 1, title: 'Stock Market Basics', duration: '20m', videoId: 'bb6_M_srMBk' },
-          { id: 2, title: 'Bonds & Fixed Income', duration: '25m', videoId: 'BgEZn-HJNb4' },
-          { id: 3, title: 'ETFs & Index Funds', duration: '20m', videoId: 'hE2NsJGpEq4' },
-          { id: 4, title: 'Risk vs Return', duration: '20m', videoId: 'ktpeNzqEVCs' },
+          { id: 1, dbId: 'b0000000-0003-0000-0000-000000000001', title: 'Stock Market Basics', duration: '20m', videoId: 'bb6_M_srMBk' },
+          { id: 2, dbId: 'b0000000-0003-0000-0000-000000000002', title: 'Bonds & Fixed Income', duration: '25m', videoId: 'BgEZn-HJNb4' },
+          { id: 3, dbId: 'b0000000-0003-0000-0000-000000000003', title: 'ETFs & Index Funds', duration: '20m', videoId: 'hE2NsJGpEq4' },
+          { id: 4, dbId: 'b0000000-0003-0000-0000-000000000004', title: 'Risk vs Return', duration: '20m', videoId: 'ktpeNzqEVCs' },
         ],
       },
       {
         id: 'intermediate',
         label: 'Intermediate',
         lessons: [
-          { id: 1, title: 'Portfolio Theory', duration: '40m', videoId: 'YtrMGKLRtwA' },
-          { id: 2, title: 'Asset Allocation', duration: '45m', videoId: 'QTgvWPAihIc' },
-          { id: 3, title: 'Technical Analysis Basics', duration: '50m', videoId: 'W8OjEjASfBo' },
-          { id: 4, title: 'Understanding Market Cycles', duration: '40m', videoId: '9YdPQizV0xQ' },
+          { id: 1, dbId: 'b0000000-0003-0000-0000-000000000005', title: 'Portfolio Theory', duration: '40m', videoId: 'YtrMGKLRtwA' },
+          { id: 2, dbId: 'b0000000-0003-0000-0000-000000000006', title: 'Asset Allocation', duration: '45m', videoId: 'QTgvWPAihIc' },
+          { id: 3, dbId: 'b0000000-0003-0000-0000-000000000007', title: 'Technical Analysis Basics', duration: '50m', videoId: 'W8OjEjASfBo' },
+          { id: 4, dbId: 'b0000000-0003-0000-0000-000000000008', title: 'Understanding Market Cycles', duration: '40m', videoId: '9YdPQizV0xQ' },
         ],
       },
       {
         id: 'advanced',
         label: 'Advanced',
         lessons: [
-          { id: 1, title: 'Options & Derivatives', duration: '55m', videoId: 'N4m-2Ng__Eg' },
-          { id: 2, title: 'Factor Investing', duration: '45m', videoId: 'balyUmSLq8g' },
-          { id: 3, title: 'Macro Economics & Markets', duration: '40m', videoId: 'PlZNbY45iPk' },
-          { id: 4, title: 'Alternative Investments', duration: '45m', videoId: 'nrkLMCWnnYU' },
+          { id: 1, dbId: 'b0000000-0003-0000-0000-000000000009', title: 'Options & Derivatives', duration: '55m', videoId: 'N4m-2Ng__Eg' },
+          { id: 2, dbId: 'b0000000-0003-0000-0000-000000000010', title: 'Factor Investing', duration: '45m', videoId: 'balyUmSLq8g' },
+          { id: 3, dbId: 'b0000000-0003-0000-0000-000000000011', title: 'Macro Economics & Markets', duration: '40m', videoId: 'PlZNbY45iPk' },
+          { id: 4, dbId: 'b0000000-0003-0000-0000-000000000012', title: 'Alternative Investments', duration: '45m', videoId: 'nrkLMCWnnYU' },
         ],
       },
     ],
@@ -393,15 +372,14 @@ function HubScreen({
                   </div>
                 )}
 
-                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white">${course.price}</span>
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end">
                   <button
                     type="button"
                     onClick={() => onEnroll(course)}
                     className="rounded-xl text-sm font-bold px-4 py-2.5 transition-opacity"
                     style={{ backgroundColor: course.color, color: 'white' }}
                   >
-                    {isEnrolled ? 'Continue' : 'Enroll Now'}
+                    {isEnrolled ? 'Continue' : 'Start Learning'}
                   </button>
                 </div>
               </div>
@@ -546,8 +524,7 @@ function DetailScreen({
             {/* Lesson list */}
             <div>
               {activeLevelData.lessons.map((lesson, i) => {
-                const key = lessonKey(course.id, activeLevel, lesson.id);
-                const isDone = completed.has(key);
+                const isDone = completed.has(lesson.dbId);
                 return (
                   <div key={lesson.id}>
                     {i > 0 && <div className="h-px bg-gray-100 dark:bg-gray-800 mx-5" />}
@@ -580,18 +557,15 @@ function DetailScreen({
           </div>
         </div>
 
-        {/* Right: pricing card */}
+        {/* Right: info card */}
         <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-sm dark:shadow-none border border-gray-100 dark:border-gray-800 p-6 sticky top-6">
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">${course.price}</p>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">One-time payment · Lifetime access</p>
-
           <button
             type="button"
             onClick={() => onEnroll(course)}
-            className="mt-5 w-full rounded-xl py-3 text-sm font-bold text-white hover:opacity-90 active:opacity-80 transition-opacity"
+            className="w-full rounded-xl py-3 text-sm font-bold text-white hover:opacity-90 active:opacity-80 transition-opacity"
             style={{ backgroundColor: course.color }}
           >
-            {isEnrolled ? 'Continue Learning' : 'Enroll & Start Learning'}
+            {isEnrolled ? 'Continue Learning' : 'Start Learning'}
           </button>
 
           <ul className="mt-5 space-y-2.5 text-sm text-gray-600 dark:text-gray-300">
@@ -630,7 +604,7 @@ function LessonView({
   onMarkComplete: () => void;
   onBack: () => void;
 }) {
-  const isDone = completed.has(lessonKey(course.id, level.id, lesson.id));
+  const isDone = completed.has(lesson.dbId);
 
   const lessonIndex = level.lessons.findIndex(l => l.id === lesson.id);
   const levelPct = levelProgress(course, level.id, completed);
@@ -722,32 +696,30 @@ function LessonView({
 
 export default function LearningHub() {
   const { t } = useTranslation();
-  const { user } = useAuth();
   const [currentView, setCurrentView] = useState<CurrentView>('hub');
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<{ lesson: Lesson; level: Level } | null>(null);
   const [activeLevel, setActiveLevel] = useState<LevelId>('beginner');
-  const [completed, setCompleted] = useState<Set<string>>(loadCompleted);
+  const [completed, setCompleted] = useState<Set<string>>(new Set());
   const [enrolled, setEnrolled] = useState<Set<number>>(loadEnrolled);
 
-  function markComplete(courseId: number, levelId: LevelId, lessonId: number) {
-    setCompleted(prev => {
-      const next = new Set(prev);
-      next.add(lessonKey(courseId, levelId, lessonId));
-      saveCompleted(next);
-      return next;
-    });
+  useEffect(() => {
+    api.get('/api/learning/progress')
+      .then(r => setCompleted(new Set(r.data.completed as string[])))
+      .catch(() => {});
+  }, []);
+
+  async function markComplete(dbId: string) {
+    try {
+      await api.post('/api/learning/progress', { lesson_id: dbId });
+      setCompleted(prev => new Set([...prev, dbId]));
+    } catch {
+      // silently fail — progress will sync on next load
+    }
   }
 
   function handleEnroll(course: Course) {
-    if (enrolled.has(course.id)) {
-      setSelectedCourse(course);
-      setActiveLevel('beginner');
-      setCurrentView('courseDetail');
-      return;
-    }
-    const balance = user?.wallet_balance ?? 0;
-    if (balance >= course.price) {
+    if (!enrolled.has(course.id)) {
       setEnrolled(prev => {
         const next = new Set(prev);
         next.add(course.id);
@@ -755,16 +727,10 @@ export default function LearningHub() {
         return next;
       });
       showToast(t('learn_enrolled'));
-      setSelectedCourse(course);
-      setActiveLevel('beginner');
-      setCurrentView('courseDetail');
-    } else {
-      showAlert(
-        'Insufficient Funds',
-        `Your balance is EGP ${balance.toFixed(2)}. You need $${course.price} to enroll.`,
-        'error',
-      );
     }
+    setSelectedCourse(course);
+    setActiveLevel('beginner');
+    setCurrentView('courseDetail');
   }
 
   return (
@@ -808,9 +774,7 @@ export default function LearningHub() {
               level={selectedLesson.level}
               lesson={selectedLesson.lesson}
               completed={completed}
-              onMarkComplete={() =>
-                markComplete(selectedCourse.id, selectedLesson.level.id, selectedLesson.lesson.id)
-              }
+              onMarkComplete={() => markComplete(selectedLesson.lesson.dbId)}
               onBack={() => setCurrentView('courseDetail')}
             />
           </motion.div>
