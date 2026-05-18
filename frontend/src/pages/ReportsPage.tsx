@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import api from '../lib/api';
 import { SubpageShell } from '../components/AppShell';
+import { useTheme } from '../hooks/useTheme';
 
 type CatalogRow = {
   id: string;
@@ -27,11 +28,22 @@ type CatalogRow = {
 
 type Holdings = {
   total_invested_egp: number;
-  bucket_breakdown: { key: string; amount_egp: number; pct_of_invested: number }[];
+  total_current_value_egp: number;
+  total_return_pct: number;
+  bucket_breakdown: {
+    key: string;
+    amount_egp: number;
+    pct_of_invested: number;
+    invested_egp: number;
+    current_value_egp: number;
+    return_pct: number;
+  }[];
 };
 
 export default function ReportsPage() {
   const { t } = useTranslation();
+  const { dark } = useTheme();
+
   const bucketLabel: Record<string, string> = {
     stocks: t('reports_bucket_stocks'),
     baskets: t('reports_bucket_baskets'),
@@ -42,6 +54,14 @@ export default function ReportsPage() {
   const [catalog, setCatalog] = useState<CatalogRow[]>([]);
   const [holdings, setHoldings] = useState<Holdings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const gridColor = dark ? '#374151' : '#e5e7eb';
+  const tooltipStyle = {
+    background: dark ? '#1a1a1a' : '#ffffff',
+    border: `1px solid ${dark ? '#374151' : '#e5e7eb'}`,
+    borderRadius: 8,
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -51,7 +71,9 @@ export default function ReportsPage() {
         setCatalog(c.data.catalog || []);
         setHoldings(h.data);
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!cancelled) setError(true);
+      })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
@@ -73,11 +95,35 @@ export default function ReportsPage() {
           <div className="mt-10 flex justify-center">
             <div className="w-8 h-8 rounded-full border-2 border-gray-200 dark:border-gray-700 border-t-infinder-green animate-spin" />
           </div>
+        ) : error ? (
+          <p className="mt-10 text-center text-sm text-red-500">{t('reports_error')}</p>
         ) : (
           <>
+            {holdings && holdings.total_invested_egp > 0 && (
+              <div className="grid grid-cols-3 gap-4 mt-6">
+                <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-4">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('reports_summary_invested')}</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">
+                    EGP {holdings.total_invested_egp.toLocaleString()}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-4">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('reports_summary_current')}</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">
+                    EGP {holdings.total_current_value_egp.toLocaleString()}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-4">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('reports_summary_return')}</p>
+                  <p className={`text-lg font-bold ${holdings.total_return_pct >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                    {holdings.total_return_pct >= 0 ? '+' : ''}{holdings.total_return_pct}%
+                  </p>
+                </div>
+              </div>
+            )}
+
             <section className="mt-10">
               <div>
-                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 tracking-widest uppercase mb-1">INFINDER</p>
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('reports_allocation_title')}</h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('reports_allocation_sub')}</p>
               </div>
@@ -87,17 +133,20 @@ export default function ReportsPage() {
                     <BarChart
                       data={holdings.bucket_breakdown.map((b) => ({
                         name: bucketLabel[b.key] || b.key,
-                        amount: b.amount_egp,
+                        invested: b.invested_egp,
+                        current: b.current_value_egp,
                       }))}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                       <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#9ca3af' }} />
                       <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} />
                       <Tooltip
-                        contentStyle={{ background: '#1a1a1a', border: '1px solid #374151', borderRadius: 8 }}
-                        formatter={(v: number) => [`EGP ${v.toFixed(2)}`, t('reports_amount')]}
+                        contentStyle={tooltipStyle}
+                        formatter={(v: number) => [`EGP ${v.toFixed(2)}`, '']}
                       />
-                      <Bar dataKey="amount" fill="#76D74F" radius={[6, 6, 0, 0]} />
+                      <Legend />
+                      <Bar dataKey="invested" name={t('reports_invested_label')} fill="#76D74F" radius={[6, 6, 0, 0]} />
+                      <Bar dataKey="current" name={t('reports_current_label')} fill="#BEF35E" radius={[6, 6, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -110,7 +159,6 @@ export default function ReportsPage() {
 
             <section className="mt-12 space-y-10">
               <div>
-                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 tracking-widest uppercase mb-1">INFINDER</p>
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('reports_benchmarks_title')}</h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400">{t('reports_benchmarks_sub')}</p>
               </div>
@@ -134,11 +182,11 @@ export default function ReportsPage() {
                   <div className="h-56 mt-4">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={row.series_30d}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                         <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#9ca3af' }} tickFormatter={(d) => d.slice(5)} />
                         <YAxis domain={['auto', 'auto']} tick={{ fontSize: 10, fill: '#9ca3af' }} />
                         <Tooltip
-                          contentStyle={{ background: '#1a1a1a', border: '1px solid #374151', borderRadius: 8 }}
+                          contentStyle={tooltipStyle}
                           labelFormatter={(l) => `${t('reports_date_label')} ${l}`}
                           formatter={(v: number) => [v.toFixed(2), 'Index']}
                         />

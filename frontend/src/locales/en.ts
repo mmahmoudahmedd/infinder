@@ -311,6 +311,12 @@ const en = {
   reports_price_index: 'Price index',
   reports_date_label: 'Date:',
   reports_amount: 'Amount',
+  reports_error: 'Failed to load data, please refresh.',
+  reports_summary_invested: 'Total Invested',
+  reports_summary_current: 'Current Value',
+  reports_summary_return: 'Total Return',
+  reports_invested_label: 'Invested',
+  reports_current_label: 'Current value',
 
   // Learning
   learn_enrolled: 'Enrolled successfully!',

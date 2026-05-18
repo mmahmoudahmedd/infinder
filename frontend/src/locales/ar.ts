@@ -313,6 +313,12 @@ const ar: Record<TranslationKey, string> = {
   reports_price_index: 'مؤشر السعر',
   reports_date_label: 'التاريخ:',
   reports_amount: 'المبلغ',
+  reports_error: 'فشل تحميل البيانات، يرجى تحديث الصفحة.',
+  reports_summary_invested: 'إجمالي الاستثمار',
+  reports_summary_current: 'القيمة الحالية',
+  reports_summary_return: 'إجمالي العائد',
+  reports_invested_label: 'المستثمر',
+  reports_current_label: 'القيمة الحالية',
 
   // Learning
   learn_enrolled: 'تم التسجيل بنجاح!',
