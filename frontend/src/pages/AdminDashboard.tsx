@@ -100,6 +100,7 @@ type LearningModule = {
   difficulty: string;
   duration_minutes: number;
   order_index: number;
+  price: number;
 };
 
 type Lesson = {
@@ -1098,7 +1099,7 @@ function ProductsSection() {
 
 // ─── Section: Revenue ────────────────────────────────────────────────────────
 
-type FeeData = { total: number; by_type: Record<string, number>; breakdown: { day: string; amount: number; type: string }[] };
+type FeeData = { total: number; by_type: Record<string, number>; breakdown: { day: string; total_fees: number; type: string }[] };
 
 function RevenueSection() {
   const { t } = useTranslation();
@@ -1240,7 +1241,7 @@ function TransactionsSection() {
 
 // ─── Section: Learning ───────────────────────────────────────────────────────
 
-const EMPTY_MODULE_FORM: Partial<LearningModule> = { title: '', slug: '', description: '', difficulty: 'beginner', duration_minutes: 30, order_index: 0 };
+const EMPTY_MODULE_FORM: Partial<LearningModule> = { title: '', slug: '', description: '', difficulty: 'beginner', duration_minutes: 30, order_index: 0, price: 0 };
 const EMPTY_LESSON_FORM: Partial<Lesson> = { title: '', content: '', order_index: 0, duration_minutes: 10 };
 
 function LearningSection() {
@@ -1384,7 +1385,7 @@ function LearningSection() {
                   <span className="text-xs text-gray-400 w-5 flex-shrink-0">#{m.order_index}</span>
                   <div className="min-w-0">
                     <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{m.title}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{m.difficulty} · {m.duration_minutes}min</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{m.difficulty} · {m.duration_minutes}min · EGP {Number(m.price ?? 0).toLocaleString()}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
@@ -1495,6 +1496,10 @@ function LearningSection() {
                     <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Order Index</label>
                     <input type="number" className={inputCls} value={moduleForm.order_index ?? ''} onChange={(e) => setModuleForm((p) => ({ ...p, order_index: Number(e.target.value) }))} />
                   </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Price (EGP)</label>
+                  <input type="number" min="0" className={inputCls} value={moduleForm.price ?? ''} onChange={(e) => setModuleForm((p) => ({ ...p, price: Number(e.target.value) }))} />
                 </div>
               </div>
               {msg && <p className="text-xs text-red-500 mt-2">{msg}</p>}

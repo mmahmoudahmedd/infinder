@@ -165,15 +165,18 @@ router.post('/purchase', verifyToken, async (req, res) => {
       .maybeSingle();
     if (existing) return res.json({ ok: true, already_owned: true });
 
-    const { data: user, error: uerr } = await supabase
-      .from('users')
-      .select('wallet_balance')
-      .eq('id', req.user.id)
-      .single();
+    const [
+      { data: user, error: uerr },
+      { data: module, error: merr },
+    ] = await Promise.all([
+      supabase.from('users').select('wallet_balance').eq('id', req.user.id).single(),
+      supabase.from('learning_modules').select('price').eq('id', course_id).single(),
+    ]);
     if (uerr || !user) return res.status(404).json({ error: 'User not found' });
+    if (merr || !module) return res.status(404).json({ error: 'Module not found' });
 
     const balance = Number(user.wallet_balance);
-    const price = 1000;
+    const price = Number(module.price ?? 0);
     if (balance < price) {
       return res.status(400).json({ error: 'insufficient_balance', balance });
     }
