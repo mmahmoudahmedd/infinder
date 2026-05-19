@@ -2,10 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Swal from 'sweetalert2';
-import { TrendingUp, ArrowDownLeft, ArrowUpRight, RefreshCw, SlidersHorizontal, BarChart2, Moon, type LucideIcon } from 'lucide-react';
+import { TrendingUp, ArrowDownLeft, ArrowUpRight, RefreshCw, SlidersHorizontal, BarChart2, Moon, BookOpen, type LucideIcon } from 'lucide-react';
 import api from '../lib/api';
 import { SubpageShell } from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../hooks/useTheme';
 import { showToast, showAlert, showLoading, closeLoading, showError, showCopyToast } from '../lib/swal';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -35,15 +36,19 @@ type Position = {
   fee_amount: number;
 };
 
+type PortfolioStats = {
+  total_current_value_egp: number;
+  total_return_pct: number;
+};
+
 type KycStatus = 'not_started' | 'pending' | 'approved' | 'rejected';
 type KycData = { kyc_status: KycStatus; kyc_rejection_reason: string | null };
-type TxFilter = 'all' | 'investment' | 'deposit' | 'withdrawal' | 'return';
+type TxFilter = 'all' | 'investment' | 'deposit' | 'withdrawal' | 'return' | 'course_purchase';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function allocationSummary(allocation: Record<string, number> | null | undefined): string {
+function allocationSummary(allocation: Record<string, number> | null | undefined, labels: Record<string, string>): string {
   if (!allocation) return '';
-  const labels: Record<string, string> = { stocks: 'Stocks', baskets: 'Baskets', bonds: 'Bonds', gold: 'Gold' };
   const entries = Object.entries(allocation)
     .filter(([, v]) => v > 0)
     .sort(([, a], [, b]) => b - a);
@@ -63,30 +68,47 @@ function methodLabel(meta: Record<string, unknown> | undefined): string {
   return '';
 }
 
-function txSubtitle(tx: Tx): string {
+function txSubtitle(tx: Tx, allocLabels: Record<string, string>): string {
   if (tx.type === 'investment' || tx.type === 'return') {
     const alloc = (tx.meta?.allocation ?? (tx.meta?.meta as Record<string, number>)) as Record<string, number> | undefined;
-    return allocationSummary(alloc);
+    return allocationSummary(alloc, allocLabels);
   }
-  if (tx.type === 'deposit') return methodLabel(tx.meta) || 'Deposit';
-  if (tx.type === 'withdrawal') return methodLabel(tx.meta) || 'Withdrawal';
+  if (tx.type === 'deposit' || tx.type === 'withdrawal') return methodLabel(tx.meta);
+  if (tx.type === 'course_purchase') {
+    const id = tx.meta?.course_id;
+    return id ? `Course #${id}` : '';
+  }
   return '';
 }
 
+function txLabel(type: string, t: (k: string) => string): string {
+  const map: Record<string, string> = {
+    investment:      t('profile_tx_investment'),
+    deposit:         t('profile_tx_deposit'),
+    withdrawal:      t('profile_tx_withdrawal'),
+    return:          t('profile_tx_return'),
+    adjustment:      t('profile_tx_adjustment'),
+    course_purchase: t('profile_tx_course_purchase'),
+  };
+  return map[type] ?? type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 const TX_ICON: Record<string, LucideIcon> = {
-  investment: TrendingUp,
-  deposit:    ArrowDownLeft,
-  withdrawal: ArrowUpRight,
-  return:     RefreshCw,
-  adjustment: SlidersHorizontal,
+  investment:      TrendingUp,
+  deposit:         ArrowDownLeft,
+  withdrawal:      ArrowUpRight,
+  return:          RefreshCw,
+  adjustment:      SlidersHorizontal,
+  course_purchase: BookOpen,
 };
 
 const TX_COLOR: Record<string, string> = {
-  investment: 'bg-blue-100 dark:bg-blue-900/30',
-  deposit:    'bg-green-100 dark:bg-green-900/30',
-  withdrawal: 'bg-red-100 dark:bg-red-900/30',
-  return:     'bg-emerald-100 dark:bg-emerald-900/30',
-  adjustment: 'bg-gray-100 dark:bg-gray-800',
+  investment:      'bg-blue-100 dark:bg-blue-900/30',
+  deposit:         'bg-green-100 dark:bg-green-900/30',
+  withdrawal:      'bg-red-100 dark:bg-red-900/30',
+  return:          'bg-emerald-100 dark:bg-emerald-900/30',
+  adjustment:      'bg-gray-100 dark:bg-gray-800',
+  course_purchase: 'bg-purple-100 dark:bg-purple-900/30',
 };
 
 const isCredit = (type: string) => type === 'deposit' || type === 'return' || type === 'adjustment';
@@ -108,9 +130,14 @@ function StatusBadge({ status }: { status: string }) {
 // ─── Transaction Detail Modal ────────────────────────────────────────────────
 
 function TransactionDetailModal({ tx, onClose }: { tx: Tx; onClose: () => void }) {
+  const { t } = useTranslation();
   const overlayRef = useRef<HTMLDivElement>(null);
   const allocation = tx.meta?.allocation as Record<string, number> | undefined;
   const method = methodLabel(tx.meta);
+  const allocLabels = {
+    stocks: t('reports_bucket_stocks'), baskets: t('reports_bucket_baskets'),
+    bonds: t('reports_bucket_bonds'), gold: t('reports_bucket_gold'),
+  };
 
   function copy(text: string) {
     navigator.clipboard.writeText(text);
@@ -131,7 +158,7 @@ function TransactionDetailModal({ tx, onClose }: { tx: Tx; onClose: () => void }
               {(() => { const Icon = TX_ICON[tx.type]; return Icon ? <Icon className="w-4 h-4" /> : <span>·</span>; })()}
             </div>
             <div>
-              <p className="font-semibold text-gray-900 dark:text-white capitalize">{tx.type}</p>
+              <p className="font-semibold text-gray-900 dark:text-white">{txLabel(tx.type, t)}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {new Date(tx.created_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
               </p>
@@ -190,7 +217,9 @@ function TransactionDetailModal({ tx, onClose }: { tx: Tx; onClose: () => void }
                       <div className="flex-1 h-1.5 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden">
                         <div className="h-full bg-infinder-lime rounded-full" style={{ width: `${v}%` }} />
                       </div>
-                      <span className="text-gray-600 dark:text-gray-300 w-20 text-right capitalize">{k} {v}%</span>
+                      <span className="text-gray-600 dark:text-gray-300 w-20 text-right capitalize">
+                        {allocLabels[k as keyof typeof allocLabels] ?? k} {v}%
+                      </span>
                     </div>
                   ))}
               </div>
@@ -284,9 +313,11 @@ export default function ProfilePage() {
   const { t } = useTranslation();
   const nav = useNavigate();
   const { user, logout, updateProfile, refreshMe } = useAuth();
+  const { dark } = useTheme();
 
   const [txs, setTxs] = useState<Tx[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
+  const [portfolioStats, setPortfolioStats] = useState<PortfolioStats | null>(null);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
@@ -300,6 +331,13 @@ export default function ProfilePage() {
   const [pmExpiry, setPmExpiry] = useState('');
   const [pmSaving, setPmSaving] = useState(false);
   const [pmExpiryErr, setPmExpiryErr] = useState(false);
+
+  const allocLabels = useMemo(() => ({
+    stocks:  t('reports_bucket_stocks'),
+    baskets: t('reports_bucket_baskets'),
+    bonds:   t('reports_bucket_bonds'),
+    gold:    t('reports_bucket_gold'),
+  }), [t]);
 
   useEffect(() => {
     if (user) {
@@ -318,6 +356,12 @@ export default function ProfilePage() {
     }).catch(() => {});
     api.get('/api/kyc/status').then((r) => setKycData(r.data)).catch(() => {});
     api.get('/api/investments/positions').then((r) => setPositions(r.data.positions || [])).catch(() => {});
+    api.get('/api/analytics/holdings').then((r) => {
+      setPortfolioStats({
+        total_current_value_egp: r.data.total_current_value_egp ?? 0,
+        total_return_pct: r.data.total_return_pct ?? 0,
+      });
+    }).catch(() => {});
   }, []);
 
   const filteredTxs = useMemo(() => {
@@ -329,6 +373,8 @@ export default function ProfilePage() {
     () => positions.reduce((s, p) => s + (p.amount ?? 0), 0),
     [positions]
   );
+
+  const swalTheme = { background: dark ? '#1a1a1a' : '#ffffff', color: dark ? '#ffffff' : '#111111' };
 
   async function saveProfile() {
     if (!user) return;
@@ -387,8 +433,7 @@ export default function ProfilePage() {
       showCancelButton: true,
       confirmButtonText: 'Yes, continue',
       cancelButtonText: 'Cancel',
-      background: '#1a1a1a',
-      color: '#ffffff',
+      ...swalTheme,
       confirmButtonColor: '#ef4444',
     });
     if (!step1.isConfirmed) return;
@@ -400,8 +445,7 @@ export default function ProfilePage() {
       showCancelButton: true,
       confirmButtonText: 'Delete my account',
       cancelButtonText: 'Cancel',
-      background: '#1a1a1a',
-      color: '#ffffff',
+      ...swalTheme,
       confirmButtonColor: '#ef4444',
       inputValidator: (val) => {
         if (val !== 'DELETE') return 'You must type DELETE exactly to confirm';
@@ -427,11 +471,12 @@ export default function ProfilePage() {
   const initial = (user.full_name || user.email || '?').charAt(0).toUpperCase();
 
   const FILTER_CHIPS: { key: TxFilter; label: string }[] = [
-    { key: 'all',        label: 'All' },
-    { key: 'investment', label: 'Investments' },
-    { key: 'deposit',    label: 'Deposits' },
-    { key: 'withdrawal', label: 'Withdrawals' },
-    { key: 'return',     label: 'Returns' },
+    { key: 'all',            label: t('profile_filter_all') },
+    { key: 'investment',     label: t('profile_filter_investments') },
+    { key: 'deposit',        label: t('profile_filter_deposits') },
+    { key: 'withdrawal',     label: t('profile_filter_withdrawals') },
+    { key: 'return',         label: t('profile_filter_returns') },
+    { key: 'course_purchase', label: t('profile_filter_courses') },
   ];
 
   return (
@@ -489,7 +534,7 @@ export default function ProfilePage() {
       <div className="mt-8 grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
 
-          {/* ── PART 3: Portfolio summary ── */}
+          {/* ── Portfolio summary ── */}
           <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold text-lg text-gray-900 dark:text-white">Portfolio Summary</h2>
@@ -512,12 +557,19 @@ export default function ProfilePage() {
                   </div>
                   <div className="rounded-xl bg-gray-50 dark:bg-white/[0.04] p-3 text-center">
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Current Value</p>
-                    {/* TODO: replace with live price data */}
-                    <p className="font-bold text-gray-900 dark:text-white text-sm">EGP {totalInvested.toFixed(2)}</p>
+                    <p className="font-bold text-gray-900 dark:text-white text-sm">
+                      {portfolioStats ? `EGP ${portfolioStats.total_current_value_egp.toFixed(2)}` : '—'}
+                    </p>
                   </div>
                   <div className="rounded-xl bg-gray-50 dark:bg-white/[0.04] p-3 text-center">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Returns</p>
-                    <p className="font-bold text-gray-400 dark:text-gray-500 text-sm">—</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Return</p>
+                    {portfolioStats ? (
+                      <p className={`font-bold text-sm ${portfolioStats.total_return_pct >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                        {portfolioStats.total_return_pct >= 0 ? '+' : ''}{portfolioStats.total_return_pct}%
+                      </p>
+                    ) : (
+                      <p className="font-bold text-gray-400 dark:text-gray-500 text-sm">—</p>
+                    )}
                   </div>
                 </div>
 
@@ -547,7 +599,7 @@ export default function ProfilePage() {
                       </div>
                       <div className="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400">
                         {segments.map(({ k, pct }) => (
-                          <span key={k} className="capitalize">{k} {pct.toFixed(0)}%</span>
+                          <span key={k}>{allocLabels[k as keyof typeof allocLabels] ?? k} {pct.toFixed(0)}%</span>
                         ))}
                       </div>
                     </div>
@@ -744,11 +796,10 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* ── PART 1+2: Transactions with filter chips ── */}
+          {/* ── Transactions with filter chips ── */}
           <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-5">
             <h2 className="font-semibold text-gray-900 dark:text-white mb-3">{t('profile_transactions')}</h2>
 
-            {/* Filter chips */}
             <div className="flex flex-wrap gap-2 mb-4">
               {FILTER_CHIPS.map(({ key, label }) => (
                 <button
@@ -771,7 +822,7 @@ export default function ProfilePage() {
             ) : (
               <ul className="space-y-1 max-h-96 overflow-y-auto">
                 {filteredTxs.map((tx) => {
-                  const subtitle = txSubtitle(tx);
+                  const subtitle = txSubtitle(tx, allocLabels);
                   const credit = isCredit(tx.type);
                   return (
                     <li key={tx.id}>
@@ -785,7 +836,7 @@ export default function ProfilePage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium capitalize text-gray-700 dark:text-gray-300">{tx.type}</span>
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{txLabel(tx.type, t)}</span>
                             {subtitle && <span className="text-xs text-gray-400 dark:text-gray-500 truncate">{subtitle}</span>}
                             <StatusBadge status={tx.status} />
                           </div>
@@ -834,7 +885,7 @@ export default function ProfilePage() {
             </button>
           </div>
 
-          {/* ── PART 4: Danger zone ── */}
+          {/* ── Danger zone ── */}
           <div className="rounded-2xl border-2 border-red-200 dark:border-red-900/50 bg-white dark:bg-[#1a1a1a] p-5">
             <h2 className="font-semibold text-red-700 dark:text-red-400 mb-1">Danger zone</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -849,7 +900,7 @@ export default function ProfilePage() {
             </button>
           </div>
 
-          {/* ── PART 5: Legal links ── */}
+          {/* ── Legal links ── */}
           <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] p-5">
             <h2 className="font-semibold text-gray-900 dark:text-white mb-3">Legal &amp; Support</h2>
             <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
@@ -894,7 +945,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* ── Transaction detail modal ── */}
       {selectedTx && (
         <TransactionDetailModal tx={selectedTx} onClose={() => setSelectedTx(null)} />
       )}
