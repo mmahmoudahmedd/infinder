@@ -12,7 +12,7 @@ import SmartAssistant from './pages/SmartAssistant';
 import ProfilePage from './pages/ProfilePage';
 import LearningModules from './pages/LearningModules';
 import RewardsDashboard from './pages/RewardsDashboard';
-import AdminPanel from './pages/AdminPanel';
+import AdminDashboard from './pages/AdminDashboard';
 import ReportsPage from './pages/ReportsPage';
 import LearningHub from './pages/LearningHub';
 import TermsPage from './pages/legal/TermsPage';
@@ -118,7 +118,7 @@ export default function App() {
         path="/admin"
         element={
           <ProtectedRoute admin>
-            <AdminPanel />
+            <AdminDashboard />
           </ProtectedRoute>
         }
       />
