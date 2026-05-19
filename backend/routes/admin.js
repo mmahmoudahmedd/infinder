@@ -1,6 +1,8 @@
 import { Router } from 'express';
+import bcrypt from 'bcryptjs';
 import { supabase } from '../supabase/client.js';
 import { verifyToken, requireAdmin } from '../middleware/verifyToken.js';
+import { generateDepositRef } from '../utils/codes.js';
 
 const router = Router();
 router.use(verifyToken, requireAdmin);
@@ -136,6 +138,83 @@ router.patch('/users/:id', async (req, res) => {
   }
 });
 
+// POST /api/admin/users
+router.post('/users', async (req, res) => {
+  try {
+    const { email, password, full_name, phone, role } = req.body;
+    if (!email || !password || !full_name) {
+      return res.status(400).json({ error: 'email, password, and full_name are required' });
+    }
+
+    const { data: existing } = await supabase.from('users').select('id').eq('email', email.toLowerCase().trim()).maybeSingle();
+    if (existing) return res.status(409).json({ error: 'Email already registered' });
+
+    const password_hash = await bcrypt.hash(password, 10);
+    let deposit_ref_code = generateDepositRef();
+    for (let i = 0; i < 5; i++) {
+      const { data: clash } = await supabase.from('users').select('id').eq('deposit_ref_code', deposit_ref_code).maybeSingle();
+      if (!clash) break;
+      deposit_ref_code = generateDepositRef();
+    }
+
+    const { data: user, error } = await supabase
+      .from('users')
+      .insert({
+        email: email.toLowerCase().trim(),
+        password_hash,
+        full_name: full_name || null,
+        phone: phone || null,
+        role: ['admin', 'user'].includes(role) ? role : 'user',
+        kyc_status: 'not_started',
+        wallet_balance: 0,
+        deposit_ref_code,
+      })
+      .select('id, email, full_name, phone, role, kyc_status, wallet_balance, created_at')
+      .single();
+
+    if (error) throw error;
+    return res.status(201).json({ user });
+  } catch (e) {
+    console.error('admin create user', e);
+    return res.status(500).json({ error: 'Failed to create user' });
+  }
+});
+
+// DELETE /api/admin/users/:id
+router.delete('/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (id === req.user.id) return res.status(400).json({ error: 'Cannot delete yourself' });
+    const { error } = await supabase.from('users').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+    if (error) throw error;
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('admin delete user', e);
+    return res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
+// GET /api/admin/users/:id
+router.get('/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [
+      { data: user, error: uErr },
+      { data: portfolios },
+      { data: transactions },
+    ] = await Promise.all([
+      supabase.from('users').select('id, email, full_name, phone, role, kyc_status, wallet_balance, created_at, deleted_at').eq('id', id).single(),
+      supabase.from('portfolios').select('id, name, status, allocation, amount, is_sharia, created_at').eq('user_id', id).order('created_at', { ascending: false }),
+      supabase.from('transactions').select('id, type, amount, net_amount, fee_amount, status, created_at').eq('user_id', id).order('created_at', { ascending: false }).limit(20),
+    ]);
+    if (uErr || !user) return res.status(404).json({ error: 'User not found' });
+    return res.json({ user, portfolios: portfolios || [], recent_transactions: transactions || [] });
+  } catch (e) {
+    console.error('admin user detail', e);
+    return res.status(500).json({ error: 'Failed to load user' });
+  }
+});
+
 // GET /api/admin/deposits?status=&page=1
 router.get('/deposits', async (req, res) => {
   try {
@@ -266,6 +345,161 @@ router.patch('/investments/:id', async (req, res) => {
   } catch (e) {
     console.error('admin update investment', e);
     return res.status(500).json({ error: 'Failed to update investment' });
+  }
+});
+
+// DELETE /api/admin/investments/:id
+router.delete('/investments/:id', async (req, res) => {
+  try {
+    const { error } = await supabase.from('investments').delete().eq('id', req.params.id);
+    if (error) throw error;
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('admin delete investment', e);
+    return res.status(500).json({ error: 'Failed to delete investment' });
+  }
+});
+
+// ─── Learning Modules ─────────────────────────────────────────────────────────
+
+// GET /api/admin/learning/modules
+router.get('/learning/modules', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('learning_modules').select('*').order('order_index');
+    if (error) throw error;
+    return res.json({ modules: data || [] });
+  } catch (e) {
+    console.error('admin learning modules', e);
+    return res.status(500).json({ error: 'Failed to load modules' });
+  }
+});
+
+// POST /api/admin/learning/modules
+router.post('/learning/modules', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('learning_modules').insert(req.body).select().single();
+    if (error) throw error;
+    return res.status(201).json({ module: data });
+  } catch (e) {
+    console.error('admin create module', e);
+    return res.status(500).json({ error: 'Failed to create module' });
+  }
+});
+
+// PATCH /api/admin/learning/modules/:id
+router.patch('/learning/modules/:id', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('learning_modules').update(req.body).eq('id', req.params.id).select().single();
+    if (error) throw error;
+    return res.json({ module: data });
+  } catch (e) {
+    console.error('admin update module', e);
+    return res.status(500).json({ error: 'Failed to update module' });
+  }
+});
+
+// DELETE /api/admin/learning/modules/:id
+router.delete('/learning/modules/:id', async (req, res) => {
+  try {
+    const { error } = await supabase.rpc('delete_module_cascade', { p_module_id: req.params.id });
+    if (error) throw error;
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('admin delete module', e);
+    return res.status(500).json({ error: 'Failed to delete module' });
+  }
+});
+
+// GET /api/admin/learning/modules/:id/lessons
+router.get('/learning/modules/:id/lessons', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('lessons').select('*').eq('module_id', req.params.id).order('order_index');
+    if (error) throw error;
+    return res.json({ lessons: data || [] });
+  } catch (e) {
+    console.error('admin lessons', e);
+    return res.status(500).json({ error: 'Failed to load lessons' });
+  }
+});
+
+// POST /api/admin/learning/modules/:id/lessons
+router.post('/learning/modules/:id/lessons', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('lessons').insert({ ...req.body, module_id: req.params.id }).select().single();
+    if (error) throw error;
+    return res.status(201).json({ lesson: data });
+  } catch (e) {
+    console.error('admin create lesson', e);
+    return res.status(500).json({ error: 'Failed to create lesson' });
+  }
+});
+
+// PATCH /api/admin/learning/lessons/:id
+router.patch('/learning/lessons/:id', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('lessons').update(req.body).eq('id', req.params.id).select().single();
+    if (error) throw error;
+    return res.json({ lesson: data });
+  } catch (e) {
+    console.error('admin update lesson', e);
+    return res.status(500).json({ error: 'Failed to update lesson' });
+  }
+});
+
+// DELETE /api/admin/learning/lessons/:id
+router.delete('/learning/lessons/:id', async (req, res) => {
+  try {
+    const { error } = await supabase.from('lessons').delete().eq('id', req.params.id);
+    if (error) throw error;
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('admin delete lesson', e);
+    return res.status(500).json({ error: 'Failed to delete lesson' });
+  }
+});
+
+// ─── Portfolios ───────────────────────────────────────────────────────────────
+
+// GET /api/admin/portfolios?page=1
+router.get('/portfolios', async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = 20;
+    const offset = (page - 1) * limit;
+
+    const { data, error, count } = await supabase
+      .from('portfolios')
+      .select('id, name, status, allocation, amount, is_sharia, created_at, users!inner(id, email, full_name)', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
+    return res.json({
+      portfolios: (data || []).map((p) => ({ ...p, user: p.users, amount: Number(p.amount || 0) })),
+      total: count || 0,
+      page,
+      limit,
+    });
+  } catch (e) {
+    console.error('admin portfolios', e);
+    return res.status(500).json({ error: 'Failed to load portfolios' });
+  }
+});
+
+// PATCH /api/admin/portfolios/:id
+router.patch('/portfolios/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data: portfolio, error: fetchErr } = await supabase.from('portfolios').select('status').eq('id', id).single();
+    if (fetchErr || !portfolio) return res.status(404).json({ error: 'Portfolio not found' });
+    if (portfolio.status === 'closed') return res.status(400).json({ error: 'Portfolio already closed' });
+
+    const { error } = await supabase.from('portfolios').update({ status: 'closed' }).eq('id', id);
+    if (error) throw error;
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('admin close portfolio', e);
+    return res.status(500).json({ error: 'Failed to close portfolio' });
   }
 });
 

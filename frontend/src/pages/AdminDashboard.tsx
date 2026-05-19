@@ -5,7 +5,7 @@ import {
   Users, ShieldCheck, ArrowDownCircle, Package, BarChart2,
   ArrowLeftRight, LayoutDashboard, AlertTriangle, CheckCircle,
   ChevronLeft, ChevronRight, Search, Edit2, ToggleLeft, ToggleRight,
-  Plus, X,
+  Plus, X, Trash2, BookOpen, Briefcase, ChevronDown, ChevronUp, Eye,
 } from 'lucide-react';
 import api from '../lib/api';
 import { AppShell } from '../components/AppShell';
@@ -73,6 +73,43 @@ type KycSubmission = {
   status: string;
   submitted_at: string;
   user: { id: string; email: string; full_name: string | null; phone: string | null; kyc_status: string };
+};
+
+type AdminUserDetail = {
+  user: AdminUser & { phone: string | null };
+  portfolios: { id: string; name: string; status: string; amount: number; is_sharia: boolean; created_at: string }[];
+  recent_transactions: { id: string; type: string; amount: number; net_amount: number; status: string; created_at: string }[];
+};
+
+type Portfolio = {
+  id: string;
+  name: string;
+  status: 'active' | 'closed';
+  allocation: Record<string, unknown> | null;
+  amount: number;
+  is_sharia: boolean;
+  created_at: string;
+  user: { id: string; email: string; full_name: string | null };
+};
+
+type LearningModule = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  difficulty: string;
+  duration_minutes: number;
+  order_index: number;
+};
+
+type Lesson = {
+  id: string;
+  module_id: string;
+  title: string;
+  content: string;
+  order_index: number;
+  duration_minutes: number;
+  quiz: Record<string, unknown> | null;
 };
 
 // ─── Small helpers ─────────────────────────────────────────────────────────────
@@ -179,6 +216,8 @@ function OverviewSection({ stats, onNavigate }: { stats: Stats | null; onNavigat
 
 // ─── Section: Users ──────────────────────────────────────────────────────────
 
+const EMPTY_USER_FORM = { email: '', password: '', full_name: '', phone: '', role: 'user' };
+
 function UsersSection() {
   const { t } = useTranslation();
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -192,10 +231,21 @@ function UsersSection() {
   const [adjustNote, setAdjustNote] = useState('');
   const [adjustLoading, setAdjustLoading] = useState(false);
   const [msg, setMsg] = useState('');
+  // create
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [createForm, setCreateForm] = useState(EMPTY_USER_FORM);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createMsg, setCreateMsg] = useState('');
+  // delete
+  const [deletingUser, setDeletingUser] = useState<AdminUser | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  // detail
+  const [detailUser, setDetailUser] = useState<AdminUserDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQ(q), 400);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDebouncedQ(q), 400);
+    return () => clearTimeout(timer);
   }, [q]);
 
   const load = useCallback(async () => {
@@ -238,6 +288,47 @@ function UsersSection() {
     }
   }
 
+  async function submitCreate() {
+    setCreateLoading(true);
+    setCreateMsg('');
+    try {
+      await api.post('/api/admin/users', createForm);
+      setCreatingUser(false);
+      setCreateForm(EMPTY_USER_FORM);
+      load();
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { error?: string } } };
+      setCreateMsg(err?.response?.data?.error || 'Failed to create user.');
+    } finally {
+      setCreateLoading(false);
+    }
+  }
+
+  async function confirmDelete() {
+    if (!deletingUser) return;
+    setDeleteLoading(true);
+    try {
+      await api.delete(`/api/admin/users/${deletingUser.id}`);
+      setDeletingUser(null);
+      load();
+    } catch {
+      // ignore
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
+  async function openDetail(u: AdminUser) {
+    setDetailUser(null);
+    setDetailLoading(true);
+    try {
+      const r = await api.get(`/api/admin/users/${u.id}`);
+      setDetailUser(r.data);
+    } finally {
+      setDetailLoading(false);
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
@@ -250,6 +341,12 @@ function UsersSection() {
             onChange={(e) => { setQ(e.target.value); setPage(1); }}
           />
         </div>
+        <button
+          onClick={() => { setCreatingUser(true); setCreateForm(EMPTY_USER_FORM); setCreateMsg(''); }}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-infinder-lime text-infinder-black text-sm font-semibold flex-shrink-0"
+        >
+          <Plus size={15} /> New User
+        </button>
       </div>
 
       {msg && <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">{msg}</p>}
@@ -272,7 +369,12 @@ function UsersSection() {
               {users.map((u) => (
                 <tr key={u.id} className={`${u.deleted_at ? 'opacity-50' : ''} hover:bg-gray-50 dark:hover:bg-white/5`}>
                   <td className="px-4 py-2.5 text-gray-900 dark:text-white font-mono text-xs">
-                    {u.email}
+                    <button
+                      className="hover:underline text-left"
+                      onClick={() => openDetail(u)}
+                    >
+                      {u.email}
+                    </button>
                     {u.deleted_at && <span className="ml-1 text-xs text-red-500 line-through">{t('admin_users_deleted')}</span>}
                   </td>
                   <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300">{u.full_name || '—'}</td>
@@ -282,6 +384,9 @@ function UsersSection() {
                   <td className="px-4 py-2.5 text-gray-500 dark:text-gray-400 text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-1">
+                      <button title="View details" onClick={() => openDetail(u)} className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <Eye size={14} />
+                      </button>
                       <button
                         title={u.role === 'admin' ? t('admin_action_demote') : t('admin_action_promote')}
                         onClick={() => toggleRole(u)}
@@ -296,6 +401,15 @@ function UsersSection() {
                       >
                         <Edit2 size={14} />
                       </button>
+                      {!u.deleted_at && (
+                        <button
+                          title="Delete user"
+                          onClick={() => setDeletingUser(u)}
+                          className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -308,18 +422,15 @@ function UsersSection() {
       <Pagination page={page} total={total} limit={20} onPage={setPage} />
 
       <AnimatePresence>
+        {/* Wallet Adjustment Modal */}
         {adjustingUser && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
             onClick={(e) => { if (e.target === e.currentTarget) setAdjustingUser(null); }}
           >
             <motion.div
-              initial={{ scale: 0.96, y: 8 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.96, y: 8 }}
+              initial={{ scale: 0.96, y: 8 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 8 }}
               className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-sm shadow-xl"
             >
               <div className="flex items-center justify-between mb-4">
@@ -342,20 +453,181 @@ function UsersSection() {
                 onChange={(e) => setAdjustNote(e.target.value)}
               />
               <div className="flex gap-2">
-                <button
-                  onClick={() => setAdjustingUser(null)}
-                  className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
-                >
+                <button onClick={() => setAdjustingUser(null)} className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5">
                   {t('admin_adjust_cancel')}
                 </button>
-                <button
-                  onClick={submitAdjustment}
-                  disabled={adjustLoading || !adjustAmount}
-                  className="flex-1 py-2 rounded-xl bg-infinder-lime text-infinder-black text-sm font-semibold disabled:opacity-50"
-                >
+                <button onClick={submitAdjustment} disabled={adjustLoading || !adjustAmount} className="flex-1 py-2 rounded-xl bg-infinder-lime text-infinder-black text-sm font-semibold disabled:opacity-50">
                   {adjustLoading ? '…' : t('admin_adjust_confirm')}
                 </button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Create User Modal */}
+        {creatingUser && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setCreatingUser(false); }}
+          >
+            <motion.div
+              initial={{ scale: 0.96, y: 8 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 8 }}
+              className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-sm shadow-xl"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white">Create User</h3>
+                <button onClick={() => setCreatingUser(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={18} /></button>
+              </div>
+              <div className="space-y-3">
+                {([['Email', 'email', 'email'], ['Password', 'password', 'password'], ['Full Name', 'full_name', 'text'], ['Phone', 'phone', 'tel']] as [string, keyof typeof createForm, string][]).map(([label, key, type]) => (
+                  <div key={key}>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{label}</label>
+                    <input
+                      type={type}
+                      className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-gray-400"
+                      value={createForm[key]}
+                      onChange={(e) => setCreateForm((p) => ({ ...p, [key]: e.target.value }))}
+                    />
+                  </div>
+                ))}
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Role</label>
+                  <select
+                    className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] rounded-xl text-gray-900 dark:text-white focus:outline-none"
+                    value={createForm.role}
+                    onChange={(e) => setCreateForm((p) => ({ ...p, role: e.target.value }))}
+                  >
+                    <option value="user">user</option>
+                    <option value="admin">admin</option>
+                  </select>
+                </div>
+              </div>
+              {createMsg && <p className="text-xs text-red-500 mt-2">{createMsg}</p>}
+              <div className="flex gap-2 mt-5">
+                <button onClick={() => setCreatingUser(false)} className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300">Cancel</button>
+                <button
+                  onClick={submitCreate}
+                  disabled={createLoading || !createForm.email || !createForm.password || !createForm.full_name}
+                  className="flex-1 py-2 rounded-xl bg-infinder-lime text-infinder-black text-sm font-semibold disabled:opacity-50"
+                >
+                  {createLoading ? '…' : 'Create'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {deletingUser && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setDeletingUser(null); }}
+          >
+            <motion.div
+              initial={{ scale: 0.96, y: 8 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 8 }}
+              className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-sm shadow-xl"
+            >
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Delete User</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Soft-delete <span className="font-mono text-xs">{deletingUser.email}</span>? They won't be able to log in.
+              </p>
+              <div className="flex gap-2">
+                <button onClick={() => setDeletingUser(null)} className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300">Cancel</button>
+                <button
+                  onClick={confirmDelete}
+                  disabled={deleteLoading}
+                  className="flex-1 py-2 rounded-xl bg-red-500 text-white text-sm font-semibold disabled:opacity-50"
+                >
+                  {deleteLoading ? '…' : 'Delete'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* User Detail Slide-over */}
+        {(detailLoading || detailUser) && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex justify-end bg-black/40"
+            onClick={(e) => { if (e.target === e.currentTarget) { setDetailUser(null); } }}
+          >
+            <motion.div
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+              transition={{ type: 'tween', duration: 0.22 }}
+              className="bg-white dark:bg-[#1a1a1a] border-l border-gray-200 dark:border-gray-700 w-full max-w-sm h-full overflow-y-auto flex flex-col"
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+                <h3 className="font-semibold text-gray-900 dark:text-white">User Detail</h3>
+                <button onClick={() => setDetailUser(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={18} /></button>
+              </div>
+
+              {detailLoading ? (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full border-2 border-infinder-green border-t-transparent animate-spin" />
+                </div>
+              ) : detailUser ? (
+                <div className="p-5 space-y-5">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{detailUser.user.full_name || '—'}</p>
+                    <p className="text-xs font-mono text-gray-500 dark:text-gray-400">{detailUser.user.email}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{detailUser.user.phone || 'No phone'}</p>
+                    <div className="flex gap-2 mt-2 flex-wrap">
+                      <StatusBadge status={detailUser.user.role} />
+                      <StatusBadge status={detailUser.user.kyc_status} />
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Wallet: <span className="font-semibold text-gray-800 dark:text-gray-200">EGP {Number(detailUser.user.wallet_balance ?? 0).toLocaleString()}</span>
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                      Joined {new Date(detailUser.user.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Portfolios ({detailUser.portfolios?.length ?? 0})</p>
+                    {(detailUser.portfolios?.length ?? 0) === 0 ? (
+                      <p className="text-xs text-gray-400">No portfolios.</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {detailUser.portfolios.map((p) => (
+                          <div key={p.id} className="flex items-center justify-between rounded-xl border border-gray-100 dark:border-gray-800 px-3 py-2 text-xs">
+                            <div>
+                              <p className="font-medium text-gray-800 dark:text-gray-200">{p.name}</p>
+                              <p className="text-gray-400">EGP {Number(p.amount || 0).toLocaleString()} · {p.is_sharia ? 'Sharia' : 'Conventional'}</p>
+                            </div>
+                            <StatusBadge status={p.status} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Recent Transactions</p>
+                    {(detailUser.recent_transactions?.length ?? 0) === 0 ? (
+                      <p className="text-xs text-gray-400">No transactions.</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {detailUser.recent_transactions.map((tx) => (
+                          <div key={tx.id} className="flex items-center justify-between rounded-xl border border-gray-100 dark:border-gray-800 px-3 py-2 text-xs">
+                            <div>
+                              <StatusBadge status={tx.type} />
+                              <p className="text-gray-400 mt-0.5">{new Date(tx.created_at).toLocaleDateString()}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-medium text-gray-800 dark:text-gray-200">EGP {Number(tx.amount).toLocaleString()}</p>
+                              <StatusBadge status={tx.status} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
             </motion.div>
           </motion.div>
         )}
@@ -371,19 +643,28 @@ function KycSection() {
   const [rows, setRows] = useState<KycSubmission[]>([]);
   const [reason, setReason] = useState('');
   const [msg, setMsg] = useState('');
+  const [errDetail, setErrDetail] = useState('');
   const [loading, setLoading] = useState(true);
 
   async function load() {
     setLoading(true);
+    setMsg('');
+    setErrDetail('');
     try {
       const r = await api.get('/api/kyc/admin/pending');
       setRows(r.data.submissions);
+    } catch (e: unknown) {
+      const err = e as { response?: { status?: number; data?: { error?: string } }; message?: string };
+      const status = err?.response?.status;
+      const detail = err?.response?.data?.error || err?.message || 'Unknown error';
+      setErrDetail(`${status ? `HTTP ${status}: ` : ''}${detail}`);
+      setMsg(t('admin_load_error'));
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => { load().catch(() => setMsg(t('admin_load_error'))); }, []);
+  useEffect(() => { load(); }, []);
 
   async function approve(id: string) {
     setMsg('');
@@ -404,8 +685,15 @@ function KycSection() {
 
   return (
     <div>
-      {msg && <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">{msg}</p>}
-      {rows.length === 0 ? (
+      {msg ? (
+        <div className="rounded-2xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 mb-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-red-700 dark:text-red-400">{msg}</p>
+            <button onClick={load} className="text-xs text-red-600 dark:text-red-400 underline ml-3 flex-shrink-0">Retry</button>
+          </div>
+          {errDetail && <p className="text-xs text-red-500 dark:text-red-500 mt-1 font-mono">{errDetail}</p>}
+        </div>
+      ) : rows.length === 0 ? (
         <p className="text-sm text-gray-500 dark:text-gray-400">{t('admin_none')}</p>
       ) : (
         <div className="space-y-3">
@@ -564,6 +852,8 @@ function ProductsSection() {
   const [form, setForm] = useState<Partial<Investment>>(EMPTY_PRODUCT);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
+  const [deletingProduct, setDeletingProduct] = useState<Investment | null>(null);
+  const [deleteProductLoading, setDeleteProductLoading] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -601,6 +891,20 @@ function ProductsSection() {
   async function toggleActive(p: Investment) {
     await api.patch(`/api/admin/investments/${p.id}`, { active: !p.active });
     load();
+  }
+
+  async function confirmDeleteProduct() {
+    if (!deletingProduct) return;
+    setDeleteProductLoading(true);
+    try {
+      await api.delete(`/api/admin/investments/${deletingProduct.id}`);
+      setDeletingProduct(null);
+      load();
+    } catch {
+      // ignore
+    } finally {
+      setDeleteProductLoading(false);
+    }
   }
 
   const field = (key: keyof Investment) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -651,9 +955,14 @@ function ProductsSection() {
                     </button>
                   </td>
                   <td className="px-4 py-2.5">
-                    <button onClick={() => openEdit(p)} className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800">
-                      <Edit2 size={14} />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => openEdit(p)} className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <Edit2 size={14} />
+                      </button>
+                      <button onClick={() => setDeletingProduct(p)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -757,6 +1066,31 @@ function ProductsSection() {
             </motion.div>
           </motion.div>
         )}
+
+        {/* Delete Product Confirmation */}
+        {deletingProduct && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setDeletingProduct(null); }}
+          >
+            <motion.div
+              initial={{ scale: 0.96, y: 8 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 8 }}
+              className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-sm shadow-xl"
+            >
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Delete Product</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Permanently delete <span className="font-semibold">{deletingProduct.title}</span>? This cannot be undone.
+              </p>
+              <div className="flex gap-2">
+                <button onClick={() => setDeletingProduct(null)} className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300">Cancel</button>
+                <button onClick={confirmDeleteProduct} disabled={deleteProductLoading} className="flex-1 py-2 rounded-xl bg-red-500 text-white text-sm font-semibold disabled:opacity-50">
+                  {deleteProductLoading ? '…' : 'Delete'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );
@@ -818,7 +1152,7 @@ function RevenueSection() {
                     <tr key={i} className="hover:bg-gray-50 dark:hover:bg-white/5">
                       <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400">{row.day}</td>
                       <td className="px-4 py-2.5 text-xs text-gray-700 dark:text-gray-300">{row.type}</td>
-                      <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300">EGP {Number(row.amount).toLocaleString()}</td>
+                      <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300">EGP {Number(row.total_fees).toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -904,9 +1238,499 @@ function TransactionsSection() {
   );
 }
 
+// ─── Section: Learning ───────────────────────────────────────────────────────
+
+const EMPTY_MODULE_FORM: Partial<LearningModule> = { title: '', slug: '', description: '', difficulty: 'beginner', duration_minutes: 30, order_index: 0 };
+const EMPTY_LESSON_FORM: Partial<Lesson> = { title: '', content: '', order_index: 0, duration_minutes: 10 };
+
+function LearningSection() {
+  const [modules, setModules] = useState<LearningModule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedModule, setExpandedModule] = useState<string | null>(null);
+  const [lessons, setLessons] = useState<Record<string, Lesson[]>>({});
+  const [moduleFormOpen, setModuleFormOpen] = useState(false);
+  const [editingModule, setEditingModule] = useState<LearningModule | null>(null);
+  const [moduleForm, setModuleForm] = useState<Partial<LearningModule>>(EMPTY_MODULE_FORM);
+  const [moduleSaving, setModuleSaving] = useState(false);
+  const [lessonFormOpen, setLessonFormOpen] = useState(false);
+  const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
+  const [lessonForm, setLessonForm] = useState<Partial<Lesson>>(EMPTY_LESSON_FORM);
+  const [activeLessonModuleId, setActiveLessonModuleId] = useState<string | null>(null);
+  const [lessonSaving, setLessonSaving] = useState(false);
+  const [deletingModule, setDeletingModule] = useState<LearningModule | null>(null);
+  const [deletingLesson, setDeletingLesson] = useState<Lesson | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  async function loadModules() {
+    setLoading(true);
+    try {
+      const r = await api.get('/api/admin/learning/modules');
+      setModules(r.data.modules);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { loadModules(); }, []);
+
+  async function loadLessons(moduleId: string) {
+    const r = await api.get(`/api/admin/learning/modules/${moduleId}/lessons`);
+    setLessons((prev) => ({ ...prev, [moduleId]: r.data.lessons }));
+  }
+
+  async function toggleExpand(moduleId: string) {
+    if (expandedModule === moduleId) {
+      setExpandedModule(null);
+    } else {
+      setExpandedModule(moduleId);
+      if (!lessons[moduleId]) await loadLessons(moduleId);
+    }
+  }
+
+  async function saveModule() {
+    setModuleSaving(true);
+    setMsg('');
+    try {
+      if (editingModule) {
+        await api.patch(`/api/admin/learning/modules/${editingModule.id}`, moduleForm);
+      } else {
+        await api.post('/api/admin/learning/modules', moduleForm);
+      }
+      setModuleFormOpen(false);
+      loadModules();
+    } catch {
+      setMsg('Save failed.');
+    } finally {
+      setModuleSaving(false);
+    }
+  }
+
+  async function saveLesson() {
+    if (!activeLessonModuleId) return;
+    setLessonSaving(true);
+    setMsg('');
+    try {
+      let quizParsed: Record<string, unknown> | null = null;
+      if (lessonForm.quiz && typeof lessonForm.quiz === 'string') {
+        try { quizParsed = JSON.parse(lessonForm.quiz as unknown as string); } catch { setMsg('Quiz JSON is invalid.'); setLessonSaving(false); return; }
+      }
+      const payload = { ...lessonForm, quiz: quizParsed ?? (lessonForm.quiz || null) };
+      if (editingLesson) {
+        await api.patch(`/api/admin/learning/lessons/${editingLesson.id}`, payload);
+      } else {
+        await api.post(`/api/admin/learning/modules/${activeLessonModuleId}/lessons`, payload);
+      }
+      setLessonFormOpen(false);
+      await loadLessons(activeLessonModuleId);
+    } catch {
+      setMsg('Save failed.');
+    } finally {
+      setLessonSaving(false);
+    }
+  }
+
+  async function confirmDeleteModule() {
+    if (!deletingModule) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/api/admin/learning/modules/${deletingModule.id}`);
+      setDeletingModule(null);
+      if (expandedModule === deletingModule.id) setExpandedModule(null);
+      loadModules();
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  async function confirmDeleteLesson() {
+    if (!deletingLesson || !activeLessonModuleId) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/api/admin/learning/lessons/${deletingLesson.id}`);
+      setDeletingLesson(null);
+      await loadLessons(activeLessonModuleId);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  const inputCls = 'w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-gray-400';
+  const selectCls = 'w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] rounded-xl text-gray-900 dark:text-white focus:outline-none';
+
+  return (
+    <div>
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={() => { setEditingModule(null); setModuleForm(EMPTY_MODULE_FORM); setModuleFormOpen(true); setMsg(''); }}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-infinder-lime text-infinder-black text-sm font-semibold"
+        >
+          <Plus size={15} /> New Module
+        </button>
+      </div>
+
+      {msg && <p className="text-sm text-red-500 mb-3">{msg}</p>}
+
+      {loading ? (
+        <div className="w-8 h-8 rounded-full border-2 border-infinder-green border-t-transparent animate-spin mx-auto mt-8" />
+      ) : modules.length === 0 ? (
+        <p className="text-sm text-gray-500 dark:text-gray-400">No learning modules yet.</p>
+      ) : (
+        <div className="space-y-2">
+          {modules.map((m) => (
+            <div key={m.id} className="rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-[#1a1a1a]">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-xs text-gray-400 w-5 flex-shrink-0">#{m.order_index}</span>
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{m.title}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{m.difficulty} · {m.duration_minutes}min</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button
+                    onClick={() => { setEditingModule(m); setModuleForm(m); setModuleFormOpen(true); setMsg(''); }}
+                    className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                  <button onClick={() => { setDeletingModule(m); setActiveLessonModuleId(m.id); }} className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
+                    <Trash2 size={14} />
+                  </button>
+                  <button onClick={() => toggleExpand(m.id)} className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800">
+                    {expandedModule === m.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {expandedModule === m.id && (
+                <div className="border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-white/[0.02] px-4 py-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Lessons</p>
+                    <button
+                      onClick={() => { setEditingLesson(null); setLessonForm(EMPTY_LESSON_FORM); setActiveLessonModuleId(m.id); setLessonFormOpen(true); setMsg(''); }}
+                      className="flex items-center gap-1 px-3 py-1 rounded-lg bg-infinder-lime text-infinder-black text-xs font-semibold"
+                    >
+                      <Plus size={12} /> Add Lesson
+                    </button>
+                  </div>
+
+                  {!lessons[m.id] ? (
+                    <div className="w-5 h-5 rounded-full border-2 border-infinder-green border-t-transparent animate-spin" />
+                  ) : lessons[m.id].length === 0 ? (
+                    <p className="text-xs text-gray-400">No lessons yet.</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {lessons[m.id].map((l) => (
+                        <div key={l.id} className="flex items-center justify-between rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1a1a1a] px-3 py-2">
+                          <div className="min-w-0">
+                            <span className="text-xs text-gray-400 mr-2">#{l.order_index}</span>
+                            <span className="text-sm text-gray-800 dark:text-gray-200">{l.title}</span>
+                            <span className="text-xs text-gray-400 ml-2">{l.duration_minutes}min</span>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <button
+                              onClick={() => { setEditingLesson(l); setLessonForm({ ...l, quiz: l.quiz ? JSON.stringify(l.quiz, null, 2) as unknown as Record<string, unknown> : null }); setActiveLessonModuleId(m.id); setLessonFormOpen(true); setMsg(''); }}
+                              className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+                            >
+                              <Edit2 size={12} />
+                            </button>
+                            <button
+                              onClick={() => { setDeletingLesson(l); setActiveLessonModuleId(m.id); }}
+                              className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <AnimatePresence>
+        {/* Module Form Modal */}
+        {moduleFormOpen && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-8 overflow-y-auto"
+            onClick={(e) => { if (e.target === e.currentTarget) setModuleFormOpen(false); }}
+          >
+            <motion.div
+              initial={{ scale: 0.96, y: 8 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 8 }}
+              className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md shadow-xl my-auto"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white">{editingModule ? 'Edit Module' : 'New Module'}</h3>
+                <button onClick={() => setModuleFormOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={18} /></button>
+              </div>
+              <div className="space-y-3">
+                {([['Title', 'title'], ['Slug', 'slug']] as [string, keyof LearningModule][]).map(([label, key]) => (
+                  <div key={key}>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{label}</label>
+                    <input type="text" className={inputCls} value={(moduleForm[key] as string) ?? ''} onChange={(e) => setModuleForm((p) => ({ ...p, [key]: e.target.value }))} />
+                  </div>
+                ))}
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Description</label>
+                  <textarea rows={2} className={`${inputCls} resize-none`} value={(moduleForm.description as string) ?? ''} onChange={(e) => setModuleForm((p) => ({ ...p, description: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Difficulty</label>
+                  <select className={selectCls} value={(moduleForm.difficulty as string) ?? 'beginner'} onChange={(e) => setModuleForm((p) => ({ ...p, difficulty: e.target.value }))}>
+                    {['beginner', 'intermediate', 'advanced'].map((d) => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Duration (min)</label>
+                    <input type="number" className={inputCls} value={moduleForm.duration_minutes ?? ''} onChange={(e) => setModuleForm((p) => ({ ...p, duration_minutes: Number(e.target.value) }))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Order Index</label>
+                    <input type="number" className={inputCls} value={moduleForm.order_index ?? ''} onChange={(e) => setModuleForm((p) => ({ ...p, order_index: Number(e.target.value) }))} />
+                  </div>
+                </div>
+              </div>
+              {msg && <p className="text-xs text-red-500 mt-2">{msg}</p>}
+              <div className="flex gap-2 mt-5">
+                <button onClick={() => setModuleFormOpen(false)} className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300">Cancel</button>
+                <button onClick={saveModule} disabled={moduleSaving || !moduleForm.title || !moduleForm.slug} className="flex-1 py-2 rounded-xl bg-infinder-lime text-infinder-black text-sm font-semibold disabled:opacity-50">
+                  {moduleSaving ? '…' : 'Save'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Lesson Form Modal */}
+        {lessonFormOpen && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-8 overflow-y-auto"
+            onClick={(e) => { if (e.target === e.currentTarget) setLessonFormOpen(false); }}
+          >
+            <motion.div
+              initial={{ scale: 0.96, y: 8 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 8 }}
+              className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md shadow-xl my-auto"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white">{editingLesson ? 'Edit Lesson' : 'New Lesson'}</h3>
+                <button onClick={() => setLessonFormOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={18} /></button>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Title</label>
+                  <input type="text" className={inputCls} value={(lessonForm.title as string) ?? ''} onChange={(e) => setLessonForm((p) => ({ ...p, title: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Content</label>
+                  <textarea rows={5} className={`${inputCls} resize-none`} value={(lessonForm.content as string) ?? ''} onChange={(e) => setLessonForm((p) => ({ ...p, content: e.target.value }))} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Duration (min)</label>
+                    <input type="number" className={inputCls} value={lessonForm.duration_minutes ?? ''} onChange={(e) => setLessonForm((p) => ({ ...p, duration_minutes: Number(e.target.value) }))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Order Index</label>
+                    <input type="number" className={inputCls} value={lessonForm.order_index ?? ''} onChange={(e) => setLessonForm((p) => ({ ...p, order_index: Number(e.target.value) }))} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Quiz JSON (optional)</label>
+                  <textarea rows={3} className={`${inputCls} resize-none font-mono text-xs`} placeholder='{"question": "...", "options": [...], "answer": 0}' value={(lessonForm.quiz as unknown as string) ?? ''} onChange={(e) => setLessonForm((p) => ({ ...p, quiz: e.target.value as unknown as Record<string, unknown> }))} />
+                </div>
+              </div>
+              {msg && <p className="text-xs text-red-500 mt-2">{msg}</p>}
+              <div className="flex gap-2 mt-5">
+                <button onClick={() => setLessonFormOpen(false)} className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300">Cancel</button>
+                <button onClick={saveLesson} disabled={lessonSaving || !lessonForm.title || !lessonForm.content} className="flex-1 py-2 rounded-xl bg-infinder-lime text-infinder-black text-sm font-semibold disabled:opacity-50">
+                  {lessonSaving ? '…' : 'Save'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Delete Module Confirmation */}
+        {deletingModule && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setDeletingModule(null); }}
+          >
+            <motion.div
+              initial={{ scale: 0.96, y: 8 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 8 }}
+              className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-sm shadow-xl"
+            >
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Delete Module</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Delete <span className="font-semibold">{deletingModule.title}</span> and all its lessons? This cannot be undone.
+              </p>
+              <div className="flex gap-2">
+                <button onClick={() => setDeletingModule(null)} className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300">Cancel</button>
+                <button onClick={confirmDeleteModule} disabled={deleting} className="flex-1 py-2 rounded-xl bg-red-500 text-white text-sm font-semibold disabled:opacity-50">
+                  {deleting ? '…' : 'Delete'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Delete Lesson Confirmation */}
+        {deletingLesson && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setDeletingLesson(null); }}
+          >
+            <motion.div
+              initial={{ scale: 0.96, y: 8 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 8 }}
+              className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-sm shadow-xl"
+            >
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Delete Lesson</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Delete <span className="font-semibold">{deletingLesson.title}</span>? This cannot be undone.
+              </p>
+              <div className="flex gap-2">
+                <button onClick={() => setDeletingLesson(null)} className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300">Cancel</button>
+                <button onClick={confirmDeleteLesson} disabled={deleting} className="flex-1 py-2 rounded-xl bg-red-500 text-white text-sm font-semibold disabled:opacity-50">
+                  {deleting ? '…' : 'Delete'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Section: Portfolios ─────────────────────────────────────────────────────
+
+function PortfoliosSection() {
+  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [closingPortfolio, setClosingPortfolio] = useState<Portfolio | null>(null);
+  const [closeLoading, setCloseLoading] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await api.get('/api/admin/portfolios', { params: { page } });
+      setPortfolios(r.data.portfolios);
+      setTotal(r.data.total);
+    } finally {
+      setLoading(false);
+    }
+  }, [page]);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function confirmClose() {
+    if (!closingPortfolio) return;
+    setCloseLoading(true);
+    try {
+      await api.patch(`/api/admin/portfolios/${closingPortfolio.id}`, { status: 'closed' });
+      setClosingPortfolio(null);
+      load();
+    } finally {
+      setCloseLoading(false);
+    }
+  }
+
+  return (
+    <div>
+      {loading ? (
+        <div className="w-8 h-8 rounded-full border-2 border-infinder-green border-t-transparent animate-spin mx-auto mt-8" />
+      ) : portfolios.length === 0 ? (
+        <p className="text-sm text-gray-500 dark:text-gray-400">No portfolios found.</p>
+      ) : (
+        <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-700">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 dark:bg-white/5">
+              <tr>
+                {['User', 'Portfolio', 'Status', 'Sharia', 'Amount', 'Assets', 'Created', ''].map((h, i) => (
+                  <th key={i} className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              {portfolios.map((p) => (
+                <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-white/5">
+                  <td className="px-4 py-2.5">
+                    <p className="text-xs text-gray-700 dark:text-gray-300">{p.user?.email}</p>
+                    <p className="text-xs text-gray-400">{p.user?.full_name || '—'}</p>
+                  </td>
+                  <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white text-sm">{p.name}</td>
+                  <td className="px-4 py-2.5"><StatusBadge status={p.status} /></td>
+                  <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400">
+                    {p.is_sharia ? <CheckCircle size={14} className="text-green-500" /> : <X size={14} className="text-gray-400" />}
+                  </td>
+                  <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300">EGP {Number(p.amount || 0).toLocaleString()}</td>
+                  <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400">
+                    {p.allocation ? Object.keys(p.allocation).length : 0}
+                  </td>
+                  <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400">{new Date(p.created_at).toLocaleDateString()}</td>
+                  <td className="px-4 py-2.5">
+                    {p.status === 'active' && (
+                      <button
+                        onClick={() => setClosingPortfolio(p)}
+                        className="px-3 py-1 rounded-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 text-xs font-medium"
+                      >
+                        Close
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <Pagination page={page} total={total} limit={20} onPage={setPage} />
+
+      <AnimatePresence>
+        {closingPortfolio && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setClosingPortfolio(null); }}
+          >
+            <motion.div
+              initial={{ scale: 0.96, y: 8 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 8 }}
+              className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-sm shadow-xl"
+            >
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Force-Close Portfolio</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Close <span className="font-semibold">{closingPortfolio.name}</span> for {closingPortfolio.user?.email}? This cannot be reopened.
+              </p>
+              <div className="flex gap-2">
+                <button onClick={() => setClosingPortfolio(null)} className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300">Cancel</button>
+                <button onClick={confirmClose} disabled={closeLoading} className="flex-1 py-2 rounded-xl bg-red-500 text-white text-sm font-semibold disabled:opacity-50">
+                  {closeLoading ? '…' : 'Close Portfolio'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 // ─── Main Dashboard ──────────────────────────────────────────────────────────
 
-type Section = 'overview' | 'users' | 'kyc' | 'deposits' | 'products' | 'revenue' | 'transactions';
+type Section = 'overview' | 'users' | 'kyc' | 'deposits' | 'products' | 'revenue' | 'transactions' | 'learning' | 'portfolios';
 
 const NAV: { id: Section; icon: React.FC<{ size?: number; className?: string }>; labelKey: string }[] = [
   { id: 'overview',     icon: LayoutDashboard, labelKey: 'admin_nav_overview' },
@@ -916,6 +1740,8 @@ const NAV: { id: Section; icon: React.FC<{ size?: number; className?: string }>;
   { id: 'products',     icon: Package,         labelKey: 'admin_nav_products' },
   { id: 'revenue',      icon: BarChart2,       labelKey: 'admin_nav_revenue' },
   { id: 'transactions', icon: ArrowLeftRight,  labelKey: 'admin_nav_transactions' },
+  { id: 'learning',     icon: BookOpen,        labelKey: 'Learning' },
+  { id: 'portfolios',   icon: Briefcase,       labelKey: 'Portfolios' },
 ];
 
 export default function AdminDashboard() {
@@ -985,6 +1811,8 @@ export default function AdminDashboard() {
                 {active === 'products'     && <ProductsSection />}
                 {active === 'revenue'      && <RevenueSection />}
                 {active === 'transactions' && <TransactionsSection />}
+                {active === 'learning'     && <LearningSection />}
+                {active === 'portfolios'   && <PortfoliosSection />}
               </motion.div>
             </AnimatePresence>
           </main>

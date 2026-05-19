@@ -40,19 +40,26 @@ async function uploadToStorage(userId, fieldName, file) {
 // Defined before /:id routes to prevent Express treating 'admin' as a submission ID param.
 router.get('/admin/pending', verifyToken, requireAdmin, async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data: subs, error: subErr } = await supabase
       .from('kyc_submissions')
-      .select(`
-        id, status, submitted_at, rejection_reason,
-        national_id_front_url, national_id_back_url, selfie_url, address_proof_url,
-        users!inner(id, email, full_name, phone, kyc_status, created_at)
-      `)
+      .select('id, status, submitted_at, rejection_reason, national_id_front_url, national_id_back_url, selfie_url, address_proof_url, user_id')
       .eq('status', 'pending')
       .order('submitted_at', { ascending: true });
 
-    if (error) throw error;
+    if (subErr) throw subErr;
 
-    const submissions = (data || []).map((s) => ({
+    const userIds = [...new Set((subs || []).map((s) => s.user_id))];
+    let userMap = {};
+    if (userIds.length > 0) {
+      const { data: users, error: userErr } = await supabase
+        .from('users')
+        .select('id, email, full_name, phone, kyc_status, created_at')
+        .in('id', userIds);
+      if (userErr) throw userErr;
+      userMap = Object.fromEntries((users || []).map((u) => [u.id, u]));
+    }
+
+    const submissions = (subs || []).map((s) => ({
       id: s.id,
       status: s.status,
       submitted_at: s.submitted_at,
@@ -61,7 +68,7 @@ router.get('/admin/pending', verifyToken, requireAdmin, async (req, res) => {
       national_id_back_url: s.national_id_back_url,
       selfie_url: s.selfie_url,
       address_proof_url: s.address_proof_url,
-      user: s.users,
+      user: userMap[s.user_id] || null,
     }));
 
     return res.json({ submissions });
