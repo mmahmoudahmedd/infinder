@@ -53,6 +53,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     try {
       const { data } = await api.get('/api/auth/me');
+      if (data.token) {
+        localStorage.setItem('infinder_token', data.token);
+        setToken(data.token);
+      }
       setUser(data.user);
     } catch {
       localStorage.removeItem('infinder_token');

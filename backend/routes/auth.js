@@ -156,7 +156,7 @@ router.get('/me', verifyToken, async (req, res) => {
 
     if (error || !user) return res.status(404).json({ error: 'User not found' });
     user.wallet_balance = Number(user.wallet_balance);
-    return res.json({ user });
+    return res.json({ user, token: signToken(user) });
 
   } catch (e) {
     console.error('get me error:', e?.message);
