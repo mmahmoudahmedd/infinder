@@ -139,6 +139,7 @@ const ar: Record<TranslationKey, string> = {
   invest_cat_baskets: 'سلال الأسهم',
   invest_cat_bonds: 'السندات',
   invest_cat_gold: 'الذهب',
+  invest_cat_real_estate: 'العقارات',
   invest_my_positions: 'مراكزي الاستثمارية',
   invest_modal_subtitle: 'أدخل المبلغ المراد استثماره',
   invest_modal_available: 'المتاح',

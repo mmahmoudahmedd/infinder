@@ -137,6 +137,7 @@ const en = {
   invest_cat_baskets: 'Baskets',
   invest_cat_bonds: 'Bonds',
   invest_cat_gold: 'Gold',
+  invest_cat_real_estate: 'Real Estate',
   invest_my_positions: 'My Active Positions',
   invest_modal_subtitle: 'Enter amount to invest',
   invest_modal_available: 'Available',
