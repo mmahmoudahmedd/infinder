@@ -14,6 +14,7 @@ import depositsRoutes from './routes/deposits.js';
 import kycRoutes from './routes/kyc.js';
 import profileRoutes from './routes/profile.js';
 import adminRoutes from './routes/admin.js';
+import partnersRoutes from './routes/partners.js';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -42,6 +43,7 @@ app.use('/api/deposits', depositsRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/partners', partnersRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

@@ -18,6 +18,7 @@ const ar: Record<TranslationKey, string> = {
   nav_learn: 'تعلم',
   nav_reports: 'التقارير',
   nav_profile: 'حسابي',
+  nav_partners: 'الشركاء',
   nav_admin: 'المشرف',
   nav_sign_out: 'تسجيل الخروج',
 
@@ -534,6 +535,18 @@ const ar: Record<TranslationKey, string> = {
   perf_return: 'العائد',
   perf_category: 'الفئة',
   perf_invested: 'المستثمر',
+
+  // Partners
+  partners_title:         'شركاء الشهادات',
+  partners_subtitle:      'تعلّم من أبرز المؤسسات المصرية واحصل على شهادات معتمدة',
+  partners_explore_btn:   'استكشف الدورات',
+  partners_roadmap_title: 'خارطة طريق الشهادات',
+  partners_start_level:   'ابدأ المستوى',
+  partners_completed:     'مكتمل',
+  partners_cert_earned:   'تم الحصول على الشهادة',
+  partners_coming_soon:   'قريباً',
+  partners_locked:        'أكمل المستوى السابق أولاً',
+  partners_back:          'العودة إلى الشركاء',
 };
 
 export default ar;

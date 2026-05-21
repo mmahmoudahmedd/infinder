@@ -10,6 +10,7 @@ export function BottomNav() {
     { to: '/dashboard', icon: '🏠', label: t('nav_dashboard') },
     { to: '/invest',    icon: '📈', label: t('nav_invest') },
     { to: '/learn',     icon: '📘', label: t('nav_learn') },
+    { to: '/partners',  icon: '🏛️', label: t('nav_partners') },
     { to: '/reports',   icon: '📊', label: t('nav_reports') },
     { to: '/profile',   icon: '👤', label: t('nav_profile') },
   ];

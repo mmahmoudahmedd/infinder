@@ -20,6 +20,8 @@ import PrivacyPage from './pages/legal/PrivacyPage';
 import RiskPage from './pages/legal/RiskPage';
 import SupportPage from './pages/SupportPage';
 import HelpPage from './pages/HelpPage';
+import PartnersPage from './pages/PartnersPage';
+import PartnerDetailPage from './pages/PartnerDetailPage';
 
 function HomeGate() {
   const { token, loading } = useAuth();
@@ -95,6 +97,22 @@ export default function App() {
         element={
           <ProtectedRoute>
             <LearningHub />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/partners"
+        element={
+          <ProtectedRoute>
+            <PartnersPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/partners/:slug"
+        element={
+          <ProtectedRoute>
+            <PartnerDetailPage />
           </ProtectedRoute>
         }
       />

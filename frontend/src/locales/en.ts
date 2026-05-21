@@ -16,6 +16,7 @@ const en = {
   nav_learn: 'Learn',
   nav_reports: 'Reports',
   nav_profile: 'Profile',
+  nav_partners: 'Partners',
   nav_admin: 'Admin',
   nav_sign_out: 'Sign out',
 
@@ -532,6 +533,18 @@ const en = {
   perf_return: 'Return',
   perf_category: 'Category',
   perf_invested: 'Invested',
+
+  // Partners
+  partners_title:         'Certification Partners',
+  partners_subtitle:      'Learn from top Egyptian institutions and earn verified certificates.',
+  partners_explore_btn:   'Explore Courses',
+  partners_roadmap_title: 'Certifications Roadmap',
+  partners_start_level:   'Start Level',
+  partners_completed:     'Completed',
+  partners_cert_earned:   'Certificate earned',
+  partners_coming_soon:   'Coming soon',
+  partners_locked:        'Complete previous level first',
+  partners_back:          'Back to Partners',
 } as const;
 
 export type TranslationKey = keyof typeof en;
