@@ -194,7 +194,11 @@ router.post('/purchase', verifyToken, async (req, res) => {
       course_id,
       amount: price,
     });
-    if (perr) throw perr;
+    if (perr) {
+      // Refund wallet — purchase recording failed
+      await supabase.from('users').update({ wallet_balance: balance }).eq('id', req.user.id);
+      throw perr;
+    }
 
     await supabase.from('transactions').insert({
       user_id: req.user.id,
