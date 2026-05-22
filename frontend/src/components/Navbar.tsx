@@ -17,6 +17,7 @@ const navLinks = [
   { to: '/dashboard', labelKey: 'nav_dashboard' },
   { to: '/invest',    labelKey: 'nav_invest' },
   { to: '/learn',     labelKey: 'nav_learn' },
+  { to: '/partners',  labelKey: 'nav_partners' },
   { to: '/reports',   labelKey: 'nav_reports' },
   { to: '/profile',   labelKey: 'nav_profile' },
 ];
