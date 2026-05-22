@@ -45,7 +45,7 @@ router.get('/:slug', verifyToken, async (req, res) => {
     if (moduleIds.length > 0) {
       const { data: modules } = await supabase
         .from('learning_modules')
-        .select('id, title, slug')
+        .select('id, title, slug, price')
         .in('id', moduleIds);
       for (const m of modules || []) moduleMap[m.id] = m;
 

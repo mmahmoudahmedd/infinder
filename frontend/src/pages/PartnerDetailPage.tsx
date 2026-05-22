@@ -6,7 +6,7 @@ import { ShieldCheck, TrendingUp, Landmark, Award, Lock, CheckCircle2, type Luci
 import { SubpageShell } from '../components/AppShell';
 import api from '../lib/api';
 
-type ModuleInfo = { id: string; title: string; slug: string };
+type ModuleInfo = { id: string; title: string; slug: string; price: number };
 
 type PartnerLevel = {
   id: string;
@@ -64,19 +64,42 @@ export default function PartnerDetailPage() {
   const [levels, setLevels] = useState<PartnerLevel[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [purchased, setPurchased] = useState<Set<string>>(new Set());
+  const [purchasing, setPurchasing] = useState<string | null>(null);
 
   useEffect(() => {
     if (!slug) return;
-    api.get(`/api/partners/${slug}`)
-      .then(r => {
-        setPartner(r.data.partner);
-        setLevels(r.data.levels || []);
+    Promise.all([
+      api.get(`/api/partners/${slug}`),
+      api.get('/api/learning/purchases'),
+    ])
+      .then(([partnerRes, purchasesRes]) => {
+        setPartner(partnerRes.data.partner);
+        setLevels(partnerRes.data.levels || []);
+        setPurchased(new Set<string>(purchasesRes.data.purchased || []));
       })
       .catch(e => {
         if (e?.response?.status === 404) setNotFound(true);
       })
       .finally(() => setLoading(false));
   }, [slug]);
+
+  async function handlePurchase(moduleId: string) {
+    setPurchasing(moduleId);
+    try {
+      await api.post('/api/learning/purchase', { course_id: moduleId });
+      setPurchased(prev => new Set([...prev, moduleId]));
+    } catch (e: any) {
+      const msg = e?.response?.data?.error;
+      if (msg === 'insufficient_balance') {
+        alert('Insufficient wallet balance. Please add funds first.');
+      } else {
+        alert('Purchase failed. Please try again.');
+      }
+    } finally {
+      setPurchasing(null);
+    }
+  }
 
   const backBtn = (
     <button
@@ -231,7 +254,7 @@ export default function PartnerDetailPage() {
                     >
                       {t('partners_coming_soon')}
                     </button>
-                  ) : (
+                  ) : purchased.has(level.module_id!) ? (
                     <button
                       type="button"
                       onClick={() => navigate(`/learn/${level.module!.slug}`)}
@@ -239,6 +262,24 @@ export default function PartnerDetailPage() {
                     >
                       {t('partners_start_level')} →
                     </button>
+                  ) : (
+                    <div className="space-y-2">
+                      {level.module!.price > 0 && (
+                        <p className="text-center text-xs text-gray-500 dark:text-gray-400">
+                          {level.module!.price.toLocaleString()} EGP
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        disabled={purchasing === level.module_id}
+                        onClick={() => handlePurchase(level.module_id!)}
+                        className="w-full rounded-xl py-2.5 text-sm font-semibold bg-infinder-black dark:bg-white text-white dark:text-infinder-black hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {purchasing === level.module_id
+                          ? 'Processing…'
+                          : `${t('partners_explore_btn')} • ${(level.module!.price).toLocaleString()} EGP`}
+                      </button>
+                    </div>
                   )}
                 </div>
               </motion.div>
