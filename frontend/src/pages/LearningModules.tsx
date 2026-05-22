@@ -190,7 +190,19 @@ export default function LearningModules() {
             <div>
               <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 tracking-widest uppercase mb-1">{module.title}</p>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{activeLesson.title}</h3>
-              <p className="text-gray-700 dark:text-gray-300 text-sm mt-4 leading-relaxed whitespace-pre-wrap">{activeLesson.content}</p>
+              {activeLesson.content && /^[a-zA-Z0-9_-]{11}$/.test(activeLesson.content.trim()) ? (
+                <div className="mt-4 rounded-xl overflow-hidden aspect-video bg-black">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${activeLesson.content.trim()}`}
+                    title={activeLesson.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-full"
+                  />
+                </div>
+              ) : (
+                <p className="text-gray-700 dark:text-gray-300 text-sm mt-4 leading-relaxed whitespace-pre-wrap">{activeLesson.content}</p>
+              )}
               <div className="mt-6 flex flex-wrap gap-2">
                 <button
                   type="button"
