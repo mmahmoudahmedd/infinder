@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { ShieldCheck, TrendingUp, Landmark, Award, Lock, CheckCircle2, type LucideIcon } from 'lucide-react';
 import { SubpageShell } from '../components/AppShell';
+import { showToast, showError } from '../lib/swal';
 import api from '../lib/api';
 
 type ModuleInfo = { id: string; title: string; slug: string; price: number };
@@ -89,13 +90,13 @@ export default function PartnerDetailPage() {
     try {
       await api.post('/api/learning/purchase', { course_id: moduleId });
       setPurchased(prev => new Set([...prev, moduleId]));
+      showToast('Course purchased! You can now start the level.', 'success');
     } catch (e: any) {
       const msg = e?.response?.data?.error;
-      const detail = e?.response?.data?.detail;
       if (msg === 'insufficient_balance') {
-        alert('Insufficient wallet balance. Please add funds first.');
+        showError('Insufficient Balance', 'Please add funds to your wallet before purchasing this course.');
       } else {
-        alert(`Purchase failed: ${detail || 'Please try again.'}`);
+        showError('Purchase Failed', 'Something went wrong. Please try again.');
       }
     } finally {
       setPurchasing(null);
