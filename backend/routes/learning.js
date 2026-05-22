@@ -187,7 +187,10 @@ router.post('/purchase', verifyToken, async (req, res) => {
       .from('users')
       .update({ wallet_balance: newBalance })
       .eq('id', req.user.id);
-    if (werr) throw werr;
+    if (werr) {
+      console.error('[purchase] wallet update failed:', werr);
+      throw werr;
+    }
 
     const { error: perr } = await supabase.from('course_purchases').insert({
       user_id: req.user.id,
@@ -195,12 +198,13 @@ router.post('/purchase', verifyToken, async (req, res) => {
       amount: price,
     });
     if (perr) {
+      console.error('[purchase] course_purchases insert failed:', perr);
       // Refund wallet — purchase recording failed
       await supabase.from('users').update({ wallet_balance: balance }).eq('id', req.user.id);
-      throw perr;
+      return res.status(500).json({ error: 'Purchase failed', detail: perr.message });
     }
 
-    await supabase.from('transactions').insert({
+    const { error: terr } = await supabase.from('transactions').insert({
       user_id: req.user.id,
       type: 'course_purchase',
       amount: price,
@@ -211,12 +215,14 @@ router.post('/purchase', verifyToken, async (req, res) => {
       status: 'completed',
       meta: { course_id },
     });
+    if (terr) console.error('[purchase] transaction log failed (non-fatal):', terr);
 
-    await evaluateRewards(req.user.id);
+    try { await evaluateRewards(req.user.id); } catch (re) { console.error('[purchase] rewards eval failed (non-fatal):', re); }
+
     return res.json({ ok: true, wallet_balance: newBalance });
   } catch (e) {
-    console.error(e);
-    return res.status(500).json({ error: 'Purchase failed' });
+    console.error('[purchase] unexpected error:', e);
+    return res.status(500).json({ error: 'Purchase failed', detail: e?.message });
   }
 });
 

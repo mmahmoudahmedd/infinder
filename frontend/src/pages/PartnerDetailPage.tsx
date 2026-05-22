@@ -91,10 +91,11 @@ export default function PartnerDetailPage() {
       setPurchased(prev => new Set([...prev, moduleId]));
     } catch (e: any) {
       const msg = e?.response?.data?.error;
+      const detail = e?.response?.data?.detail;
       if (msg === 'insufficient_balance') {
         alert('Insufficient wallet balance. Please add funds first.');
       } else {
-        alert('Purchase failed. Please try again.');
+        alert(`Purchase failed: ${detail || 'Please try again.'}`);
       }
     } finally {
       setPurchasing(null);
