@@ -39,10 +39,13 @@ router.get('/modules/:id', verifyToken, async (req, res) => {
   try {
     const id = req.params.id;
     let mod = null;
-    const { data: byId, error: e1 } = await supabase.from('learning_modules').select('*').eq('id', id).maybeSingle();
-    if (e1) throw e1;
-    if (byId) mod = byId;
-    else {
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidPattern.test(id)) {
+      const { data: byId, error: e1 } = await supabase.from('learning_modules').select('*').eq('id', id).maybeSingle();
+      if (e1) throw e1;
+      mod = byId;
+    }
+    if (!mod) {
       const { data: bySlug, error: e2 } = await supabase.from('learning_modules').select('*').eq('slug', id).maybeSingle();
       if (e2) throw e2;
       mod = bySlug;
