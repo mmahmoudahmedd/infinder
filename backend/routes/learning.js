@@ -201,7 +201,7 @@ router.post('/purchase', verifyToken, async (req, res) => {
       console.error('[purchase] course_purchases insert failed:', perr);
       // Refund wallet — purchase recording failed
       await supabase.from('users').update({ wallet_balance: balance }).eq('id', req.user.id);
-      return res.status(500).json({ error: 'Purchase failed', detail: perr.message });
+      return res.status(500).json({ error: 'Purchase failed' });
     }
 
     const { error: terr } = await supabase.from('transactions').insert({
@@ -222,7 +222,7 @@ router.post('/purchase', verifyToken, async (req, res) => {
     return res.json({ ok: true, wallet_balance: newBalance });
   } catch (e) {
     console.error('[purchase] unexpected error:', e);
-    return res.status(500).json({ error: 'Purchase failed', detail: e?.message });
+    return res.status(500).json({ error: 'Purchase failed' });
   }
 });
 
