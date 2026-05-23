@@ -23,10 +23,10 @@ const en = {
   // Landing
   landing_sign_in: 'Sign In',
   landing_badge: '🇪🇬 Built for Egypt · EGP-native',
-  landing_hero_pre: 'Your money,',
-  landing_hero_highlight: 'working smarter.',
+  landing_hero_pre: 'Find your',
+  landing_hero_highlight: 'smart Investment.',
   landing_hero_sub: 'Beginner-friendly investing with education, AI guidance, and Sharia-aware options — all in EGP.',
-  landing_cta_start: "Get started — it's free",
+  landing_cta_start: 'Get Started',
   landing_cta_login: 'I have an account',
   landing_trust_kyc: '✓ KYC verified',
   landing_trust_sharia: '✓ Sharia-compliant options',
