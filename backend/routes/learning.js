@@ -7,13 +7,23 @@ const router = Router();
 
 router.get('/modules', verifyToken, async (req, res) => {
   try {
-    const { data: modules, error } = await supabase.from('learning_modules').select('*').order('order_index');
-    if (error) throw error;
-    const { data: lessons } = await supabase.from('lessons').select('id, module_id');
-    const counts = {};
-    for (const l of lessons || []) {
-      counts[l.module_id] = (counts[l.module_id] || 0) + 1;
+    // Exclude modules that belong to partner certification tracks
+    const { data: partnerLevels } = await supabase
+      .from('partner_levels')
+      .select('module_id')
+      .not('module_id', 'is', null);
+    const partnerModuleIds = [...new Set((partnerLevels || []).map((r) => r.module_id).filter(Boolean))];
+
+    let modulesQuery = supabase.from('learning_modules').select('*').order('order_index');
+    if (partnerModuleIds.length > 0) {
+      modulesQuery = modulesQuery.not('id', 'in', `(${partnerModuleIds.join(',')})`);
     }
+    const { data: modules, error } = await modulesQuery;
+    if (error) throw error;
+    const { data: lessons } = await supabase
+      .from('lessons')
+      .select('id, module_id, title, content, order_index, duration_minutes')
+      .order('order_index');
     const { data: progress } = await supabase.from('user_progress').select('lesson_id').eq('user_id', req.user.id);
     const done = new Set((progress || []).map((p) => p.lesson_id));
 
@@ -26,6 +36,7 @@ router.get('/modules', verifyToken, async (req, res) => {
         lesson_count: total,
         completed_lessons: completed,
         progress_pct: total ? Math.round((completed / total) * 100) : 0,
+        lessons: modLessons,
       };
     });
     return res.json({ modules: enriched });

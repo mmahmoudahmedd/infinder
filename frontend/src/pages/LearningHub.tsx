@@ -27,7 +27,7 @@ interface Level {
 }
 
 interface Course {
-  id: number;
+  id: string;
   category: string;
   title: string;
   totalTime: string;
@@ -38,20 +38,39 @@ interface Course {
   price: number;
 }
 
+interface ApiLesson {
+  id: string;
+  module_id: string;
+  title: string;
+  content: string;
+  order_index: number;
+  duration_minutes: number;
+}
+
+interface ApiModule {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  duration_minutes: number;
+  price: number;
+  lessons: ApiLesson[];
+}
+
 // ── Enrollment (localStorage-backed, server-synced) ───────────────────────
 
 const ENROLLED_KEY = 'infinder_enrolled_courses';
 
-function loadEnrolled(): Set<number> {
+function loadEnrolled(): Set<string> {
   try {
     const s = localStorage.getItem(ENROLLED_KEY);
-    return s ? new Set<number>(JSON.parse(s) as number[]) : new Set();
+    return s ? new Set<string>(JSON.parse(s) as string[]) : new Set();
   } catch {
     return new Set();
   }
 }
 
-function saveEnrolled(set: Set<number>) {
+function saveEnrolled(set: Set<string>) {
   try { localStorage.setItem(ENROLLED_KEY, JSON.stringify([...set])); } catch { /* ignore */ }
 }
 
@@ -72,143 +91,71 @@ function levelProgress(course: Course, levelId: LevelId, completed: Set<string>)
   return Math.round((done / level.lessons.length) * 100);
 }
 
-// ── Data ───────────────────────────────────────────────────────────────────
+// ── Course presentation metadata (slug → UI-only config) ───────────────────
 
-const COURSES: Course[] = [
-  {
-    id: 1,
-    category: 'Startups',
-    title: 'Startup Investing & Venture Capital',
-    totalTime: '6h 45m',
-    overview:
-      'Discover how venture capital fuels innovation. Learn how early-stage investors evaluate startups, structure deals, and manage risk across a diversified portfolio.',
-    color: '#22c55e',
-    image: 'https://i.pinimg.com/1200x/78/af/94/78af94689cca8a224bfe8274725fb767.jpg',
-    price: 1000,
-    levels: [
-      {
-        id: 'beginner',
-        label: 'Beginner',
-        lessons: [
-          { id: 1, dbId: 'b0000000-0001-0000-0000-000000000001', title: 'What is Venture Capital?', duration: '15m', videoId: '1qy1GX6gugw' },
-          { id: 2, dbId: 'b0000000-0001-0000-0000-000000000002', title: 'What is a Startup?', duration: '20m', videoId: 'gA2lb0W7Qi8' },
-          { id: 3, dbId: 'b0000000-0001-0000-0000-000000000003', title: 'Equity 101', duration: '25m', videoId: 'ji3H1t9ZqvQ' },
-          { id: 4, dbId: 'b0000000-0001-0000-0000-000000000004', title: 'Cap Tables Explained', duration: '20m', videoId: 'W_r4Uq4E8GE' },
-        ],
-      },
-      {
-        id: 'intermediate',
-        label: 'Intermediate',
-        lessons: [
-          { id: 1, dbId: 'b0000000-0001-0000-0000-000000000005', title: 'Deal Flow & Sourcing', duration: '35m', videoId: 'I6uxOktTRE0' },
-          { id: 2, dbId: 'b0000000-0001-0000-0000-000000000006', title: 'Due Diligence Process', duration: '45m', videoId: 'O69c82yhSr0' },
-          { id: 3, dbId: 'b0000000-0001-0000-0000-000000000007', title: 'Term Sheets & Valuations', duration: '50m', videoId: 'YV-ddY5AN50' },
-          { id: 4, dbId: 'b0000000-0001-0000-0000-000000000008', title: 'Portfolio Construction', duration: '40m', videoId: 'JUr6xa7-a4I' },
-        ],
-      },
-      {
-        id: 'advanced',
-        label: 'Advanced',
-        lessons: [
-          { id: 1, dbId: 'b0000000-0001-0000-0000-000000000009', title: 'Exit Strategies & M&A', duration: '45m', videoId: 'Xt6nrONHVbQ' },
-          { id: 2, dbId: 'b0000000-0001-0000-0000-000000000010', title: 'LP/GP Dynamics', duration: '40m', videoId: 'kFtqLRfWXt0' },
-          { id: 3, dbId: 'b0000000-0001-0000-0000-000000000011', title: 'Carry & Fund Economics', duration: '35m', videoId: 'n1bwGuW7Nqk' },
-          { id: 4, dbId: 'b0000000-0001-0000-0000-000000000012', title: 'Secondary Markets', duration: '35m', videoId: 'rHOo2Utr4Xc' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 2,
-    category: 'Real Estate',
-    title: 'Real Estate Investment Fundamentals',
-    totalTime: '7h 10m',
-    overview:
-      'Build a foundation in property investment. Understand how to analyze markets, evaluate yields, and leverage financing to grow a real estate portfolio.',
-    color: '#3b82f6',
-    image: 'https://i.pinimg.com/1200x/11/7a/55/117a550a41583be8a579e1333f795aad.jpg',
-    price: 1000,
-    levels: [
-      {
-        id: 'beginner',
-        label: 'Beginner',
-        lessons: [
-          { id: 1, dbId: 'b0000000-0002-0000-0000-000000000001', title: 'Types of Properties', duration: '20m', videoId: 'OKuSNm3apCs' },
-          { id: 2, dbId: 'b0000000-0002-0000-0000-000000000002', title: 'Understanding Markets', duration: '25m', videoId: 'shJd65HpqDg' },
-          { id: 3, dbId: 'b0000000-0002-0000-0000-000000000003', title: 'Basic Financing Concepts', duration: '30m', videoId: 'gagJf0XIkKw' },
-          { id: 4, dbId: 'b0000000-0002-0000-0000-000000000004', title: 'ROI Basics', duration: '20m', videoId: 'nhLhEwYSvsg' },
-        ],
-      },
-      {
-        id: 'intermediate',
-        label: 'Intermediate',
-        lessons: [
-          { id: 1, dbId: 'b0000000-0002-0000-0000-000000000005', title: 'Rental Yield Analysis', duration: '40m', videoId: '4EyeoYQlxeA' },
-          { id: 2, dbId: 'b0000000-0002-0000-0000-000000000006', title: 'Leveraged Purchases', duration: '45m', videoId: 'HLQvI3SNwvk' },
-          { id: 3, dbId: 'b0000000-0002-0000-0000-000000000007', title: 'Commercial vs Residential', duration: '35m', videoId: 'ZbtIGBtRxxQ' },
-          { id: 4, dbId: 'b0000000-0002-0000-0000-000000000008', title: 'Market Deep Dive', duration: '50m', videoId: 'x8D7raX1O5w' },
-        ],
-      },
-      {
-        id: 'advanced',
-        label: 'Advanced',
-        lessons: [
-          { id: 1, dbId: 'b0000000-0002-0000-0000-000000000009', title: 'REITs & Property Funds', duration: '45m', videoId: 'KwhfiIzx96g' },
-          { id: 2, dbId: 'b0000000-0002-0000-0000-000000000010', title: 'Tax Optimization Strategies', duration: '40m', videoId: '0yNYqWLmo5I' },
-          { id: 3, dbId: 'b0000000-0002-0000-0000-000000000011', title: 'Portfolio Diversification', duration: '35m', videoId: 'fcC6m-0dguE' },
-          { id: 4, dbId: 'b0000000-0002-0000-0000-000000000012', title: 'Risk Mitigation', duration: '45m', videoId: '-2vJgt2lLD8' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 3,
-    category: 'Investment',
-    title: 'Introduction to Investing',
-    totalTime: '7h 25m',
-    overview:
-      'Explore financial markets mechanics including derivative instruments, risk assessment frameworks, and strategic portfolio construction for navigating complex investment landscapes.',
-    color: '#8b5cf6',
-    image: 'https://i.pinimg.com/736x/b7/89/7e/b7897e9d112634c5428994643408c5b3.jpg',
-    price: 1000,
-    levels: [
-      {
-        id: 'beginner',
-        label: 'Beginner',
-        lessons: [
-          { id: 1, dbId: 'b0000000-0003-0000-0000-000000000001', title: 'Stock Market Basics', duration: '20m', videoId: 'bb6_M_srMBk' },
-          { id: 2, dbId: 'b0000000-0003-0000-0000-000000000002', title: 'Bonds & Fixed Income', duration: '25m', videoId: 'BgEZn-HJNb4' },
-          { id: 3, dbId: 'b0000000-0003-0000-0000-000000000003', title: 'ETFs & Index Funds', duration: '20m', videoId: 'hE2NsJGpEq4' },
-          { id: 4, dbId: 'b0000000-0003-0000-0000-000000000004', title: 'Risk vs Return', duration: '20m', videoId: 'ktpeNzqEVCs' },
-        ],
-      },
-      {
-        id: 'intermediate',
-        label: 'Intermediate',
-        lessons: [
-          { id: 1, dbId: 'b0000000-0003-0000-0000-000000000005', title: 'Portfolio Theory', duration: '40m', videoId: 'YtrMGKLRtwA' },
-          { id: 2, dbId: 'b0000000-0003-0000-0000-000000000006', title: 'Asset Allocation', duration: '45m', videoId: 'QTgvWPAihIc' },
-          { id: 3, dbId: 'b0000000-0003-0000-0000-000000000007', title: 'Technical Analysis Basics', duration: '50m', videoId: 'W8OjEjASfBo' },
-          { id: 4, dbId: 'b0000000-0003-0000-0000-000000000008', title: 'Understanding Market Cycles', duration: '40m', videoId: '9YdPQizV0xQ' },
-        ],
-      },
-      {
-        id: 'advanced',
-        label: 'Advanced',
-        lessons: [
-          { id: 1, dbId: 'b0000000-0003-0000-0000-000000000009', title: 'Options & Derivatives', duration: '55m', videoId: 'N4m-2Ng__Eg' },
-          { id: 2, dbId: 'b0000000-0003-0000-0000-000000000010', title: 'Factor Investing', duration: '45m', videoId: 'balyUmSLq8g' },
-          { id: 3, dbId: 'b0000000-0003-0000-0000-000000000011', title: 'Macro Economics & Markets', duration: '40m', videoId: 'PlZNbY45iPk' },
-          { id: 4, dbId: 'b0000000-0003-0000-0000-000000000012', title: 'Alternative Investments', duration: '45m', videoId: 'nrkLMCWnnYU' },
-        ],
-      },
-    ],
-  },
-];
+const COURSE_META: Record<string, { color: string; image: string; category: string }> = {
+  'hub-startup-vc':      { color: '#22c55e', image: 'https://i.pinimg.com/1200x/78/af/94/78af94689cca8a224bfe8274725fb767.jpg', category: 'Startups' },
+  'hub-real-estate':     { color: '#3b82f6', image: 'https://i.pinimg.com/1200x/11/7a/55/117a550a41583be8a579e1333f795aad.jpg', category: 'Real Estate' },
+  'hub-intro-investing': { color: '#8b5cf6', image: 'https://i.pinimg.com/736x/b7/89/7e/b7897e9d112634c5428994643408c5b3.jpg', category: 'Investment' },
+  'investing-101':       { color: '#f59e0b', image: '', category: 'Fundamentals' },
+  'risk-return':         { color: '#14b8a6', image: '', category: 'Fundamentals' },
+  'sharia-investing':    { color: '#d97706', image: '', category: 'Fundamentals' },
+};
+const DEFAULT_META = { color: '#6b7280', image: '', category: 'Fundamentals' };
+
+const LEVEL_IDS: LevelId[] = ['beginner', 'intermediate', 'advanced'];
+const LEVEL_LABELS: Record<LevelId, string> = { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced' };
+
+function formatMinutes(mins: number): string {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+function buildLevels(apiLessons: ApiLesson[]): Level[] {
+  const sorted = [...apiLessons].sort((a, b) => a.order_index - b.order_index);
+  const total = sorted.length;
+  if (total === 0) {
+    return LEVEL_IDS.map((id) => ({ id, label: LEVEL_LABELS[id], lessons: [] }));
+  }
+  const beginnerEnd = Math.ceil(total / 3);
+  const intermediateEnd = Math.ceil((total * 2) / 3);
+  const groups: Record<LevelId, ApiLesson[]> = {
+    beginner:     sorted.slice(0, beginnerEnd),
+    intermediate: sorted.slice(beginnerEnd, intermediateEnd),
+    advanced:     sorted.slice(intermediateEnd),
+  };
+  return LEVEL_IDS.map((id) => ({
+    id,
+    label: LEVEL_LABELS[id],
+    lessons: groups[id].map((l, i) => ({
+      id: i + 1,
+      dbId: l.id,
+      title: l.title,
+      duration: `${l.duration_minutes}m`,
+      videoId: l.content,
+    })),
+  }));
+}
+
+function apiModuleToCourse(m: ApiModule): Course {
+  const meta = COURSE_META[m.slug] ?? DEFAULT_META;
+  return {
+    id:        m.id,
+    category:  meta.category,
+    title:     m.title,
+    totalTime: formatMinutes(m.duration_minutes),
+    overview:  m.description ?? '',
+    color:     meta.color,
+    image:     meta.image,
+    price:     Number(m.price ?? 0),
+    levels:    buildLevels(m.lessons ?? []),
+  };
+}
 
 const COMING_SOON = [
-  { id: 101, title: 'Cryptocurrency & DeFi', category: 'Crypto', color: '#f59e0b' },
-  { id: 102, title: 'Commodities & Forex Trading', category: 'Trading', color: '#ec4899' },
+  { id: 'cs-1', title: 'Cryptocurrency & DeFi', category: 'Crypto', color: '#f59e0b' },
+  { id: 'cs-2', title: 'Commodities & Forex Trading', category: 'Trading', color: '#ec4899' },
 ];
 
 // ── SVG Icons ──────────────────────────────────────────────────────────────
@@ -394,6 +341,7 @@ function PurchaseModal({
 // ── Screen 1: Hub ──────────────────────────────────────────────────────────
 
 function HubScreen({
+  courses,
   enrolled,
   onEnroll,
   completed,
@@ -401,11 +349,12 @@ function HubScreen({
   purchases,
   onPurchase,
 }: {
-  enrolled: Set<number>;
+  courses: Course[];
+  enrolled: Set<string>;
   onEnroll: (course: Course) => void;
   completed: Set<string>;
   loading: boolean;
-  purchases: Set<number>;
+  purchases: Set<string>;
   onPurchase: (course: Course) => void;
 }) {
   return (
@@ -432,7 +381,7 @@ function HubScreen({
           ))
         ) : (
           <>
-            {COURSES.map((course, i) => {
+            {courses.map((course, i) => {
               const pct = courseProgress(course, completed);
               const totalLessons = course.levels.reduce((s, l) => s + l.lessons.length, 0);
               const isEnrolled = enrolled.has(course.id);
@@ -477,7 +426,7 @@ function HubScreen({
                     </h3>
 
                     <div className="mt-3 flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500">
-                      <span className="flex items-center gap-1"><IcBook />{totalLessons} lessons</span>
+                      <span className="flex items-center gap-1"><IcBook />{totalLessons} {totalLessons === 1 ? 'lesson' : 'lessons'}</span>
                       <span className="flex items-center gap-1"><IcClock />{course.totalTime}</span>
                     </div>
 
@@ -502,7 +451,7 @@ function HubScreen({
                         style={{ backgroundColor: course.color, color: 'white' }}
                       >
                         {!purchases.has(course.id)
-                          ? 'Enroll — 1,000 EGP'
+                          ? course.price > 0 ? `Enroll — ${course.price.toLocaleString()} EGP` : 'Start Learning'
                           : enrolled.has(course.id) ? 'Continue' : 'Start Learning'}
                       </button>
                     </div>
@@ -517,7 +466,7 @@ function HubScreen({
                 key={cs.id}
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: (COURSES.length + i) * 0.07, duration: 0.22, ease: 'easeOut' }}
+                transition={{ delay: (courses.length + i) * 0.07, duration: 0.22, ease: 'easeOut' }}
                 className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-sm dark:shadow-none border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col opacity-60"
               >
                 <div className="relative h-40 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
@@ -566,14 +515,14 @@ function DetailScreen({
   onPurchase,
 }: {
   course: Course;
-  enrolled: Set<number>;
+  enrolled: Set<string>;
   completed: Set<string>;
   activeLevel: LevelId;
   onSetActiveLevel: (id: LevelId) => void;
   onBack: () => void;
   onOpenLesson: (lesson: Lesson, level: Level) => void;
   onEnroll: (course: Course) => void;
-  purchases: Set<number>;
+  purchases: Set<string>;
   onPurchase: (course: Course) => void;
 }) {
   const pct = courseProgress(course, completed);
@@ -617,7 +566,7 @@ function DetailScreen({
           <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-sm dark:shadow-none border border-gray-100 dark:border-gray-800 p-6">
             <div className="flex items-center gap-3 mb-1">
               <span className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
-                <IcBook />{course.levels.reduce((s, l) => s + l.lessons.length, 0)} lessons
+                {(() => { const n = course.levels.reduce((s, l) => s + l.lessons.length, 0); return <><IcBook />{n} {n === 1 ? 'lesson' : 'lessons'}</>; })()}
               </span>
               <span className="text-gray-200 dark:text-gray-700">·</span>
               <span className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
@@ -688,7 +637,9 @@ function DetailScreen({
 
             {/* Lesson list */}
             <div>
-              {activeLevelData.lessons.map((lesson, i) => {
+              {activeLevelData.lessons.length === 0 ? (
+                <p className="px-5 py-8 text-sm text-center text-gray-400 dark:text-gray-500">No content yet</p>
+              ) : activeLevelData.lessons.map((lesson, i) => {
                 const isDone = completed.has(lesson.dbId);
                 return (
                   <div key={lesson.id}>
@@ -735,13 +686,13 @@ function DetailScreen({
             style={{ backgroundColor: course.color }}
           >
             {!isPurchased
-              ? 'Enroll — 1,000 EGP'
+              ? course.price > 0 ? `Enroll — ${course.price.toLocaleString()} EGP` : 'Start Learning'
               : isEnrolled ? 'Continue Learning' : 'Start Learning'}
           </button>
 
           <ul className="mt-5 space-y-2.5 text-sm text-gray-600 dark:text-gray-300">
             {[
-              { icon: <IcBook />,        text: `${course.levels.reduce((s, l) => s + l.lessons.length, 0)} lessons across 3 levels` },
+              { icon: <IcBook />,        text: (() => { const n = course.levels.reduce((s, l) => s + l.lessons.length, 0); return `${n} ${n === 1 ? 'lesson' : 'lessons'} across 3 levels`; })() },
               { icon: <IcClock />,       text: `${course.totalTime} of content` },
               { icon: <IcInfinity />,    text: 'Lifetime access' },
               { icon: <IcCertificate />, text: 'Certificate of completion' },
@@ -887,24 +838,30 @@ export default function LearningHub() {
   const [currentView, setCurrentView] = useState<CurrentView>('hub');
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<{ lesson: Lesson; level: Level } | null>(null);
-  const [activeLevels, setActiveLevels] = useState<Record<number, LevelId>>({});
+  const [activeLevels, setActiveLevels] = useState<Record<string, LevelId>>({});
   const [completed, setCompleted] = useState<Set<string>>(new Set());
-  const [enrolled, setEnrolled] = useState<Set<number>>(loadEnrolled);
+  const [enrolled, setEnrolled] = useState<Set<string>>(loadEnrolled);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(true);
   const [progressLoading, setProgressLoading] = useState(true);
   const { user, refreshMe } = useAuth();
   const navigate = useNavigate();
-  const [purchases, setPurchases] = useState<Set<number>>(new Set());
+  const [purchases, setPurchases] = useState<Set<string>>(new Set());
   const [purchaseTarget, setPurchaseTarget] = useState<Course | null>(null);
   const [purchasing, setPurchasing] = useState(false);
 
   useEffect(() => {
+    api.get('/api/learning/modules')
+      .then(r => setCourses((r.data.modules as ApiModule[]).map(apiModuleToCourse)))
+      .catch(() => {})
+      .finally(() => setCoursesLoading(false));
     api.get('/api/learning/progress')
       .then(r => setCompleted(new Set(r.data.completed as string[])))
       .catch(() => {})
       .finally(() => setProgressLoading(false));
     api.get('/api/learning/enrollment')
       .then(r => {
-        const ids = r.data.enrolled as number[];
+        const ids = r.data.enrolled as string[];
         if (ids?.length) {
           setEnrolled(prev => {
             const next = new Set([...prev, ...ids]);
@@ -915,7 +872,7 @@ export default function LearningHub() {
       })
       .catch(() => {});
     api.get('/api/learning/purchases')
-      .then(r => setPurchases(new Set(r.data.purchased as number[])))
+      .then(r => setPurchases(new Set(r.data.purchased as string[])))
       .catch(() => {});
   }, []);
 
@@ -967,16 +924,19 @@ export default function LearningHub() {
     setCurrentView('courseDetail');
   }
 
+  const loading = coursesLoading || progressLoading;
+
   return (
     <SubpageShell>
       <AnimatePresence mode="wait">
         {currentView === 'hub' && (
           <motion.div key="hub" variants={fade} initial="enter" animate="center" exit="exit">
             <HubScreen
+              courses={courses}
               enrolled={enrolled}
               completed={completed}
               onEnroll={handleEnroll}
-              loading={progressLoading}
+              loading={loading}
               purchases={purchases}
               onPurchase={setPurchaseTarget}
             />
