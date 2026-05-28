@@ -6,6 +6,7 @@ import { SubpageShell } from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
 import { showToast } from '../lib/swal';
 import api from '../lib/api';
+import { BookOpen, TrendingUp, Rocket, Building2, BarChart2, Lock as LucideLock } from 'lucide-react';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -97,11 +98,22 @@ const COURSE_META: Record<string, { color: string; image: string; category: stri
   'hub-startup-vc':      { color: '#22c55e', image: 'https://i.pinimg.com/1200x/78/af/94/78af94689cca8a224bfe8274725fb767.jpg', category: 'Startups' },
   'hub-real-estate':     { color: '#3b82f6', image: 'https://i.pinimg.com/1200x/11/7a/55/117a550a41583be8a579e1333f795aad.jpg', category: 'Real Estate' },
   'hub-intro-investing': { color: '#8b5cf6', image: 'https://i.pinimg.com/736x/b7/89/7e/b7897e9d112634c5428994643408c5b3.jpg', category: 'Investment' },
-  'investing-101':       { color: '#f59e0b', image: '', category: 'Fundamentals' },
-  'risk-return':         { color: '#14b8a6', image: '', category: 'Fundamentals' },
-  'sharia-investing':    { color: '#d97706', image: '', category: 'Fundamentals' },
+  'investing-101':       { color: '#f59e0b', image: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&q=80', category: 'Fundamentals' },
+  'risk-return':         { color: '#14b8a6', image: 'https://images.unsplash.com/photo-1579621908742-6c6f3f88d9b4?w=800&q=80', category: 'Fundamentals' },
+  'sharia-investing':    { color: '#d97706', image: 'https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=800&q=80', category: 'Fundamentals' },
 };
 const DEFAULT_META = { color: '#6b7280', image: '', category: 'Fundamentals' };
+
+type LucideIcon = typeof BookOpen;
+const CATEGORY_ICON: Record<string, LucideIcon> = {
+  'Fundamentals': BookOpen,
+  'Investment':   TrendingUp,
+  'Startups':     Rocket,
+  'Real Estate':  Building2,
+  'Crypto':       BarChart2,
+  'Trading':      BarChart2,
+};
+const DEFAULT_ICON: LucideIcon = BarChart2;
 
 const LEVEL_IDS: LevelId[] = ['beginner', 'intermediate', 'advanced'];
 const LEVEL_LABELS: Record<LevelId, string> = { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced' };
@@ -311,8 +323,7 @@ function PurchaseModal({
               type="button"
               onClick={onConfirm}
               disabled={purchasing}
-              className="w-full rounded-xl py-3 text-sm font-bold text-white disabled:opacity-60 transition-opacity hover:opacity-90"
-              style={{ backgroundColor: course.color }}
+              className="w-full rounded-xl py-3 text-sm font-bold text-black bg-[#C5F94E] disabled:opacity-60 transition-opacity hover:opacity-90"
             >
               {purchasing ? 'Processing…' : 'Confirm Purchase'}
             </button>
@@ -384,7 +395,7 @@ function HubScreen({
             {courses.map((course, i) => {
               const pct = courseProgress(course, completed);
               const totalLessons = course.levels.reduce((s, l) => s + l.lessons.length, 0);
-              const isEnrolled = enrolled.has(course.id);
+              const Icon = CATEGORY_ICON[course.category] ?? DEFAULT_ICON;
 
               return (
                 <motion.div
@@ -394,33 +405,31 @@ function HubScreen({
                   transition={{ delay: i * 0.07, duration: 0.22, ease: 'easeOut' }}
                   className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-sm dark:shadow-none border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col"
                 >
-                  {/* Course image banner */}
-                  <div className="relative h-40 overflow-hidden">
-                    <img
-                      src={course.image}
-                      alt={course.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/35" />
-                    <span className="absolute bottom-3 left-3 bg-gray-900/75 text-white text-[11px] font-semibold px-3 py-1 rounded-full backdrop-blur-sm">
-                      {course.category}
-                    </span>
-                    {/* Level badges */}
-                    <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
-                      {course.levels.map(l => (
-                        <span
-                          key={l.id}
-                          className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                          style={{ backgroundColor: LEVEL_COLORS[l.id].bg, color: LEVEL_COLORS[l.id].text }}
-                        >
-                          {l.label}
-                        </span>
-                      ))}
+                  {/* Course header: photo or icon */}
+                  {course.image ? (
+                    <div className="relative h-40 overflow-hidden">
+                      <img
+                        src={course.image}
+                        alt={course.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/35" />
                     </div>
-                  </div>
+                  ) : (
+                    <div className="h-40 flex items-center justify-center" style={{ backgroundColor: '#0d0d0d' }}>
+                      <Icon size={52} strokeWidth={1.25} className="text-[#C5F94E] opacity-60" />
+                    </div>
+                  )}
 
                   {/* Content */}
                   <div className="p-5 flex flex-col flex-1">
+                    <span
+                      className="self-start text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full mb-2"
+                      style={{ backgroundColor: `${course.color}1a`, color: course.color }}
+                    >
+                      {course.category}
+                    </span>
+
                     <h3 className="text-[15px] font-bold text-gray-900 dark:text-white leading-snug flex-1">
                       {course.title}
                     </h3>
@@ -447,8 +456,7 @@ function HubScreen({
                       <button
                         type="button"
                         onClick={() => purchases.has(course.id) ? onEnroll(course) : onPurchase(course)}
-                        className="rounded-xl text-sm font-bold px-4 py-2.5 transition-opacity hover:opacity-90"
-                        style={{ backgroundColor: course.color, color: 'white' }}
+                        className="rounded-xl text-sm font-bold px-4 py-2.5 bg-[#C5F94E] text-black transition-opacity hover:opacity-90"
                       >
                         {!purchases.has(course.id)
                           ? course.price > 0 ? `Enroll — ${course.price.toLocaleString()} EGP` : 'Start Learning'
@@ -461,38 +469,48 @@ function HubScreen({
             })}
 
             {/* Coming soon cards */}
-            {COMING_SOON.map((cs, i) => (
-              <motion.div
-                key={cs.id}
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: (courses.length + i) * 0.07, duration: 0.22, ease: 'easeOut' }}
-                className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-sm dark:shadow-none border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col opacity-60"
-              >
-                <div className="relative h-40 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                  <span className="bg-gray-900/70 text-white text-[11px] font-bold px-3 py-1 rounded-full">
-                    Coming Soon
-                  </span>
-                  <span className="absolute bottom-3 left-3 bg-gray-900/75 text-white text-[11px] font-semibold px-3 py-1 rounded-full backdrop-blur-sm">
-                    {cs.category}
-                  </span>
-                </div>
-                <div className="p-5 flex flex-col flex-1">
-                  <h3 className="text-[15px] font-bold text-gray-900 dark:text-white leading-snug flex-1">
-                    {cs.title}
-                  </h3>
-                  <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end">
-                    <button
-                      type="button"
-                      disabled
-                      className="rounded-xl text-sm font-bold px-4 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
-                    >
-                      Coming Soon
-                    </button>
+            {COMING_SOON.map((cs, i) => {
+              const CsIcon = CATEGORY_ICON[cs.category] ?? DEFAULT_ICON;
+              return (
+                <motion.div
+                  key={cs.id}
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: (courses.length + i) * 0.07, duration: 0.22, ease: 'easeOut' }}
+                  className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-sm dark:shadow-none border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col opacity-60"
+                >
+                  {/* Icon header with lock overlay */}
+                  <div className="h-40 relative flex items-center justify-center" style={{ backgroundColor: '#0d0d0d' }}>
+                    <CsIcon size={52} strokeWidth={1.25} className="text-white opacity-10" />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5">
+                      <LucideLock size={20} strokeWidth={1.5} className="text-white/40" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/40 px-3 py-1 bg-white/10 rounded-full">
+                        Coming Soon
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+
+                  {/* Content */}
+                  <div className="p-5 flex flex-col flex-1">
+                    <span className="self-start text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full mb-2 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500">
+                      {cs.category}
+                    </span>
+                    <h3 className="text-[15px] font-bold text-gray-900 dark:text-white leading-snug flex-1">
+                      {cs.title}
+                    </h3>
+                    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end">
+                      <button
+                        type="button"
+                        disabled
+                        className="rounded-xl text-sm font-bold px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                      >
+                        Coming Soon
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
           </>
         )}
       </div>
@@ -529,6 +547,7 @@ function DetailScreen({
   const activeLevelData = course.levels.find(l => l.id === activeLevel)!;
   const isEnrolled = enrolled.has(course.id);
   const isPurchased = purchases.has(course.id);
+  const HeroIcon = CATEGORY_ICON[course.category] ?? DEFAULT_ICON;
 
   return (
     <div>
@@ -542,14 +561,22 @@ function DetailScreen({
         Back to courses
       </button>
 
-      {/* Hero banner with course image */}
+      {/* Hero banner */}
       <div className="rounded-2xl overflow-hidden relative mb-6" style={{ height: 220 }}>
-        <img
-          src={course.image}
-          alt={course.title}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/55" />
+        {course.image ? (
+          <>
+            <img
+              src={course.image}
+              alt={course.title}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/55" />
+          </>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: '#0d0d0d' }}>
+            <HeroIcon size={72} strokeWidth={1.25} className="text-[#C5F94E] opacity-25" />
+          </div>
+        )}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-6 pt-12 pb-5">
           <p className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-1">{course.category}</p>
           <h1 className="text-white text-xl font-bold leading-snug">{course.title}</h1>
@@ -682,8 +709,7 @@ function DetailScreen({
           <button
             type="button"
             onClick={() => isPurchased ? onEnroll(course) : onPurchase(course)}
-            className="w-full rounded-xl py-3 text-sm font-bold text-white hover:opacity-90 active:opacity-80 transition-opacity"
-            style={{ backgroundColor: course.color }}
+            className="w-full rounded-xl py-3 text-sm font-bold text-black bg-[#C5F94E] hover:opacity-90 active:opacity-80 transition-opacity"
           >
             {!isPurchased
               ? course.price > 0 ? `Enroll — ${course.price.toLocaleString()} EGP` : 'Start Learning'
@@ -805,8 +831,7 @@ function LessonView({
             <button
               type="button"
               onClick={onMarkComplete}
-              className="w-full rounded-xl py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 active:opacity-80"
-              style={{ backgroundColor: course.color }}
+              className="w-full rounded-xl py-3 text-sm font-bold text-black bg-[#C5F94E] transition-opacity hover:opacity-90 active:opacity-80"
             >
               Mark as Complete
             </button>
