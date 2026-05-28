@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { SubpageShell } from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
-import { showToast } from '../lib/swal';
+import { showToast, showAlert } from '../lib/swal';
 import api from '../lib/api';
 import { BookOpen, TrendingUp, Rocket, Building2, BarChart2, Lock as LucideLock } from 'lucide-react';
 
@@ -933,6 +933,26 @@ export default function LearningHub() {
     }
   }
 
+  async function handleInitiateEnroll(course: Course) {
+    if (course.price === 0) {
+      try {
+        await api.post('/api/learning/purchase', { course_id: course.id });
+        setPurchases(prev => new Set([...prev, course.id]));
+        handleEnroll(course);
+      } catch (e: any) {
+        const msg = e?.response?.data?.error;
+        if (msg === 'already_purchased' || msg === 'already_owned') {
+          setPurchases(prev => new Set([...prev, course.id]));
+          handleEnroll(course);
+        } else {
+          showAlert(t('learn_enroll_failed') || 'Could not enroll', 'Please try again.');
+        }
+      }
+    } else {
+      setPurchaseTarget(course);
+    }
+  }
+
   function handleEnroll(course: Course) {
     if (!enrolled.has(course.id)) {
       setEnrolled(prev => {
@@ -963,7 +983,7 @@ export default function LearningHub() {
               onEnroll={handleEnroll}
               loading={loading}
               purchases={purchases}
-              onPurchase={setPurchaseTarget}
+              onPurchase={handleInitiateEnroll}
             />
           </motion.div>
         )}
@@ -980,7 +1000,7 @@ export default function LearningHub() {
               onOpenLesson={(lesson, level) => { setSelectedLesson({ lesson, level }); setCurrentView('lessonView'); }}
               onEnroll={handleEnroll}
               purchases={purchases}
-              onPurchase={setPurchaseTarget}
+              onPurchase={handleInitiateEnroll}
             />
           </motion.div>
         )}

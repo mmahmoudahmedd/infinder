@@ -371,6 +371,7 @@ const ar: Record<TranslationKey, string> = {
 
   // Learning
   learn_enrolled: 'تم التسجيل بنجاح!',
+  learn_enroll_failed: 'تعذّر التسجيل',
   learn_title: 'وحدات التعلم',
   learn_sub: 'دروس قصيرة مع اختبارات سريعة — تعلم بالسرعة التي تناسبك.',
   learn_lessons_label: 'الدروس',

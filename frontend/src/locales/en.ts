@@ -369,6 +369,7 @@ const en = {
 
   // Learning
   learn_enrolled: 'Enrolled successfully!',
+  learn_enroll_failed: 'Could not enroll',
   learn_title: 'Learning modules',
   learn_sub: 'Short lessons with quick checks — learn at your pace.',
   learn_lessons_label: 'Lessons',
