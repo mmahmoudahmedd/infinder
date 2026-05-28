@@ -4,21 +4,23 @@ import { verifyToken } from '../middleware/verifyToken.js';
 
 const router = Router();
 
-const BUCKETS = ['stocks', 'baskets', 'bonds', 'gold'];
+const BUCKETS = ['stocks', 'baskets', 'bonds', 'gold', 'real_estate'];
 
 const CATEGORY_SYMBOLS = {
-  stocks: 'SPY',
-  baskets: 'QQQ',
-  bonds: 'TLT',
-  gold: 'XAU/USD',
+  stocks:      'SPY',
+  baskets:     'QQQ',
+  bonds:       'TLT',
+  gold:        'XAU/USD',
+  real_estate: 'VNQ',
 };
 
 // Shown when no DB row exists for a category
 const BENCHMARK_DEFAULTS = {
-  stocks: { title: 'Global Equities (SPY)', volatility_label: 'Medium', risk_level: 'medium', mtd_seed: 1.4 },
-  baskets: { title: 'Tech Basket (QQQ)',    volatility_label: 'High',   risk_level: 'high',   mtd_seed: 2.1 },
-  bonds:   { title: 'Fixed Income (TLT)',   volatility_label: 'Low',    risk_level: 'low',    mtd_seed: -0.4 },
-  gold:    { title: 'Gold (XAU/USD)',        volatility_label: 'Medium', risk_level: 'medium', mtd_seed: 0.9 },
+  stocks:      { title: 'Global Equities (SPY)',  volatility_label: 'Medium', risk_level: 'medium', mtd_seed: 1.4 },
+  baskets:     { title: 'Tech Basket (QQQ)',       volatility_label: 'High',   risk_level: 'high',   mtd_seed: 2.1 },
+  bonds:       { title: 'Fixed Income (TLT)',      volatility_label: 'Low',    risk_level: 'low',    mtd_seed: -0.4 },
+  gold:        { title: 'Gold (XAU/USD)',           volatility_label: 'Medium', risk_level: 'medium', mtd_seed: 0.9 },
+  real_estate: { title: 'Real Estate (VNQ)',        volatility_label: 'Medium', risk_level: 'medium', mtd_seed: 0.7 },
 };
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
@@ -107,57 +109,77 @@ async function fetchSeries(symbol) {
 
 router.get('/catalog', verifyToken, async (req, res) => {
   try {
-    // Pull any active investments from DB to enrich category metadata
     const { data: rows } = await supabase
       .from('investments')
       .select('*')
-      .eq('active', true);
+      .eq('active', true)
+      .order('min_investment');
 
-    const dbByCategory = {};
-    for (const row of rows || []) {
-      if (!dbByCategory[row.category]) dbByCategory[row.category] = row;
-    }
-
-    // Fetch all 4 benchmark series in parallel
+    // Fetch all bucket benchmark series in parallel
     const seriesMap = {};
     await Promise.all(
       BUCKETS.map(async (cat) => {
-        const sym = CATEGORY_SYMBOLS[cat];
-        seriesMap[cat] = await fetchSeries(sym);
+        seriesMap[cat] = await fetchSeries(CATEGORY_SYMBOLS[cat]);
       }),
     );
 
-    // Always return one card per category
-    const catalog = BUCKETS.map((cat) => {
-      const dbRow  = dbByCategory[cat];
-      const def    = BENCHMARK_DEFAULTS[cat];
-      const series = seriesMap[cat] ?? [];
-      const first  = series[0];
-      const last   = series[series.length - 1];
-      const mtdPct =
-        first && last && first.index
-          ? Math.round(((last.index - first.index) / first.index) * 10000) / 100
-          : def.mtd_seed;
+    function mtdFromSeries(series, fallbackSeed) {
+      const first = series[0];
+      const last  = series[series.length - 1];
+      return first && last && first.index
+        ? Math.round(((last.index - first.index) / first.index) * 10000) / 100
+        : fallbackSeed;
+    }
 
+    function volatilityLabel(riskLevel) {
+      return riskLevel === 'high' ? 'High' : riskLevel === 'low' ? 'Low' : 'Medium';
+    }
+
+    // One card per investment product, sharing the category benchmark series
+    const productCards = (rows || []).map((dbRow) => {
+      const cat    = dbRow.category;
+      const def    = BENCHMARK_DEFAULTS[cat] ?? BENCHMARK_DEFAULTS.stocks;
+      const series = seriesMap[cat] ?? [];
       return {
-        id:                   dbRow?.id ?? cat,
-        slug:                 dbRow?.slug ?? cat,
-        title:                dbRow?.title ?? def.title,
+        id:                   dbRow.id,
+        slug:                 dbRow.slug,
+        title:                dbRow.title,
         category:             cat,
-        min_investment:       dbRow ? Number(dbRow.min_investment) : 0,
-        expected_return_low:  dbRow?.expected_return_low  != null ? Number(dbRow.expected_return_low)  : 4,
-        expected_return_high: dbRow?.expected_return_high != null ? Number(dbRow.expected_return_high) : 8,
-        risk_level:           dbRow?.risk_level ?? def.risk_level,
-        is_halal:             dbRow?.is_halal   ?? false,
-        mtd_pct:              mtdPct,
-        volatility_label:     dbRow
-          ? (dbRow.risk_level === 'high' ? 'High' : dbRow.risk_level === 'low' ? 'Low' : 'Medium')
-          : def.volatility_label,
-        series_30d: series,
+        min_investment:       Number(dbRow.min_investment),
+        expected_return_low:  dbRow.expected_return_low  != null ? Number(dbRow.expected_return_low)  : 4,
+        expected_return_high: dbRow.expected_return_high != null ? Number(dbRow.expected_return_high) : 8,
+        risk_level:           dbRow.risk_level,
+        is_halal:             dbRow.is_halal ?? false,
+        mtd_pct:              mtdFromSeries(series, def.mtd_seed),
+        volatility_label:     volatilityLabel(dbRow.risk_level),
+        series_30d:           series,
       };
     });
 
-    return res.json({ catalog });
+    // Fallback cards for any bucket that has no products in the DB
+    const coveredCategories = new Set((rows || []).map((r) => r.category));
+    const fallbackCards = BUCKETS
+      .filter((cat) => !coveredCategories.has(cat))
+      .map((cat) => {
+        const def    = BENCHMARK_DEFAULTS[cat];
+        const series = seriesMap[cat] ?? [];
+        return {
+          id:                   cat,
+          slug:                 cat,
+          title:                def.title,
+          category:             cat,
+          min_investment:       0,
+          expected_return_low:  4,
+          expected_return_high: 8,
+          risk_level:           def.risk_level,
+          is_halal:             false,
+          mtd_pct:              mtdFromSeries(series, def.mtd_seed),
+          volatility_label:     def.volatility_label,
+          series_30d:           series,
+        };
+      });
+
+    return res.json({ catalog: [...productCards, ...fallbackCards] });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ error: 'Failed to load analytics' });
@@ -184,7 +206,7 @@ router.get('/holdings', verifyToken, async (req, res) => {
       txList.find((t) => t.reference === pid || t.reference === String(pid));
 
     // Aggregate invested amounts per bucket
-    const agg = { stocks: 0, baskets: 0, bonds: 0, gold: 0 };
+    const agg = Object.fromEntries(BUCKETS.map((k) => [k, 0]));
     let totalInvested = 0;
     for (const p of portfolios || []) {
       const alloc = p.allocation || {};

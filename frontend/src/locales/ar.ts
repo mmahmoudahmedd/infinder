@@ -358,6 +358,7 @@ const ar: Record<TranslationKey, string> = {
   reports_bucket_baskets: 'سلال الأسهم',
   reports_bucket_bonds: 'السندات / الدخل الثابت',
   reports_bucket_gold: 'الذهب',
+  reports_bucket_real_estate: 'العقارات',
   reports_price_index: 'مؤشر السعر',
   reports_date_label: 'التاريخ:',
   reports_amount: 'المبلغ',

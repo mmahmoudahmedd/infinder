@@ -73,7 +73,7 @@ router.post('/robo', verifyToken, (req, res) => {
 });
 
 function normalizeAllocation(a) {
-  const keys = ['stocks', 'baskets', 'bonds', 'gold'];
+  const keys = ['stocks', 'baskets', 'bonds', 'gold', 'real_estate'];
   const out = {};
   let sum = 0;
   for (const k of keys) {

@@ -356,6 +356,7 @@ const en = {
   reports_bucket_baskets: 'Stock baskets',
   reports_bucket_bonds: 'Bonds / fixed income',
   reports_bucket_gold: 'Gold',
+  reports_bucket_real_estate: 'Real Estate',
   reports_price_index: 'Price index',
   reports_date_label: 'Date:',
   reports_amount: 'Amount',

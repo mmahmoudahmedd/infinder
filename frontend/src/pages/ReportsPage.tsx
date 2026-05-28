@@ -45,10 +45,11 @@ export default function ReportsPage() {
   const { dark } = useTheme();
 
   const bucketLabel: Record<string, string> = {
-    stocks: t('reports_bucket_stocks'),
-    baskets: t('reports_bucket_baskets'),
-    bonds: t('reports_bucket_bonds'),
-    gold: t('reports_bucket_gold'),
+    stocks:      t('reports_bucket_stocks'),
+    baskets:     t('reports_bucket_baskets'),
+    bonds:       t('reports_bucket_bonds'),
+    gold:        t('reports_bucket_gold'),
+    real_estate: t('reports_bucket_real_estate'),
   };
 
   const [catalog, setCatalog] = useState<CatalogRow[]>([]);
