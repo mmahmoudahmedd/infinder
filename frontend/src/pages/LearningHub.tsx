@@ -99,7 +99,7 @@ const COURSE_META: Record<string, { color: string; image: string; category: stri
   'hub-real-estate':     { color: '#3b82f6', image: 'https://i.pinimg.com/1200x/11/7a/55/117a550a41583be8a579e1333f795aad.jpg', category: 'Real Estate' },
   'hub-intro-investing': { color: '#8b5cf6', image: 'https://i.pinimg.com/736x/b7/89/7e/b7897e9d112634c5428994643408c5b3.jpg', category: 'Investment' },
   'investing-101':       { color: '#f59e0b', image: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&q=80', category: 'Fundamentals' },
-  'risk-return':         { color: '#14b8a6', image: 'https://images.unsplash.com/photo-1579621908742-6c6f3f88d9b4?w=800&q=80', category: 'Fundamentals' },
+  'risk-return':         { color: '#14b8a6', image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80', category: 'Fundamentals' },
   'sharia-investing':    { color: '#d97706', image: 'https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=800&q=80', category: 'Fundamentals' },
 };
 const DEFAULT_META = { color: '#6b7280', image: '', category: 'Fundamentals' };
