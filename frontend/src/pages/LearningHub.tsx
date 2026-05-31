@@ -695,14 +695,10 @@ function DetailScreen({
                     {i > 0 && <div className="h-px bg-gray-100 dark:bg-gray-800 mx-5" />}
                     <button
                       type="button"
-                      onClick={() => isPurchased ? onOpenLesson(lesson, activeLevelData) : onPurchase(course)}
+                      onClick={() => onOpenLesson(lesson, activeLevelData)}
                       className="w-full flex items-center gap-4 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors text-left"
                     >
-                      {!isPurchased ? (
-                        <div className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0 text-gray-400">
-                          <IcLock />
-                        </div>
-                      ) : isDone ? (
+                      {isDone ? (
                         <div className="w-9 h-9 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
                           <IcCheck size={14} />
                         </div>
@@ -712,12 +708,12 @@ function DetailScreen({
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium leading-snug ${isDone && isPurchased ? 'text-gray-400 dark:text-gray-600' : 'text-gray-900 dark:text-white'}`}>
+                        <p className={`text-sm font-medium leading-snug ${isDone ? 'text-gray-400 dark:text-gray-600' : 'text-gray-900 dark:text-white'}`}>
                           {lesson.title}
                         </p>
                       </div>
                       <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">{lesson.duration}</span>
-                      {isPurchased ? <IcChevronRight /> : <IcLock />}
+                      <IcChevronRight />
                     </button>
                   </div>
                 );
@@ -914,17 +910,21 @@ function LessonView({
   level,
   lesson,
   completed,
+  isPurchased,
   onMarkComplete,
   onNextLesson,
   onBack,
+  onPurchase,
 }: {
   course: Course;
   level: Level;
   lesson: Lesson;
   completed: Set<string>;
+  isPurchased: boolean;
   onMarkComplete: () => void;
   onNextLesson: (lesson: Lesson, level: Level) => void;
   onBack: () => void;
+  onPurchase: () => void;
 }) {
   const isDone = completed.has(lesson.dbId);
 
@@ -958,16 +958,33 @@ function LessonView({
         </span>
       </div>
 
-      {/* YouTube embed */}
-      <div className="w-full rounded-2xl overflow-hidden mb-5" style={{ aspectRatio: '16/9' }}>
-        <iframe
-          src={`https://www.youtube.com/embed/${lesson.videoId}?rel=0&modestbranding=1`}
-          title={lesson.title}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          className="w-full h-full border-0"
-        />
-      </div>
+      {/* Video */}
+      {isPurchased ? (
+        <div className="w-full rounded-2xl overflow-hidden mb-5" style={{ aspectRatio: '16/9' }}>
+          <iframe
+            src={`https://www.youtube.com/embed/${lesson.videoId}?rel=0&modestbranding=1`}
+            title={lesson.title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="w-full h-full border-0"
+          />
+        </div>
+      ) : (
+        <div
+          className="w-full rounded-2xl overflow-hidden mb-5 bg-gray-900 dark:bg-black flex flex-col items-center justify-center gap-3"
+          style={{ aspectRatio: '16/9' }}
+        >
+          <IcLock />
+          <p className="text-white/60 text-sm">Enroll to watch this lesson</p>
+          <button
+            type="button"
+            onClick={onPurchase}
+            className="rounded-xl px-5 py-2 text-sm font-bold bg-[#C5F94E] text-black hover:opacity-90 transition-opacity"
+          >
+            Enroll — 1,000 EGP
+          </button>
+        </div>
+      )}
 
       {/* Lesson card */}
       <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-sm dark:shadow-none border border-gray-100 dark:border-gray-800 p-6">
@@ -999,13 +1016,21 @@ function LessonView({
               <IcCheck size={16} />
               Lesson completed
             </div>
-          ) : (
+          ) : isPurchased ? (
             <button
               type="button"
               onClick={onMarkComplete}
               className="w-full rounded-xl py-3 text-sm font-bold text-black bg-[#C5F94E] transition-opacity hover:opacity-90 active:opacity-80"
             >
               Mark as Complete
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onPurchase}
+              className="w-full rounded-xl py-3 text-sm font-bold border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors"
+            >
+              Enroll to Track Progress — 1,000 EGP
             </button>
           )}
 
@@ -1185,9 +1210,11 @@ export default function LearningHub() {
               level={selectedLesson.level}
               lesson={selectedLesson.lesson}
               completed={completed}
+              isPurchased={purchases.has(selectedCourse.id)}
               onMarkComplete={() => markComplete(selectedLesson.lesson.dbId)}
               onNextLesson={(lesson, level) => setSelectedLesson({ lesson, level })}
               onBack={() => setCurrentView('courseDetail')}
+              onPurchase={() => setPurchaseTarget(selectedCourse)}
             />
           </motion.div>
         )}
