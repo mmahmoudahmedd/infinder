@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { TrendingUp, Landmark, Coins, ShoppingBasket, Bitcoin, Building2, Info, type LucideIcon } from 'lucide-react';
+import { TrendingUp, Landmark, Coins, ShoppingBasket, Building2, Rocket, Info, type LucideIcon } from 'lucide-react';
 import api from '../lib/api';
 import { SubpageShell } from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
@@ -44,11 +44,11 @@ const categoryIcon: Record<string, LucideIcon> = {
   baskets:     ShoppingBasket,
   bonds:       Landmark,
   gold:        Coins,
-  crypto:      Bitcoin,
   real_estate: Building2,
+  startup:     Rocket,
 };
 
-const CATEGORIES = ['all', 'stocks', 'baskets', 'bonds', 'gold', 'real_estate'] as const;
+const CATEGORIES = ['all', 'stocks', 'baskets', 'bonds', 'gold', 'real_estate', 'startup'] as const;
 const LEVELS = ['all', 'beginner', 'intermediate', 'advanced'] as const;
 
 const riskBadgeClass: Record<string, string> = {
@@ -59,17 +59,14 @@ const riskBadgeClass: Record<string, string> = {
 };
 
 const levelMap: Record<string, 'beginner' | 'intermediate' | 'advanced'> = {
-  'egypt-tbills':          'beginner',
-  'gold':                  'beginner',
-  'physical-gold-24k':     'beginner',
-  'government-sukuk-bonds':'beginner',
-  'palm-hills-new-cairo':  'beginner',
-  'egx-30-index-basket':   'intermediate',
-  'egx-blue-chip-basket':  'intermediate',
-  'sodic-west-cairo':      'intermediate',
-  'cib-egypt-stock':       'intermediate',
-  'telecom-egypt-stock':   'intermediate',
-  'egx-individual-stocks': 'advanced',
+  'az-gold-fund':           'beginner',
+  'b-secure-tbills':        'beginner',
+  'az-opportunities-egx30': 'intermediate',
+  'ci-capital-misr-equity': 'intermediate',
+  'cib-comi':               'intermediate',
+  'partment-new-cairo':     'intermediate',
+  'fawry-fwry':             'advanced',
+  'sylndr-pre-ipo':         'advanced',
 };
 
 const levelBadgeClass: Record<string, string> = {
@@ -113,6 +110,7 @@ export default function InvestmentOptions() {
     bonds:       t('invest_cat_bonds'),
     gold:        t('invest_cat_gold'),
     real_estate: t('invest_cat_real_estate'),
+    startup:     t('invest_cat_startup'),
   }), [t]);
 
   const allocLabels = useMemo(() => ({

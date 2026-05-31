@@ -141,6 +141,7 @@ const ar: Record<TranslationKey, string> = {
   invest_cat_bonds: 'السندات',
   invest_cat_gold: 'الذهب',
   invest_cat_real_estate: 'العقارات',
+  invest_cat_startup: 'الشركات الناشئة',
   invest_level_all: 'كل المستويات',
   invest_level_beginner: 'مبتدئ',
   invest_level_intermediate: 'متوسط',

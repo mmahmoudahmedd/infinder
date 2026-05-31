@@ -139,6 +139,7 @@ const en = {
   invest_cat_bonds: 'Bonds',
   invest_cat_gold: 'Gold',
   invest_cat_real_estate: 'Real Estate',
+  invest_cat_startup: 'Startups',
   invest_level_all: 'All Levels',
   invest_level_beginner: 'Beginner',
   invest_level_intermediate: 'Intermediate',
