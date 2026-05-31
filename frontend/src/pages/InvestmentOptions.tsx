@@ -49,12 +49,33 @@ const categoryIcon: Record<string, LucideIcon> = {
 };
 
 const CATEGORIES = ['all', 'stocks', 'baskets', 'bonds', 'gold', 'real_estate'] as const;
+const LEVELS = ['all', 'beginner', 'intermediate', 'advanced'] as const;
 
 const riskBadgeClass: Record<string, string> = {
   low:        'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
   low_medium: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
   medium:     'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
   high:       'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+};
+
+const levelMap: Record<string, 'beginner' | 'intermediate' | 'advanced'> = {
+  'egypt-tbills':          'beginner',
+  'gold':                  'beginner',
+  'physical-gold-24k':     'beginner',
+  'government-sukuk-bonds':'beginner',
+  'palm-hills-new-cairo':  'beginner',
+  'egx-30-index-basket':   'intermediate',
+  'egx-blue-chip-basket':  'intermediate',
+  'sodic-west-cairo':      'intermediate',
+  'cib-egypt-stock':       'intermediate',
+  'telecom-egypt-stock':   'intermediate',
+  'egx-individual-stocks': 'advanced',
+};
+
+const levelBadgeClass: Record<string, string> = {
+  beginner:     'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  intermediate: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+  advanced:     'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
 };
 
 export default function InvestmentOptions() {
@@ -64,11 +85,19 @@ export default function InvestmentOptions() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<string>('all');
+  const [levelFilter, setLevelFilter] = useState<string>('all');
   const [investModal, setInvestModal] = useState<Inv | null>(null);
   const [investAmt, setInvestAmt] = useState('');
   const [positions, setPositions] = useState<Position[]>([]);
   const [exitTarget, setExitTarget] = useState<Position | null>(null);
   const [exiting, setExiting] = useState(false);
+
+  const levelLabel: Record<string, string> = {
+    all:          t('invest_level_all'),
+    beginner:     t('invest_level_beginner'),
+    intermediate: t('invest_level_intermediate'),
+    advanced:     t('invest_level_advanced'),
+  };
 
   const riskLabel: Record<string, string> = {
     low:        t('invest_risk_low_label'),
@@ -116,7 +145,9 @@ export default function InvestmentOptions() {
 
   if (!user) return null;
 
-  const filtered = filter === 'all' ? items : items.filter((inv) => inv.category === filter);
+  const filtered = items
+    .filter((inv) => filter === 'all' || inv.category === filter)
+    .filter((inv) => levelFilter === 'all' || levelMap[inv.slug] === levelFilter);
 
   return (
     <SubpageShell>
@@ -197,6 +228,30 @@ export default function InvestmentOptions() {
         ))}
       </div>
 
+      {/* Level filter pills */}
+      <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+        {LEVELS.map((lvl) => (
+          <button
+            key={lvl}
+            type="button"
+            onClick={() => setLevelFilter(lvl)}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition shrink-0 ${
+              levelFilter === lvl
+                ? lvl === 'all'
+                  ? 'bg-infinder-black dark:bg-white text-white dark:text-infinder-black'
+                  : lvl === 'beginner'
+                  ? 'bg-green-600 text-white'
+                  : lvl === 'intermediate'
+                  ? 'bg-amber-500 text-white'
+                  : 'bg-purple-600 text-white'
+                : 'border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500'
+            }`}
+          >
+            {levelLabel[lvl] ?? lvl}
+          </button>
+        ))}
+      </div>
+
       {/* Cards grid */}
       <div className="mt-8 grid md:grid-cols-2 gap-4">
         {loading ? (
@@ -237,6 +292,11 @@ export default function InvestmentOptions() {
                   </span>
                   {inv.is_halal && (
                     <span className="text-xs rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 px-2 py-0.5">{t('invest_halal')}</span>
+                  )}
+                  {levelMap[inv.slug] && (
+                    <span className={`text-xs rounded-full px-2 py-0.5 font-medium ${levelBadgeClass[levelMap[inv.slug]]}`}>
+                      {levelLabel[levelMap[inv.slug]]}
+                    </span>
                   )}
                 </div>
                 <p className="text-sm text-gray-600 dark:text-gray-300 mt-3">{inv.description}</p>
