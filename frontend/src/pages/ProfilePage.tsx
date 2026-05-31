@@ -7,6 +7,7 @@ import api from '../lib/api';
 import { SubpageShell } from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../hooks/useTheme';
+import { useUserLevel } from '../hooks/useUserLevel';
 import { showToast, showAlert, showLoading, closeLoading, showError, showCopyToast } from '../lib/swal';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -314,6 +315,7 @@ export default function ProfilePage() {
   const nav = useNavigate();
   const { user, logout, updateProfile, refreshMe } = useAuth();
   const { dark } = useTheme();
+  const { level: userLevel, loading: levelLoading } = useUserLevel();
 
   const [txs, setTxs] = useState<Tx[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
@@ -479,6 +481,12 @@ export default function ProfilePage() {
     { key: 'course_purchase', label: t('profile_filter_courses') },
   ];
 
+  const LEVEL_BADGE: Record<string, { label: string; cls: string }> = {
+    beginner:     { label: 'Beginner Investor',     cls: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400' },
+    intermediate: { label: 'Intermediate Investor', cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400' },
+    advanced:     { label: 'Advanced Investor',     cls: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-400' },
+  };
+
   return (
     <SubpageShell>
       {/* ── Profile header ── */}
@@ -516,6 +524,16 @@ export default function ProfilePage() {
                   className="text-xs px-2 py-0.5 rounded-full font-medium bg-infinder-lime/20 text-infinder-black dark:text-infinder-lime border border-infinder-lime/30 hover:bg-infinder-lime/30 transition">
                   {kycData.kyc_status === 'rejected' ? 'Resubmit' : 'Complete KYC'}
                 </button>
+              )}
+              {!levelLoading && userLevel && (
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${LEVEL_BADGE[userLevel].cls}`}>
+                  {LEVEL_BADGE[userLevel].label}
+                </span>
+              )}
+              {!levelLoading && !userLevel && (
+                <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-white/40">
+                  No Certification Yet
+                </span>
               )}
             </div>
           ) : (

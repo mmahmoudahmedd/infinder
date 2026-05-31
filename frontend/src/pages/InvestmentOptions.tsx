@@ -6,6 +6,7 @@ import { TrendingUp, Landmark, Coins, ShoppingBasket, Building2, Rocket, Info, t
 import api from '../lib/api';
 import { SubpageShell } from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
+import { useUserLevel } from '../hooks/useUserLevel';
 import { showLoading, closeLoading, showSuccess, showError } from '../lib/swal';
 
 type Inv = {
@@ -78,6 +79,7 @@ const levelBadgeClass: Record<string, string> = {
 export default function InvestmentOptions() {
   const { t } = useTranslation();
   const { user, refreshMe } = useAuth();
+  const { level: userLevel } = useUserLevel();
   const [items, setItems] = useState<Inv[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<Record<string, boolean>>({});
@@ -142,6 +144,18 @@ export default function InvestmentOptions() {
   }, [fetchPositions]);
 
   if (!user) return null;
+
+  const ACCESS: Record<string, string[]> = {
+    beginner:     ['beginner'],
+    intermediate: ['beginner', 'intermediate'],
+    advanced:     ['beginner', 'intermediate', 'advanced'],
+  };
+  function isInvestmentLocked(slug: string): boolean {
+    const required = levelMap[slug];
+    if (!required) return false;
+    const allowed = userLevel ? ACCESS[userLevel] : ACCESS['beginner'];
+    return !allowed.includes(required);
+  }
 
   const filtered = items
     .filter((inv) => filter === 'all' || inv.category === filter)
@@ -272,6 +286,7 @@ export default function InvestmentOptions() {
             const can = user.wallet_balance >= inv.min_investment;
             const isOpen = open[inv.id];
             const bullets = Array.isArray(inv.learn_more) ? inv.learn_more : [];
+            const locked = isInvestmentLocked(inv.slug);
             return (
               <motion.div
                 key={inv.id}
@@ -335,21 +350,27 @@ export default function InvestmentOptions() {
                     ))}
                   </ul>
                 )}
-                <button
-                  type="button"
-                  disabled={!can}
-                  onClick={() => {
-                    if (can) {
-                      setInvestModal(inv);
-                      setInvestAmt('');
-                    }
-                  }}
-                  className={`mt-4 w-full rounded-xl py-2.5 text-sm font-semibold ${
-                    can ? 'bg-infinder-lime text-infinder-black' : 'bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-600 cursor-not-allowed'
-                  }`}
-                >
-                  {can ? t('invest_invest_btn') : t('invest_insufficient')}
-                </button>
+                {locked ? (
+                  <div className="mt-4 w-full rounded-xl py-2.5 text-sm font-medium bg-gray-100 dark:bg-gray-800/60 text-gray-500 dark:text-gray-500 text-center cursor-not-allowed border border-gray-200 dark:border-gray-700">
+                    🔒 Complete <span className="capitalize font-semibold">{levelMap[inv.slug]}</span> certification to unlock
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={!can}
+                    onClick={() => {
+                      if (can) {
+                        setInvestModal(inv);
+                        setInvestAmt('');
+                      }
+                    }}
+                    className={`mt-4 w-full rounded-xl py-2.5 text-sm font-semibold ${
+                      can ? 'bg-infinder-lime text-infinder-black' : 'bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-600 cursor-not-allowed'
+                    }`}
+                  >
+                    {can ? t('invest_invest_btn') : t('invest_insufficient')}
+                  </button>
+                )}
               </motion.div>
             );
           })
