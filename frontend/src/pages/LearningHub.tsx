@@ -458,11 +458,11 @@ function HubScreen({
                     <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end">
                       <button
                         type="button"
-                        onClick={() => purchases.has(course.id) ? onEnroll(course) : onPurchase(course)}
+                        onClick={() => onEnroll(course)}
                         className="rounded-xl text-sm font-bold px-4 py-2.5 bg-[#C5F94E] text-black transition-opacity hover:opacity-90"
                       >
                         {!purchases.has(course.id)
-                          ? course.price > 0 ? `Enroll — ${course.price.toLocaleString()} EGP` : 'Start Learning'
+                          ? course.price > 0 ? `View Course — ${course.price.toLocaleString()} EGP` : 'Start Learning'
                           : enrolled.has(course.id) ? 'Continue' : 'Start Learning'}
                       </button>
                     </div>
