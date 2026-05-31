@@ -108,6 +108,18 @@ router.post('/progress', verifyToken, async (req, res) => {
     const { lesson_id } = req.body;
     if (!lesson_id) return res.status(400).json({ error: 'lesson_id required' });
 
+    const { data: lessonRow } = await supabase
+      .from('lessons').select('module_id').eq('id', lesson_id).maybeSingle();
+    if (!lessonRow) return res.status(404).json({ error: 'Lesson not found' });
+
+    const { data: purchase } = await supabase
+      .from('course_purchases')
+      .select('id')
+      .eq('user_id', req.user.id)
+      .eq('course_id', lessonRow.module_id)
+      .maybeSingle();
+    if (!purchase) return res.status(403).json({ error: 'Course not purchased' });
+
     const { error } = await supabase.from('user_progress').upsert(
       {
         user_id: req.user.id,
@@ -240,8 +252,17 @@ router.post('/quiz', verifyToken, async (req, res) => {
     const { lesson_id, answers } = req.body;
     if (!lesson_id || !Array.isArray(answers)) return res.status(400).json({ error: 'lesson_id and answers[] required' });
 
-    const { data: lesson, error } = await supabase.from('lessons').select('quiz').eq('id', lesson_id).single();
+    const { data: lesson, error } = await supabase.from('lessons').select('quiz, module_id').eq('id', lesson_id).single();
     if (error || !lesson) return res.status(404).json({ error: 'Lesson not found' });
+
+    const { data: purchase } = await supabase
+      .from('course_purchases')
+      .select('id')
+      .eq('user_id', req.user.id)
+      .eq('course_id', lesson.module_id)
+      .maybeSingle();
+    if (!purchase) return res.status(403).json({ error: 'Course not purchased' });
+
     const quiz = lesson.quiz;
     const questions = quiz?.questions || [];
     let correct = 0;
