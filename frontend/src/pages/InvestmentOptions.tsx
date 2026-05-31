@@ -50,7 +50,6 @@ const categoryIcon: Record<string, LucideIcon> = {
 };
 
 const CATEGORIES = ['all', 'stocks', 'baskets', 'bonds', 'gold', 'real_estate', 'startup'] as const;
-const LEVELS = ['all', 'beginner', 'intermediate', 'advanced'] as const;
 
 const riskBadgeClass: Record<string, string> = {
   low:        'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
@@ -84,7 +83,6 @@ export default function InvestmentOptions() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<string>('all');
-  const [levelFilter, setLevelFilter] = useState<string>('all');
   const [investModal, setInvestModal] = useState<Inv | null>(null);
   const [investAmt, setInvestAmt] = useState('');
   const [positions, setPositions] = useState<Position[]>([]);
@@ -92,7 +90,6 @@ export default function InvestmentOptions() {
   const [exiting, setExiting] = useState(false);
 
   const levelLabel: Record<string, string> = {
-    all:          t('invest_level_all'),
     beginner:     t('invest_level_beginner'),
     intermediate: t('invest_level_intermediate'),
     advanced:     t('invest_level_advanced'),
@@ -157,9 +154,7 @@ export default function InvestmentOptions() {
     return !allowed.includes(required);
   }
 
-  const filtered = items
-    .filter((inv) => filter === 'all' || inv.category === filter)
-    .filter((inv) => levelFilter === 'all' || levelMap[inv.slug] === levelFilter);
+  const filtered = items.filter((inv) => filter === 'all' || inv.category === filter);
 
   return (
     <SubpageShell>
@@ -236,30 +231,6 @@ export default function InvestmentOptions() {
             }`}
           >
             {catLabel[cat] ?? cat}
-          </button>
-        ))}
-      </div>
-
-      {/* Level filter pills */}
-      <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
-        {LEVELS.map((lvl) => (
-          <button
-            key={lvl}
-            type="button"
-            onClick={() => setLevelFilter(lvl)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition shrink-0 ${
-              levelFilter === lvl
-                ? lvl === 'all'
-                  ? 'bg-infinder-black dark:bg-white text-white dark:text-infinder-black'
-                  : lvl === 'beginner'
-                  ? 'bg-green-600 text-white'
-                  : lvl === 'intermediate'
-                  ? 'bg-amber-500 text-white'
-                  : 'bg-purple-600 text-white'
-                : 'border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500'
-            }`}
-          >
-            {levelLabel[lvl] ?? lvl}
           </button>
         ))}
       </div>
