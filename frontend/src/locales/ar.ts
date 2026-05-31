@@ -546,6 +546,8 @@ const ar: Record<TranslationKey, string> = {
   partners_title:         'شركاء الشهادات',
   partners_subtitle:      'تعلّم من أبرز المؤسسات المصرية واحصل على شهادات معتمدة',
   partners_explore_btn:   'استكشف الدورات',
+  partners_what_you_learn: 'ماذا ستتعلم',
+  partners_why_it_matters: 'لماذا يهم',
   partners_roadmap_title: 'خارطة طريق الشهادات',
   partners_start_level:   'ابدأ المستوى',
   partners_completed:     'مكتمل',

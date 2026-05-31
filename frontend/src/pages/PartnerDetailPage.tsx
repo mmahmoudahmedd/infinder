@@ -27,6 +27,7 @@ type Partner = {
   description: string | null;
   icon: string;
   tags: string[];
+  long_description: { what_you_learn: string; why_it_matters: string } | null;
 };
 
 const iconMap: Record<string, LucideIcon> = {
@@ -170,6 +171,20 @@ export default function PartnerDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* What you learn + Why it matters */}
+      {partner.long_description && (
+        <div className="space-y-3 mb-8">
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/[0.03] p-5">
+            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">{t('partners_what_you_learn')}</p>
+            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{partner.long_description.what_you_learn}</p>
+          </div>
+          <div className="rounded-2xl border-l-4 border-infinder-lime bg-infinder-lime/5 dark:bg-infinder-lime/[0.04] p-5">
+            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">{t('partners_why_it_matters')}</p>
+            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{partner.long_description.why_it_matters}</p>
+          </div>
+        </div>
+      )}
 
       {/* Roadmap */}
       <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-5">{t('partners_roadmap_title')}</h2>

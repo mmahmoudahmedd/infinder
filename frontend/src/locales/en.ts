@@ -544,6 +544,8 @@ const en = {
   partners_title:         'Certification Partners',
   partners_subtitle:      'Learn from top Egyptian institutions and earn verified certificates.',
   partners_explore_btn:   'Explore Courses',
+  partners_what_you_learn: 'What you learn',
+  partners_why_it_matters: 'Why it matters',
   partners_roadmap_title: 'Certifications Roadmap',
   partners_start_level:   'Start Level',
   partners_completed:     'Completed',
