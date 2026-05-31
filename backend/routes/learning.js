@@ -272,4 +272,106 @@ router.post('/quiz', verifyToken, async (req, res) => {
   }
 });
 
+// ── GET /api/learning/user-level ─────────────────────────────────────────────
+// Returns the highest difficulty learning module the user has fully completed.
+router.get('/user-level', verifyToken, async (req, res) => {
+  try {
+    const { data: modules } = await supabase
+      .from('learning_modules')
+      .select('id, difficulty');
+
+    const moduleIds = (modules || []).map(m => m.id);
+    const completionMap = {};
+
+    if (moduleIds.length > 0) {
+      const { data: lessons } = await supabase
+        .from('lessons')
+        .select('id, module_id')
+        .in('module_id', moduleIds);
+
+      const lessonIds = (lessons || []).map(l => l.id);
+      let completedSet = new Set();
+
+      if (lessonIds.length > 0) {
+        const { data: progress } = await supabase
+          .from('user_progress')
+          .select('lesson_id')
+          .eq('user_id', req.user.id)
+          .in('lesson_id', lessonIds);
+        completedSet = new Set((progress || []).map(p => p.lesson_id));
+      }
+
+      const lessonsByModule = {};
+      for (const l of lessons || []) {
+        if (!lessonsByModule[l.module_id]) lessonsByModule[l.module_id] = [];
+        lessonsByModule[l.module_id].push(l.id);
+      }
+      for (const mid of moduleIds) {
+        const ml = lessonsByModule[mid] || [];
+        completionMap[mid] = ml.length > 0 && ml.every(id => completedSet.has(id));
+      }
+    }
+
+    const LEVEL_ORDER = { beginner: 1, intermediate: 2, advanced: 3 };
+    let highestRank = 0;
+    let highestLevel = null;
+
+    for (const mod of modules || []) {
+      if (!completionMap[mod.id]) continue;
+      const rank = LEVEL_ORDER[mod.difficulty] ?? 0;
+      if (rank > highestRank) { highestRank = rank; highestLevel = mod.difficulty; }
+    }
+
+    return res.json({ level: highestLevel });
+  } catch (e) {
+    console.error('user-level error:', e);
+    return res.status(500).json({ error: 'Failed to compute user level' });
+  }
+});
+
+// ── POST /api/learning/bypass-quiz ───────────────────────────────────────────
+// 20-question bypass quiz. On pass (≥16/20) marks all module lessons complete.
+const BYPASS_ANSWERS = [1, 2, 2, 3, 1, 2, 2, 1, 1, 2, 1, 2, 1, 2, 2, 1, 2, 1, 2, 3];
+
+router.post('/bypass-quiz', verifyToken, async (req, res) => {
+  try {
+    const { module_id, answers } = req.body;
+    if (!module_id || !Array.isArray(answers) || answers.length !== 20) {
+      return res.status(400).json({ error: 'Invalid payload' });
+    }
+
+    const { data: mod } = await supabase
+      .from('learning_modules')
+      .select('id, difficulty')
+      .eq('id', module_id)
+      .maybeSingle();
+
+    if (!mod) return res.status(404).json({ error: 'Module not found' });
+    if (mod.difficulty !== 'beginner') return res.status(400).json({ error: 'Bypass quiz only available for beginner modules' });
+
+    const score = answers.reduce((acc, ans, i) => acc + (ans === BYPASS_ANSWERS[i] ? 1 : 0), 0);
+    const passed = score >= 16;
+
+    if (passed) {
+      const { data: lessons } = await supabase
+        .from('lessons')
+        .select('id')
+        .eq('module_id', module_id);
+
+      for (const lesson of lessons || []) {
+        await supabase.from('user_progress').upsert(
+          { user_id: req.user.id, lesson_id: lesson.id, completed_at: new Date().toISOString() },
+          { onConflict: 'user_id,lesson_id' }
+        );
+      }
+      await evaluateRewards(req.user.id);
+    }
+
+    return res.json({ passed, score, total: 20 });
+  } catch (e) {
+    console.error('bypass-quiz error:', e);
+    return res.status(500).json({ error: 'Failed to process quiz' });
+  }
+});
+
 export default router;

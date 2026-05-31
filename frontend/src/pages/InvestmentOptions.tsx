@@ -49,7 +49,7 @@ const categoryIcon: Record<string, LucideIcon> = {
   startup:     Rocket,
 };
 
-const CATEGORIES = ['all', 'stocks', 'baskets', 'bonds', 'gold', 'real_estate', 'startup'] as const;
+const CATEGORIES = ['all', 'stocks', 'baskets', 'gold', 'real_estate', 'startup'] as const;
 
 const riskBadgeClass: Record<string, string> = {
   low:        'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
@@ -60,7 +60,6 @@ const riskBadgeClass: Record<string, string> = {
 
 const levelMap: Record<string, 'beginner' | 'intermediate' | 'advanced'> = {
   'az-gold-fund':           'beginner',
-  'b-secure-tbills':        'beginner',
   'az-opportunities-egx30': 'intermediate',
   'ci-capital-misr-equity': 'intermediate',
   'cib-comi':               'intermediate',
@@ -106,7 +105,6 @@ export default function InvestmentOptions() {
     all:         t('invest_cat_all'),
     stocks:      t('invest_cat_stocks'),
     baskets:     t('invest_cat_baskets'),
-    bonds:       t('invest_cat_bonds'),
     gold:        t('invest_cat_gold'),
     real_estate: t('invest_cat_real_estate'),
     startup:     t('invest_cat_startup'),
@@ -115,7 +113,6 @@ export default function InvestmentOptions() {
   const allocLabels = useMemo(() => ({
     stocks:      t('invest_cat_stocks'),
     baskets:     t('invest_cat_baskets'),
-    bonds:       t('invest_cat_bonds'),
     gold:        t('invest_cat_gold'),
     real_estate: t('invest_cat_real_estate'),
   }), [t]);
@@ -289,12 +286,14 @@ export default function InvestmentOptions() {
                     <span className="text-gray-600 dark:text-gray-400">{t('invest_min_investment')}</span>
                     <span className="font-medium text-gray-900 dark:text-white">EGP {inv.min_investment.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">{t('invest_expected_returns')}</span>
-                    <span className="font-medium text-infinder-green">
-                      {inv.expected_return_low ?? '—'}–{inv.expected_return_high ?? '—'}% {t('invest_annually')}
-                    </span>
-                  </div>
+                  {inv.category !== 'gold' && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">{t('invest_expected_returns')}</span>
+                      <span className="font-medium text-infinder-green">
+                        {inv.expected_return_low ?? '—'}–{inv.expected_return_high ?? '—'}% {t('invest_annually')}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <button
                   type="button"

@@ -12,7 +12,7 @@ export function useUserLevel(): { level: UserLevel; loading: boolean } {
   useEffect(() => {
     if (!user) { setLevel(null); setLoading(false); return; }
     setLoading(true);
-    api.get<{ level: UserLevel }>('/api/partners/users/level')
+    api.get<{ level: UserLevel }>('/api/learning/user-level')
       .then(r => setLevel(r.data.level))
       .catch(() => setLevel(null))
       .finally(() => setLoading(false));

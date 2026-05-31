@@ -10,7 +10,7 @@ import { BookOpen, TrendingUp, Rocket, Building2, BarChart2, Lock as LucideLock 
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-type CurrentView = 'hub' | 'courseDetail' | 'lessonView';
+type CurrentView = 'hub' | 'courseDetail' | 'lessonView' | 'quiz';
 type LevelId = 'beginner' | 'intermediate' | 'advanced';
 
 interface Lesson {
@@ -37,6 +37,7 @@ interface Course {
   image: string;
   levels: Level[];
   price: number;
+  difficulty: string;
 }
 
 interface ApiLesson {
@@ -55,6 +56,7 @@ interface ApiModule {
   description: string;
   duration_minutes: number;
   price: number;
+  difficulty: string;
   lessons: ApiLesson[];
 }
 
@@ -153,15 +155,16 @@ function buildLevels(apiLessons: ApiLesson[]): Level[] {
 function apiModuleToCourse(m: ApiModule): Course {
   const meta = COURSE_META[m.slug] ?? DEFAULT_META;
   return {
-    id:        m.id,
-    category:  meta.category,
-    title:     m.title,
-    totalTime: formatMinutes(m.duration_minutes),
-    overview:  m.description ?? '',
-    color:     meta.color,
-    image:     meta.image,
-    price:     Number(m.price ?? 0),
-    levels:    buildLevels(m.lessons ?? []),
+    id:         m.id,
+    category:   meta.category,
+    title:      m.title,
+    totalTime:  formatMinutes(m.duration_minutes),
+    overview:   m.description ?? '',
+    color:      meta.color,
+    image:      meta.image,
+    price:      Number(m.price ?? 0),
+    difficulty: m.difficulty ?? 'beginner',
+    levels:     buildLevels(m.lessons ?? []),
   };
 }
 
@@ -531,6 +534,7 @@ function DetailScreen({
   onEnroll,
   purchases,
   onPurchase,
+  onStartQuiz,
 }: {
   course: Course;
   enrolled: Set<string>;
@@ -542,6 +546,7 @@ function DetailScreen({
   onEnroll: (course: Course) => void;
   purchases: Set<string>;
   onPurchase: (course: Course) => void;
+  onStartQuiz: () => void;
 }) {
   const pct = courseProgress(course, completed);
   const activeLevelData = course.levels.find(l => l.id === activeLevel)!;
@@ -623,6 +628,23 @@ function DetailScreen({
             <div className="mt-5 h-px bg-gray-100 dark:bg-gray-800" />
             <p className="mt-5 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{course.overview}</p>
           </div>
+
+          {/* Bypass quiz banner — beginner courses only, not yet complete */}
+          {course.difficulty === 'beginner' && courseProgress(course, completed) < 100 && (
+            <div className="rounded-2xl border border-[#C5F94E]/40 bg-[#C5F94E]/5 p-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">Already know this material?</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Pass a 20-question quiz in 30 min to skip this course and unlock intermediate investments.</p>
+              </div>
+              <button
+                type="button"
+                onClick={onStartQuiz}
+                className="shrink-0 rounded-xl px-4 py-2 text-sm font-bold bg-[#C5F94E] text-black hover:opacity-90 transition-opacity"
+              >
+                Take Quiz
+              </button>
+            </div>
+          )}
 
           {/* Level tabs + lessons */}
           <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-sm dark:shadow-none border border-gray-100 dark:border-gray-800 overflow-hidden">
@@ -731,6 +753,156 @@ function DetailScreen({
           </ul>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Bypass Quiz Data ───────────────────────────────────────────────────────
+
+const QUIZ_QUESTIONS = [
+  { q: 'What is an investment?', options: ['Spending money on entertainment', 'Putting money to work with the expectation of future returns', 'Keeping money under your mattress', 'Borrowing money from a bank'] },
+  { q: 'Which of the following is NOT an asset class?', options: ['Stocks', 'Gold', 'A mobile phone', 'Real estate'] },
+  { q: 'What does "risk" mean in investing?', options: ['The guarantee of losing money', 'The speed at which you can sell an investment', 'The possibility that an investment\'s actual return differs from the expected return', 'The fees paid to a broker'] },
+  { q: 'Which investment type gives you partial ownership of a company?', options: ['Bond', 'Gold', 'Real estate', 'Stock'] },
+  { q: 'What is diversification?', options: ['Investing all your money in one high-performing stock', 'Spreading investments across different asset classes to reduce risk', 'Withdrawing your money frequently', 'Buying only government bonds'] },
+  { q: 'Generally, what is the relationship between risk and return?', options: ['Higher risk always guarantees higher return', 'Lower risk means higher return', 'Higher potential return usually comes with higher risk', 'Risk and return are unrelated'] },
+  { q: 'What is a mutual fund?', options: ['A loan given by a bank', 'A type of cryptocurrency', 'A pooled investment vehicle managed by professionals on behalf of many investors', 'A government savings account'] },
+  { q: 'What does EGX stand for?', options: ['Egyptian Gold Exchange', 'Egyptian Exchange (stock market)', 'Electronic Global Exchange', 'Egyptian Government Index'] },
+  { q: 'Which asset is traditionally considered a safe haven against inflation?', options: ['Startup equity', 'Gold', 'Individual stocks', 'Cryptocurrency'] },
+  { q: 'What is a minimum investment?', options: ['The maximum amount you can invest', 'The fee charged by a broker', 'The smallest amount of money required to enter an investment', 'The guaranteed profit from an investment'] },
+  { q: 'What does "liquidity" mean?', options: ['The risk of an investment losing value', 'How quickly an investment can be converted to cash without significant loss', 'The annual return on an investment', 'The interest rate set by the central bank'] },
+  { q: 'What is the role of the Central Bank of Egypt (CBE)?', options: ['To trade stocks on the EGX', 'To sell real estate to investors', 'To regulate monetary policy and oversee the banking system', 'To manage individual investment portfolios'] },
+  { q: 'Which of the following best describes a "low risk" investment?', options: ['High potential returns with large price swings', 'Stable, predictable returns with lower chance of loss', 'Investments in new startup companies', 'Investments that can lose all their value overnight'] },
+  { q: 'What is a stock market index?', options: ['A list of all banks in Egypt', 'The price of a single stock', 'A measure tracking the performance of a group of stocks', 'The interest rate on government bonds'] },
+  { q: 'What does "annual return" mean?', options: ['The total amount invested over a lifetime', 'The fee paid to an investment platform', 'The profit or loss generated by an investment over one year, expressed as a percentage', 'The number of times you can withdraw per year'] },
+  { q: 'What is fractional ownership in real estate?', options: ['Owning an entire building', 'Owning a small share of a property alongside other investors', 'Renting a property from a landlord', 'Taking a mortgage from a bank'] },
+  { q: 'Which type of investment is considered Sharia-compliant?', options: ['Any investment with high returns', 'Investments that charge or earn interest (riba)', 'Investments that avoid interest and prohibited industries', 'Only gold investments'] },
+  { q: 'What happens when you invest in an IPO?', options: ['You lend money to the government', 'You buy shares of a company that is listing on the stock market for the first time', 'You open a fixed savings account', 'You purchase a government bond'] },
+  { q: 'Why is it important to research an investment before committing money?', options: ['It is not important — past performance guarantees future results', 'To find the investment with the highest advertised return', 'To understand the risks, fees, and potential returns before making a decision', 'To copy what successful investors did last year'] },
+  { q: 'What is the main purpose of the Learning Hub on INFINDER?', options: ['To sell investment products directly', 'To provide entertainment content', 'To track stock prices in real time', 'To educate users about investing before they deploy real capital'] },
+];
+
+// ── Screen: Bypass Quiz ────────────────────────────────────────────────────
+
+function QuizScreen({
+  course,
+  onBack,
+  onPassed,
+}: {
+  course: Course;
+  onBack: () => void;
+  onPassed: (completedIds: string[]) => void;
+}) {
+  const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [timeLeft, setTimeLeft] = useState(1800);
+  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState<{ passed: boolean; score: number } | null>(null);
+
+  const allAnswered = Object.keys(answers).length === 20;
+  const mins = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+  const secs = String(timeLeft % 60).padStart(2, '0');
+  const timerColor = timeLeft <= 300 ? 'text-red-500' : 'text-gray-700 dark:text-gray-300';
+
+  async function submit(ans: Record<number, number>) {
+    if (submitting || result) return;
+    setSubmitting(true);
+    try {
+      const payload = Array.from({ length: 20 }, (_, i) => ans[i] ?? -1);
+      const res = await api.post('/api/learning/bypass-quiz', { module_id: course.id, answers: payload });
+      setResult(res.data);
+      if (res.data.passed) {
+        const lessonsRes = await api.get('/api/learning/progress');
+        onPassed(lessonsRes.data.completed as string[]);
+      }
+    } catch {
+      setResult({ passed: false, score: 0 });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  useEffect(() => {
+    if (result) return;
+    if (timeLeft <= 0) { submit(answers); return; }
+    const timer = setTimeout(() => setTimeLeft(t => t - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [timeLeft, result]);
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <button
+        type="button"
+        onClick={onBack}
+        className="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-6"
+      >
+        <IcArrowLeft />
+        Back to course
+      </button>
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Bypass Quiz</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">{course.title}</h1>
+        </div>
+        <div className={`text-2xl font-mono font-bold ${timerColor}`}>{mins}:{secs}</div>
+      </div>
+
+      {result ? (
+        <div className={`rounded-2xl border p-8 text-center ${result.passed ? 'border-green-300 dark:border-green-800 bg-green-50 dark:bg-green-900/10' : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10'}`}>
+          <div className="text-4xl mb-3">{result.passed ? '🎉' : '📚'}</div>
+          <h2 className={`text-xl font-bold mb-1 ${result.passed ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+            {result.passed ? 'You passed!' : 'Not quite there'}
+          </h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            You scored <strong>{result.score}/20</strong>. {result.passed ? 'This course is now marked complete and intermediate investments are unlocked.' : 'You need 16/20 to pass. Study the course material and try again.'}
+          </p>
+          <button type="button" onClick={onBack} className="rounded-xl px-6 py-2.5 text-sm font-semibold bg-[#C5F94E] text-black hover:opacity-90 transition-opacity">
+            {result.passed ? 'Back to Course' : 'Study & Retry'}
+          </button>
+        </div>
+      ) : (
+        <>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Answer all 20 questions. Score 16 or more to skip this course. Timer auto-submits at 00:00.</p>
+          <div className="space-y-6">
+            {QUIZ_QUESTIONS.map((q, qi) => (
+              <div key={qi} className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                  <span className="text-gray-400 dark:text-gray-500 mr-2">{qi + 1}.</span>{q.q}
+                </p>
+                <div className="space-y-2">
+                  {q.options.map((opt, oi) => (
+                    <button
+                      key={oi}
+                      type="button"
+                      onClick={() => setAnswers(prev => ({ ...prev, [qi]: oi }))}
+                      className={`w-full text-left text-sm px-4 py-2.5 rounded-xl border transition-colors ${
+                        answers[qi] === oi
+                          ? 'border-[#C5F94E] bg-[#C5F94E]/10 text-gray-900 dark:text-white font-medium'
+                          : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500'
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 flex items-center justify-between">
+            <p className="text-sm text-gray-400">{Object.keys(answers).length}/20 answered</p>
+            <button
+              type="button"
+              disabled={!allAnswered || submitting}
+              onClick={() => submit(answers)}
+              className="rounded-xl px-6 py-2.5 text-sm font-bold bg-[#C5F94E] text-black disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+            >
+              {submitting ? 'Submitting…' : 'Submit Quiz'}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -1001,6 +1173,7 @@ export default function LearningHub() {
               onEnroll={handleEnroll}
               purchases={purchases}
               onPurchase={handleInitiateEnroll}
+              onStartQuiz={() => setCurrentView('quiz')}
             />
           </motion.div>
         )}
@@ -1015,6 +1188,19 @@ export default function LearningHub() {
               onMarkComplete={() => markComplete(selectedLesson.lesson.dbId)}
               onNextLesson={(lesson, level) => setSelectedLesson({ lesson, level })}
               onBack={() => setCurrentView('courseDetail')}
+            />
+          </motion.div>
+        )}
+
+        {currentView === 'quiz' && selectedCourse && (
+          <motion.div key="quiz" variants={fade} initial="enter" animate="center" exit="exit">
+            <QuizScreen
+              course={selectedCourse}
+              onBack={() => setCurrentView('courseDetail')}
+              onPassed={(completedIds) => {
+                setCompleted(new Set(completedIds));
+                setCurrentView('courseDetail');
+              }}
             />
           </motion.div>
         )}
