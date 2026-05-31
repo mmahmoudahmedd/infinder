@@ -271,13 +271,10 @@ export default function InvestmentOptions() {
                   <span className={`text-xs rounded-full px-2 py-0.5 ${riskBadgeClass[inv.risk_level] ?? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}`}>
                     {riskLabel[inv.risk_level] || inv.risk_level}
                   </span>
-                  {inv.is_halal && (
-                    <span className="text-xs rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 px-2 py-0.5">{t('invest_halal')}</span>
-                  )}
-                  {levelMap[inv.slug] && (
-                    <span className={`text-xs rounded-full px-2 py-0.5 font-medium ${levelBadgeClass[levelMap[inv.slug]]}`}>
-                      {levelLabel[levelMap[inv.slug]]}
-                    </span>
+                  {inv.is_halal ? (
+                    <span className="text-xs rounded-full border border-green-400 dark:border-green-600 text-green-700 dark:text-green-400 px-2 py-0.5">✓ {t('invest_halal')}</span>
+                  ) : (
+                    <span className="text-xs rounded-full border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 px-2 py-0.5">Not Halal</span>
                   )}
                 </div>
                 <p className="text-sm text-gray-600 dark:text-gray-300 mt-3">{inv.description}</p>
